@@ -1,0 +1,156 @@
+#+TITLE: Sumi Explorer
+
+* Standalone desktop file explorer
+
+Sumi Explorer is a NeLisp AOT GTK4/GIO application with an optional GNU Emacs
+client. GNU Emacs builds it; the resulting desktop executable runs independently.
+See the [[file:docs/file-explorer.md][application]], [[file:docs/file-operations.md][operation]], and [[file:docs/file-batches.md][batch contracts]].
+
+The GUI supports navigation, Ctrl/Shift multiple selection, associated-application
+opening, a portable Open/Properties context menu, application Properties, and
+asynchronous copy, move, rename, new-directory, and GIO Trash operations.
+These are application features, not Explorer/Finder extension menus or native
+Properties dialogs.
+
+Single-row Copy/Move takes an exact new destination path. Multiple-row Copy/Move
+takes an existing destination directory and preflights the complete batch.
+Trash confirms frozen targets; Cancel is cooperative. Existing targets are
+never overwritten or merged. Failure/cancellation can leave a reported partial
+new destination; completed batch items remain and untouched items are skipped.
+Move has no copy/delete fallback, so cross-filesystem moves can fail safely.
+
+Incoming DND accepts one local regular file with COPY semantics. Directories,
+multiple files, symlinks, and MOVE drops are unsupported. Outbound DND exports
+every selected path; the receiving application owns its operation.
+
+* Build and run
+
+Install GTK4 development libraries with =pkg-config= metadata, a C compiler/linker
+driver (=cc= by default), GNU Emacs, and Git. The public NeLisp AOT compiler is
+an external build-time dependency. Build/test helpers download nothing.
+
+#+begin_src sh
+  git clone https://github.com/zawatton/sumi-explorer.git
+  cd sumi-explorer
+  mkdir -p target/deps
+  git clone https://github.com/zawatton/nelisp.git target/deps/nelisp
+  git -C target/deps/nelisp checkout f3551799d210ed32f594383997843f0e1bf25e24
+  (ulimit -v 8388608; NELISP_REPO_ROOT="$PWD/target/deps/nelisp" emacs -Q --batch -l explorer/build.el)
+  ./target/sumi-explorer
+#+end_src
+
+That compiler revision was used for recorded Linux validation. Set
+=NELISP_REPO_ROOT= for another existing checkout; the builder otherwise looks
+for sibling =../nelisp=. Set =CC= to select another compiler driver. The shell
+memory cap is 8 GiB. Compiler sources and build outputs under =target/= are ignored.
+
+The app defaults to the user's home directory and creates a private temporary
+session. =SUMI_EXPLORER_ROOT= chooses its initial directory. A client can supply
+=SUMI_EXPLORER_SESSION=; the app never removes a supplied session.
+
+The build selects native x86_64/aarch64 ELF, COFF, or Mach-O. Windows output is
+=target/sumi-explorer.exe=. Linux has executable GUI evidence. Windows x86_64
+COFF and Apple Silicon Mach-O object emission were checked; Windows/macOS
+application builds, runtime libraries, interaction, and packaging remain
+unverified. Intel Mac object emission currently fails on an unsupported =plt32=
+relocation in the compiler. Object emission is not runtime support. See GTK's
+setup documentation for [[https://www.gtk.org/docs/installations/windows/][Windows]] and [[https://www.gtk.org/docs/installations/macos/][macOS]].
+
+* Emacs commands
+
+From this repository, or through your existing =load-path= configuration:
+
+#+begin_src emacs-lisp
+  (add-to-list 'load-path (expand-file-name "explorer" default-directory))
+  (require 'sumi-explorer)
+  (sumi-explorer-start default-directory)
+  (sumi-explorer-open-directory default-directory)
+  (sumi-explorer-selected-files)
+  (sumi-explorer-properties)
+  (sumi-explorer-refresh)
+  (sumi-explorer-stop)
+#+end_src
+
+Use =M-x sumi-explorer-copy=, =sumi-explorer-move=, =sumi-explorer-rename=,
+=sumi-explorer-mkdir=, or =sumi-explorer-trash=. Sources default to the GUI
+selection or prompt for a source. Copy/Move prompts for an exact new path;
+Rename stays in its parent. Interactive Trash confirms the exact target.
+
+For multiple rows use =M-x sumi-explorer-copy-files=, =sumi-explorer-move-files=,
+or =sumi-explorer-trash-files=. Copy/Move prompts for an existing directory;
+Trash confirms the complete frozen list. =sumi-explorer-select-files= sets
+selection from Lisp; =sumi-explorer-selected-files= returns its display order.
+
+#+begin_src emacs-lisp
+  (sumi-explorer-begin-operation "copy" source-path exact-new-destination)
+  ;; Optional cooperative cancellation; await still reports the actual result.
+  (sumi-explorer-cancel)
+  (sumi-explorer-await 30)
+
+  (let ((id (sumi-explorer-begin-batch "copy" selected-paths existing-directory)))
+    (sumi-explorer-await 30)
+    (sumi-explorer-batch-result id))
+#+end_src
+
+Timeout/C-g retains the same pending request without retrying it. Resume with
+=M-x sumi-explorer-await=. After a batch error use =sumi-explorer-batch-result=
+with its retained ID to inspect =ok=, =error=, and =skipped= items. Malformed or
+oversized manifests may have no new result. GUI actions cannot replace a protocol
+batch result. Selection/batches are bounded to 256 paths and 1 MiB encoded data;
+Unicode, line breaks, semicolons, and backslashes remain data, never delimiters.
+Oversized results are rejected before mutation.
+
+The client exchanges UTF-8 files in a private session, never evaluates received
+Lisp, and never builds shell commands from names. Durable =response.ini= is
+separate from live GUI state. Normal stop requests quit and retains the session
+while an operation finishes. Prefix/explicit forced stop can interrupt a copy.
+
+* Linux validation
+
+Client tests need GNU Emacs, Python 3 for a startup fixture, and standard =cat=
+and =true= utilities. Native tests additionally need the built binary, Xvfb
+(=xvfb-run=), xdotool, Nautilus, and =dbus-run-session=. Python implements tests
+and record verification, not the application. Fixtures/Trash data are isolated.
+
+The helper works from any current directory, downloads nothing, caps its children
+at 8 GiB, and fails on missing dependencies. =client= runs warning-as-error byte
+compilation and client ERT without GTK/a binary. =native= runs all native suites;
+=all= runs both. Optional =SUMI_EXPLORER_TEST_BIN= selects another built executable.
+
+#+begin_src sh
+  sh tools/check.sh client
+  sh tools/check.sh all
+#+end_src
+
+Equivalent native suite commands follow. Python suites accept =--artifacts=;
+keep optional diagnostics under ignored =target/=.
+
+#+begin_src sh
+  (ulimit -v 8388608; xvfb-run -a python3 tests/explorer-gui-test.py --group all)
+  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-dnd-test.py)
+  (ulimit -v 8388608; xvfb-run -a emacs -Q --batch -L explorer -l tests/sumi-explorer-integration-test.el)
+  (ulimit -v 8388608; xvfb-run -a python3 tests/explorer-operations-test.py --binary target/sumi-explorer)
+  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-batches-test.py --binary target/sumi-explorer)
+#+end_src
+
+Retained counts are 42 client ERT cases, three real Emacs/native workflows,
+15 batch checks, 12 operation checks, and seven DND checks. The GUI suite also
+covers protocol, rejection controls, and widget activation. These identify
+recorded suites; they do not claim a fresh machine has passed them.
+
+** Historical validation record
+
+=docs/validation.json= records one verified run's compiler revision, Linux
+platform, binary hash, input hashes, suite outcomes, and limitations.
+=python3 tools/verify-validation.py= checks its schema and current application,
+build, test, and helper hashes. It works without a binary or compiler checkout.
+Use repeated =--check client= / =--check emacs_native= options for named criteria.
+
+This validates a historical record's source binding, not current test execution.
+Editable JSON cannot independently prove past execution. Optional log hashes
+identify original diagnostics without publishing private logs; the verifier
+checks their format, not their contents or availability. Run the build/tests
+above for new execution evidence. The [[file:tools/ai/file-explorer-progress.org][20-criterion ledger]] maps criteria to
+named historical checks; Windows/macOS end-to-end criteria stay pending.
+
+The historical-record verifier requires Python 3.9 or newer.

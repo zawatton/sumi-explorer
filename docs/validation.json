@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "compiler": {
+    "repository": "https://github.com/zawatton/nelisp.git",
+    "revision": "f3551799d210ed32f594383997843f0e1bf25e24"
+  },
+  "platform": {
+    "os": "linux",
+    "architecture": "x86_64"
+  },
+  "binary_sha256": "6ba61bedcfc400005829c4ae73f10c6cc1e595afed3ad80351d2f561898be669",
+  "sources": {
+    "explorer/build.el": "9019525c9177f85c4434488f1b10f75ed1a46be2655665b6b7118873003fcaae",
+    "explorer/sumi-explorer-native.el": "c4242be123c9aa6b70ca5bd764dea0c107d68d578b11f96f5cef3c5dcde46134",
+    "explorer/sumi-explorer.el": "bfb435997567de77d10bcd12d97e2ffe976bd8e3a35f5662a1359a16de09b6fc",
+    "tests/sumi-explorer-client-test.el": "585b96d13c7ebe11c1fd4e59c3e40660a615c155a6215cda1b045cfb86d83373",
+    "tests/sumi-explorer-integration-test.el": "6abfdc578935ee4a80b526126a92c0a9745d024cbfdcc1b77128f9963d616510",
+    "tests/explorer-gui-test.py": "9ba503b0510a9a015fd844a78c19f6c4785d4e524e6968a2ffe5b0719e28d7da",
+    "tests/explorer-dnd-test.py": "06088777b9895c4681ca4425f8f4d7ed84681ad7878ec9889f78ca2a103d9305",
+    "tests/explorer-operations-test.py": "4fe31fb1d9049a651c5b5cc26db9dd557604e440f4eacceafc8dc7df4a96d80c",
+    "tests/explorer-batches-test.py": "cfec3b96b3ce24acb438ff94796624e0f4da023f23968dbecf48a57d59562102",
+    "tools/check.sh": "896907f3a16239ab930e5a10d7e064b4cdd293e7ff52e40b6a4a0de73be0b1ff"
+  },
+  "checks": {
+    "build": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 1,
+      "log_sha256": "b049290f7d1da14945002ce7becb2b95e9672fcc48fd7a81a23d7e1722f1ecb6"
+    },
+    "byte_compile": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 3,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "client": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 42,
+      "log_sha256": "37a9a6c20655011a493b1e55d97725044f882b467abe5a65e896a1c330e77e7b"
+    },
+    "emacs_native": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 3,
+      "log_sha256": "af100994b5a178db4d0030284e152c1598ea19329d6049c93a910a3332433243"
+    },
+    "gui": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 1,
+      "log_sha256": "aeb25f6c464a6abda94aef469eb6c73a25b5987e8ced143c5a919e3d3c5aa8be"
+    },
+    "batches": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 15,
+      "log_sha256": "d7d174f5c9e217ed882b4de439a9eb92d7b639f07acd7c528067fc68eb36cc68"
+    },
+    "operations": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 12,
+      "log_sha256": "901d4268f64af31bf360d9e5fbe3a8a59c54fab2181411769a3af3897a56f1eb"
+    },
+    "dnd": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 7,
+      "log_sha256": "dbeaec4803bf7456dcda94e2a2aa503961cd9e5526fb72cfe8fb935342b26b53"
+    }
+  },
+  "limitations": [
+    "Historical Linux execution record, not a rerun or independent attestation; check source binding with tools/verify-validation.py.",
+    "Windows and macOS native linking, runtime, packaging, and Shell/Finder integration are unverified.",
+    "COFF x86_64 and Mach-O aarch64 object emission passed; Intel Mach-O emission fails on unsupported x86_64 plt32 relocation.",
+    "Incoming drag and drop accepts one local regular file with COPY semantics; multiple rename is unsupported.",
+    "Move has no copy/delete fallback; failed or cancelled copies may retain explicitly reported partial destinations."
+  ]
+}

@@ -1,0 +1,95 @@
+#+TITLE: Sumi Explorer progress
+
+#+NOTE: Commands validate named historical run records against current source hashes; they do not rerun the recorded behavior. Editable JSON is not independent proof of execution. See README.org for actual suite commands. The six stages and 20 criteria are retained; two native OS criteria remain pending.
+
+* S1 Shared model and command contract
+
+** S1.1 File identities, Unicode names and selection have executable checks
+cmd: python3 tools/verify-validation.py --check gui --check client --check batches
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S1.2 Malformed commands and unsafe operation requests are rejected
+cmd: python3 tools/verify-validation.py --check gui --check client --check operations --check batches
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S1.3 A real directory and command sequence run end to end in NeLisp
+cmd: python3 tools/verify-validation.py --check gui --check emacs_native
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+* S2 Sumi desktop application
+
+** S2.1 The explorer builds as a standalone GTK application
+cmd: python3 tools/verify-validation.py --check build
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S2.2 Navigation, selection and Properties work through real widget events
+cmd: python3 tools/verify-validation.py --check gui --check dnd
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S2.3 A native GUI session completes a real file-transfer scenario
+cmd: python3 tools/verify-validation.py --check dnd
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+* S3 Native operating-system integration
+
+** S3.1 Windows native menu, Properties and external file transfer pass end to end
+#+NOTE: COFF x86_64 object emission passed. Native execution and Shell integration are unverified.
+pending
+
+** S3.2 macOS application, file information and external file transfer pass end to end
+#+NOTE: Mach-O arm64 object emission passed. Intel Mac emission fails on unsupported plt32 relocation. No macOS execution is verified.
+pending
+
+** S3.3 Linux desktop application, Properties and external file transfer pass end to end
+cmd: python3 tools/verify-validation.py --check gui --check dnd
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+* S4 Emacs integration and operation results
+
+** S4.1 Emacs navigation and selection use a bounded data-only command channel
+cmd: python3 tools/verify-validation.py --check client --check byte_compile
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S4.2 Real file operations preserve existing destinations and report failures
+cmd: python3 tools/verify-validation.py --check operations --check emacs_native
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S4.3 Emacs and the native GUI complete one shared-state workflow end to end
+cmd: python3 tools/verify-validation.py --check emacs_native
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+* S5 Shared file-operation increment
+
+** S5.1 Real copy, move, rename, mkdir and trash preserve existing destinations
+cmd: python3 tools/verify-validation.py --check operations
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S5.2 Cancellation and timeout recovery preserve ownership and final results
+cmd: python3 tools/verify-validation.py --check client --check operations
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S5.3 GUI controls perform confirmed file operations on disposable fixtures
+cmd: python3 tools/verify-validation.py --check operations
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S5.4 Emacs and GUI complete real file mutations through the shared engine
+cmd: python3 tools/verify-validation.py --check operations --check emacs_native
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+* S6 Multiple selection and batch operations
+
+** S6.1 Multiple file identities round-trip between native GUI and Emacs
+cmd: python3 tools/verify-validation.py --check client --check batches --check emacs_native
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S6.2 Batch preflight and per-item results preserve destinations and report partial work
+cmd: python3 tools/verify-validation.py --check batches
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S6.3 Real GUI selection, confirmed batch operations and multiple-file drag work
+cmd: python3 tools/verify-validation.py --check batches
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2
+
+** S6.4 Real Emacs and GUI batch workflows pass with cancellation and recovery
+cmd: python3 tools/verify-validation.py --check batches --check emacs_native
+evidence: docs/validation.json sha256=95bd2e9686a1ff9aaedf1dff1ca0de4aac79f7ef3392794a44522915be86fde2

@@ -11,6 +11,7 @@
 #include <winioctl.h>
 #include <wchar.h>
 static int injected_query = -1, injected_provider, active_handles, close_failures;
+static unsigned observed_opens, observed_closes;
 static BOOL WINAPI observed_query(HANDLE file, FILE_INFO_BY_HANDLE_CLASS kind, void *output, DWORD size)
 {
     if ((int)kind == injected_query) { SetLastError(ERROR_ACCESS_DENIED); return FALSE; }
@@ -30,13 +31,13 @@ static HANDLE WINAPI observed_open(LPCWSTR name, DWORD access, DWORD share,
 {
     if (injected_provider == 5) { SetLastError(ERROR_ACCESS_DENIED); return INVALID_HANDLE_VALUE; }
     HANDLE file = CreateFileW(name, access, share, security, disposition, flags, template);
-    if (file != INVALID_HANDLE_VALUE) ++active_handles;
+    if (file != INVALID_HANDLE_VALUE) { ++active_handles; ++observed_opens; }
     return file;
 }
 static BOOL WINAPI observed_close(HANDLE file)
 {
     BOOL result = CloseHandle(file);
-    if (result) --active_handles;
+    if (result) { --active_handles; ++observed_closes; }
     else ++close_failures;
     return result;
 }
@@ -176,9 +177,12 @@ static void test_acl(const WCHAR *path)
     CHECK(equal_except(before, after, "|changed="), "DACL control calibrated: all serialized fields except ChangeTime equal");
     CHECK(before && after && strcmp(before, after), "DACL-only modification changes stamp");
     CHECK(same_bytes(path), "DACL-only modification preserves default-stream bytes");
-    file = CreateFileW(path, WRITE_DAC, sharing, NULL, OPEN_EXISTING, 0, NULL);
-    CHECK(file != INVALID_HANDLE_VALUE && SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
-          NULL, NULL, old_acl, NULL) == ERROR_SUCCESS, "restore only fixture original DACL");
+    file = CreateFileW(path, READ_CONTROL | WRITE_DAC, sharing, NULL, OPEN_EXISTING, 0, NULL);
+    DWORD open_error = file == INVALID_HANDLE_VALUE ? GetLastError() : ERROR_SUCCESS;
+    DWORD restore_result = file == INVALID_HANDLE_VALUE ? open_error :
+        SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, old_acl, NULL);
+    printf("DIAG DACL restore open_error=%lu result=%lu\n", (unsigned long)open_error, (unsigned long)restore_result);
+    CHECK(file != INVALID_HANDLE_VALUE && restore_result == ERROR_SUCCESS, "restore only fixture original DACL");
     /* Keep the already authorized WRITE_DAC handle while denying only our
      * fixture's READ_ATTRIBUTES access, so restoration cannot lock us out. */
     if (file != INVALID_HANDLE_VALUE) {
@@ -190,15 +194,21 @@ static void test_acl(const WCHAR *path)
             CHECK(GetAce(old_acl, i, &ace) && AddAce(changed_acl, ACL_REVISION, MAXDWORD,
                 ace, ((ACE_HEADER *)ace)->AceSize), "retain original permission entries after denial");
         }
-        CHECK(SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
-            NULL, NULL, changed_acl, NULL) == ERROR_SUCCESS, "apply fixture-only read-attributes denial");
+        DWORD deny_result = SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+            NULL, NULL, changed_acl, NULL);
+        printf("DIAG DACL deny result=%lu\n", (unsigned long)deny_result);
+        CHECK(deny_result == ERROR_SUCCESS, "apply fixture-only read-attributes denial");
         char *name = utf8(path), *denied_error = NULL;
         char *denied_stamp = sumi_explorer_platform_metadata_stamp(name, &denied_error);
+        printf("DIAG DACL denied stamp=%s error=%s\n", denied_stamp ? denied_stamp : "<none>",
+               denied_error ? denied_error : "<none>");
         CHECK(!denied_stamp && denied_error && strstr(denied_error, "Win32 error 5") && !active_handles,
               "genuine DACL read-attributes denial is explicit");
         free(name); g_free(denied_error); g_free(denied_stamp);
-        CHECK(SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
-            NULL, NULL, old_acl, NULL) == ERROR_SUCCESS, "restore fixture ACL after access-denial control");
+        restore_result = SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+            NULL, NULL, old_acl, NULL);
+        printf("DIAG DACL final restore result=%lu\n", (unsigned long)restore_result);
+        CHECK(restore_result == ERROR_SUCCESS, "restore fixture ACL after access-denial control");
     }
 done:
     if (file != INVALID_HANDLE_VALUE) CloseHandle(file);
@@ -211,12 +221,24 @@ done:
 static void test_identity(const WCHAR *path)
 {
     FILE_BASIC_INFO original = {0};
+    WCHAR retired[2048];
+    swprintf(retired, 2048, L"%ls.retired-%lu-%llu", path, (unsigned long)GetCurrentProcessId(),
+             (unsigned long long)GetTickCount64());
     HANDLE old = CreateFileW(path, FILE_READ_ATTRIBUTES, sharing, NULL, OPEN_EXISTING, 0, NULL);
-    CHECK(old != INVALID_HANDLE_VALUE && GetFileInformationByHandleEx(old, FileBasicInfo, &original, sizeof(original)),
-          "read replacement control timestamps");
+    BOOL baseline_read = old != INVALID_HANDLE_VALUE && GetFileInformationByHandleEx(old, FileBasicInfo, &original, sizeof(original));
+    CHECK(baseline_read, "read replacement control timestamps");
+    if (!baseline_read) { if (old != INVALID_HANDLE_VALUE) CloseHandle(old); return; }
     char *before = stamp(path);
-    CHECK(DeleteFileW(path) && write_fixture(path, fixture_bytes, sizeof(fixture_bytes)), "same-byte replacement created");
-    HANDLE replacement = CreateFileW(path, FILE_WRITE_ATTRIBUTES, sharing, NULL, OPEN_EXISTING, 0, NULL);
+    BOOL moved = MoveFileW(path, retired);
+    CHECK(moved, "retire pinned original to a unique sibling without overwrite");
+    if (!moved) { CloseHandle(old); g_free(before); return; }
+    HANDLE replacement = CreateFileW(path, GENERIC_WRITE, sharing, NULL,
+                                      CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+    DWORD written = 0;
+    CHECK(replacement != INVALID_HANDLE_VALUE && WriteFile(replacement, fixture_bytes, sizeof(fixture_bytes), &written, NULL)
+          && written == sizeof(fixture_bytes), "same-byte replacement created");
+    if (replacement != INVALID_HANDLE_VALUE) CloseHandle(replacement);
+    replacement = CreateFileW(path, FILE_WRITE_ATTRIBUTES, sharing, NULL, OPEN_EXISTING, 0, NULL);
     CHECK(replacement != INVALID_HANDLE_VALUE && SetFileInformationByHandle(replacement, FileBasicInfo, &original, sizeof(original)),
           "equalize all replacement timestamps and attributes");
     if (replacement != INVALID_HANDLE_VALUE) CloseHandle(replacement);
@@ -225,7 +247,8 @@ static void test_identity(const WCHAR *path)
     CHECK(equal_except(before, after, "|id="), "identity control calibrated: all fields except file ID equal");
     CHECK(before && after && strcmp(before, after), "same-byte replacement changes file identity stamp");
     CHECK(same_bytes(path), "replacement control preserves exact bytes");
-    if (old != INVALID_HANDLE_VALUE) CloseHandle(old);
+    CloseHandle(old);
+    CHECK(DeleteFileW(retired), "retired original cleanup after pinned handle closes");
     g_free(before); g_free(after);
 }
 
@@ -233,7 +256,9 @@ static void test_faults(const WCHAR *path)
 {
     char *name = utf8(path);
     DWORD before = 0, after = 0;
-    GetProcessHandleCount(GetCurrentProcess(), &before);
+    CHECK(GetProcessHandleCount(GetCurrentProcess(), &before), "read baseline process handle count");
+    printf("DIAG handles before=%lu adapter_active=%d opens=%u closes=%u close_failures=%d\n",
+           (unsigned long)before, active_handles, observed_opens, observed_closes, close_failures);
     FILE_INFO_BY_HANDLE_CLASS queries[] = {FileIdInfo, FileBasicInfo, FileStandardInfo, FileAttributeTagInfo};
     for (unsigned round = 0; round < 8; ++round) {
         for (unsigned i = 0; i < sizeof(queries) / sizeof(queries[0]); ++i) {
@@ -243,8 +268,14 @@ static void test_faults(const WCHAR *path)
         for (injected_provider = 1; injected_provider <= 6; ++injected_provider)
             rejected(name, "unsupported provider/open/volume/delete-pending control rejected");
         injected_provider = 0;
+        DWORD current = 0;
+        CHECK(GetProcessHandleCount(GetCurrentProcess(), &current), "read fault-round process handle count");
+        printf("DIAG handles round=%u process=%lu adapter_active=%d opens=%u closes=%u close_failures=%d\n",
+               round, (unsigned long)current, active_handles, observed_opens, observed_closes, close_failures);
     }
-    GetProcessHandleCount(GetCurrentProcess(), &after);
+    CHECK(GetProcessHandleCount(GetCurrentProcess(), &after), "read final process handle count");
+    printf("DIAG handles after=%lu adapter_active=%d opens=%u closes=%u close_failures=%d\n",
+           (unsigned long)after, active_handles, observed_opens, observed_closes, close_failures);
     CHECK(active_handles == 0 && !close_failures && before == after, "all injected paths close each acquired handle without leaks");
     char *sentinel = g_strdup("preserved diagnostic"), *error = sentinel;
     CHECK(!sumi_explorer_platform_metadata_stamp(name, &error) && error == sentinel, "preexisting error is preserved");

@@ -2,6 +2,23 @@
 (require 'ert)
 (require 'sumi-explorer)
 
+(ert-deftest sumi-explorer-presentation-clipboard-api ()
+  (dolist (function '(sumi-explorer-view-settings sumi-explorer-bookmarks))
+    (should (fboundp function)))
+  (dolist (command '(sumi-explorer-filter sumi-explorer-sort sumi-explorer-order
+                     sumi-explorer-show-hidden sumi-explorer-set-view
+                     sumi-explorer-bookmark-add sumi-explorer-bookmark-remove
+                     sumi-explorer-bookmark-open sumi-explorer-clipboard-copy
+                     sumi-explorer-clipboard-cut sumi-explorer-paste))
+    (should (commandp command))))
+
+(ert-deftest sumi-explorer-workspace-api ()
+  (should (fboundp 'sumi-explorer-tabs))
+  (dolist (command '(sumi-explorer-new-tab sumi-explorer-new-window
+                     sumi-explorer-close-tab sumi-explorer-activate-tab
+                     sumi-explorer-back sumi-explorer-forward sumi-explorer-home))
+    (should (commandp command))))
+
 (ert-deftest sumi-explorer-batch-api ()
   (dolist (function '(sumi-explorer-select-files sumi-explorer-begin-batch
                       sumi-explorer-batch-result sumi-explorer-copy-files
@@ -116,6 +133,243 @@
 (defun sumi-explorer-test--sidecar (filename data)
   (let ((coding-system-for-write 'utf-8-unix))
     (write-region data nil (expand-file-name filename sumi-explorer--session-directory) nil 'silent)))
+
+(defconst sumi-explorer-test--view
+  "[View]\nversion=1\ndirectory=/tmp\nfilter=\nsort=name\norder=asc\nhidden=0\nview=list\n")
+
+(ert-deftest sumi-explorer-presentation-snapshot-validation ()
+  (sumi-explorer-test--session
+   (let* ((text " 日本語;\\\n\t ")
+          (good (string-replace "filter=" (concat "filter=" (sumi-explorer--escape text)) sumi-explorer-test--view)))
+     (sumi-explorer-test--sidecar "view.ini" good)
+     (should (equal (cdr (assoc "filter" (sumi-explorer-view-settings))) text))
+     (dolist (bad (list (concat good "sort=name\n") (concat good "unknown=x\n")
+                       (concat good "[View]\n") (concat good "[Other]\n")
+                       (string-replace "version=1" "version=2" good)
+                       (string-replace "directory=/tmp" "directory=relative" good)
+                       (string-replace "sort=name" "sort=invalid" good)
+                       (string-replace "order=asc" "order=invalid" good)
+                       (string-replace "hidden=0" "hidden=show" good)
+                       (string-replace "view=list" "view=invalid" good)
+                       (string-replace "filter=" (concat "filter=" (make-string 257 ?界)) sumi-explorer-test--view)
+                       (string-replace "filter=" "filter=\\q" sumi-explorer-test--view)
+                       (make-string 1048577 ?x)))
+       (sumi-explorer-test--sidecar "view.ini" bad)
+       (should-error (sumi-explorer-view-settings))))))
+
+(ert-deftest sumi-explorer-presentation-bookmark-error-snapshots ()
+  (sumi-explorer-test--session
+   (dolist (spec '(("view.ini" "ViewError" sumi-explorer-view-settings)
+                   ("bookmarks.ini" "BookmarksError" sumi-explorer-bookmarks)))
+     (let ((good (format "[%s]\nversion=1\nmessage=unavailable 日本語\n" (nth 1 spec))))
+       (sumi-explorer-test--sidecar (car spec) good)
+       (should (string-match-p "unavailable 日本語"
+                               (condition-case err (funcall (nth 2 spec)) (error (error-message-string err)))))
+       (dolist (bad (list (concat good "extra=x\n") (concat good "[Other]\n")
+                         (string-replace "version=1" "version=2" good)
+                         (format "[%s]\nversion=1\nmessage=%s\n" (nth 1 spec) (make-string 257 ?界))))
+         (sumi-explorer-test--sidecar (car spec) bad)
+         (should-error (funcall (nth 2 spec))))))))
+
+(defun sumi-explorer-test--bookmark-data (paths)
+  (concat (format "[Bookmarks]\nversion=1\ncount=%d\n" (length paths))
+          (mapconcat (lambda (item) (format "[Bookmark%d]\npath=%s\n" (car item) (sumi-explorer--escape (cdr item))))
+                     (cl-loop for path in paths for index from 0 collect (cons index path)) "")))
+
+(ert-deftest sumi-explorer-bookmark-snapshot-validation ()
+  (sumi-explorer-test--session
+   (let* ((paths '("/tmp/日本語;\\\n one" "/tmp/two"))
+          (good (sumi-explorer-test--bookmark-data paths)))
+     (sumi-explorer-test--sidecar "bookmarks.ini" good)
+     (should (equal (cdr (assoc "bookmarks" (sumi-explorer-bookmarks))) paths))
+     (dolist (bad (list (concat good "extra=x\n") (concat good "[Other]\n")
+                       (string-replace "version=1" "version=2" good)
+                       (string-replace "count=2" "count=65" good)
+                       (string-replace "count=2" "count=02" good)
+                       (string-replace "Bookmark1" "Bookmark01" good)
+                       (string-replace "path=/tmp/two" "path=relative" good)
+                       (sumi-explorer-test--bookmark-data '("/tmp/one" "/tmp/one"))
+                       (sumi-explorer-test--bookmark-data '("/ssh:host:/remote"))
+                       (make-string 1048577 ?x)))
+       (sumi-explorer-test--sidecar "bookmarks.ini" bad)
+       (should-error (sumi-explorer-bookmarks))))
+   (let ((paths (cl-loop for index below 64 collect (format "/tmp/dir%d" index))))
+     (sumi-explorer-test--sidecar "bookmarks.ini" (sumi-explorer-test--bookmark-data paths))
+     (should (equal (cdr (assoc "bookmarks" (sumi-explorer-bookmarks))) paths)))
+   (sumi-explorer-test--sidecar "bookmarks.ini" (sumi-explorer-test--bookmark-data nil))
+   (should-not (cdr (assoc "bookmarks" (sumi-explorer-bookmarks))))))
+
+(ert-deftest sumi-explorer-presentation-clipboard-wire-contract ()
+  (sumi-explorer-test--session
+   (setq sumi-explorer--process (make-pipe-process :name "sumi-test" :noquery t))
+   (dolist (operation '((sumi-explorer-filter "literal / not a path 日本語\n" "filter" "literal / not a path 日本語\n")
+                        (sumi-explorer-sort "size" "sort" "size")
+                        (sumi-explorer-order "desc" "order" "desc")
+                        (sumi-explorer-show-hidden t "hidden" "show")
+                        (sumi-explorer-show-hidden nil "hidden" "hide")
+                        (sumi-explorer-set-view "details" "view" "details")
+                        (sumi-explorer-bookmark-add nil "bookmark-add" "")
+                        (sumi-explorer-bookmark-remove nil "bookmark-remove" "")
+                        (sumi-explorer-bookmark-open "/tmp/bookmark" "bookmark-open" "/tmp/bookmark")
+                        (sumi-explorer-clipboard-copy nil "clipboard-copy" "")
+                        (sumi-explorer-clipboard-cut nil "clipboard-cut" "")
+                        (sumi-explorer-paste nil "paste" "")
+                        (sumi-explorer-paste "/tmp/destination" "paste" "/tmp/destination")))
+     (let ((id (1+ sumi-explorer--request-id)))
+       (sumi-explorer-test--response (string-replace "request=0" (format "request=%d" id) sumi-explorer-test--state))
+       (if (memq (car operation) '(sumi-explorer-clipboard-copy sumi-explorer-clipboard-cut))
+           (funcall (car operation) 0.1)
+         (funcall (car operation) (nth 1 operation) 0.1))
+       (should (equal (sumi-explorer-test--contents "request.ini")
+                      (format "[Explorer]\nversion=1\nrequest=%d\ncommand=%s\npath=%s\n"
+                              id (nth 2 operation) (sumi-explorer--escape (nth 3 operation)))))))))
+
+(ert-deftest sumi-explorer-presentation-clipboard-reject-before-publication ()
+  (sumi-explorer-test--session
+   (setq sumi-explorer--process (make-pipe-process :name "sumi-test" :noquery t))
+   (dolist (request '(("sort" "invalid") ("order" "invalid") ("hidden" "1")
+                      ("view" "invalid") ("bookmark-open" "") ("bookmark-add" "relative")
+                      ("bookmark-remove" "/ssh:host:/remote") ("clipboard-copy" "/tmp")
+                      ("clipboard-cut" "1") ("paste" "relative") ("paste" "/ssh:host:/remote")))
+     (should-error (apply #'sumi-explorer-send (append request '(0.1)))))
+   (should-error (sumi-explorer-show-hidden 'show 0.1))
+   (should-error (sumi-explorer-filter (make-string 257 ?界) 0.1))
+   (dolist (character '(0 #xd800 #x110000))
+     (should-error (sumi-explorer-filter (string character) 0.1)))
+   (should-not sumi-explorer--pending)
+   (should (= 0 sumi-explorer--request-id))
+   (should-not (file-exists-p (expand-file-name "request.ini" sumi-explorer--session-directory)))))
+
+(ert-deftest sumi-explorer-paste-awaits-real-completion ()
+  (sumi-explorer-test--session
+   (setq sumi-explorer--process (make-pipe-process :name "sumi-test" :noquery t))
+   (should-error (sumi-explorer-paste nil 0.01))
+   (should (= 1 sumi-explorer--pending))
+   (let ((request (sumi-explorer-test--contents "request.ini")))
+     (should-error (sumi-explorer-clipboard-copy 0.1))
+     (should (equal request (sumi-explorer-test--contents "request.ini")))
+     (sumi-explorer-test--response
+      (string-replace "status=ok" "status=error" (string-replace "request=0" "request=1" sumi-explorer-test--state)))
+     (should-error (sumi-explorer-await 0.1))
+     (should-not sumi-explorer--pending)
+     (should (= 1 sumi-explorer--request-id)))))
+
+(defun sumi-explorer-test--workspace (count)
+  (concat (format "[Workspace]\nversion=1\nactive=1\ncount=%d\n" count)
+          (mapconcat (lambda (index)
+                       (format "[Tab%d]\nid=%d\ndirectory=%s\nback=0\nforward=1\n"
+                               index (1+ index) (sumi-explorer--escape (format "/tmp/日本語;\\\n tab%d" index))))
+                     (number-sequence 0 (1- count)) "")))
+
+(ert-deftest sumi-explorer-workspace-snapshot-roundtrip ()
+  (sumi-explorer-test--session
+   (should-error (sumi-explorer-tabs))
+   (sumi-explorer-test--sidecar "workspace.ini" (sumi-explorer-test--workspace 64))
+   (let ((workspace (sumi-explorer-tabs)))
+     (should (equal (cdr (assoc "active" workspace)) "1"))
+     (should (= 64 (length (cdr (assoc "tabs" workspace)))))
+     (should (equal (cdr (assoc "directory" (car (cdr (assoc "tabs" workspace))))) "/tmp/日本語;\\\n tab0")))
+   (should-not sumi-explorer--pending)
+   (should-not (file-exists-p (expand-file-name "request.ini" sumi-explorer--session-directory)))))
+
+(ert-deftest sumi-explorer-workspace-malformed-snapshots ()
+  (sumi-explorer-test--session
+   (let ((good (sumi-explorer-test--workspace 2)))
+     (dolist (bad (list (concat good "extra=x\n") (concat good "id=2\n")
+                       (concat good "[Tab1]\n") (concat good "[Other]\n")
+                       (string-replace "version=1" "version=2" good)
+                       (string-replace "active=1" "active=3" good)
+                       (string-replace "active=1" "active=01" good)
+                       (string-replace "count=2" "count=0" good)
+                       (string-replace "count=2" "count=65" good)
+                       (string-replace "id=2" "id=1" good)
+                       (string-replace "id=2" "id=9223372036854775808" good)
+                       (string-replace "id=2" "id=0" good)
+                       (string-replace "back=0" "back=true" good)
+                       (string-replace "forward=1" "forward=2" good)
+                       (string-replace "[Tab1]" "[Tab01]" good)
+                       (string-replace "directory=/tmp/" "directory=relative/" good)
+                       (string-replace "directory=/tmp/" "directory=/ssh:host:/" good)
+                       (string-replace "directory=/tmp/" "directory=/tmp/\\q" good)
+                       (string-replace "directory=/tmp/" "directory=/tmp/\0" good)
+                       (make-string 1048577 ?x)))
+       (sumi-explorer-test--sidecar "workspace.ini" bad)
+       (should-error (sumi-explorer-tabs))))
+   (sumi-explorer-test--sidecar "workspace.ini"
+    "[Tab0]\nid=1\ndirectory=/tmp\nback=0\nforward=0\n[Workspace]\nversion=1\nactive=1\ncount=1\n")
+   (should-error (sumi-explorer-tabs))
+   (let ((coding-system-for-write 'no-conversion))
+     (write-region (concat "[Workspace]\nversion=1\nactive=1\ncount=1\n[Tab0]\nid=1\ndirectory=/tmp/"
+                           (unibyte-string 255) "\nback=0\nforward=0\n") nil
+                   (expand-file-name "workspace.ini" sumi-explorer--session-directory) nil 'silent))
+   (should-error (sumi-explorer-tabs))))
+
+(ert-deftest sumi-explorer-workspace-command-wire-contract ()
+  (sumi-explorer-test--session
+   (setq sumi-explorer--process (make-pipe-process :name "sumi-test" :noquery t))
+   (dolist (operation '((sumi-explorer-new-tab nil "new-tab" "")
+                        (sumi-explorer-new-window "/tmp/日本語\n dir" "new-window" "/tmp/日本語\n dir")
+                        (sumi-explorer-activate-tab 7 "activate-tab" "7")
+                        (sumi-explorer-close-tab nil "close-tab" "")
+                        (sumi-explorer-back nil "back" "")
+                        (sumi-explorer-forward nil "forward" "")
+                        (sumi-explorer-home nil "home" "")))
+     (let ((id (1+ sumi-explorer--request-id)))
+       (sumi-explorer-test--response (string-replace "request=0" (format "request=%d" id) sumi-explorer-test--state))
+       (if (member (car operation) '(sumi-explorer-new-tab sumi-explorer-new-window sumi-explorer-activate-tab))
+           (funcall (car operation) (nth 1 operation) 0.1)
+         (funcall (car operation) 0.1))
+       (should (equal (sumi-explorer-test--contents "request.ini")
+                      (format "[Explorer]\nversion=1\nrequest=%d\ncommand=%s\npath=%s\n"
+                              id (nth 2 operation) (sumi-explorer--escape (nth 3 operation)))))))))
+
+(ert-deftest sumi-explorer-workspace-rejects-before-publication ()
+  (sumi-explorer-test--session
+   (setq sumi-explorer--process (make-pipe-process :name "sumi-test" :noquery t))
+   (dolist (request '(("new-tab" "relative") ("new-window" "/ssh:host:/tmp")
+                      ("activate-tab" "0") ("activate-tab" "01")
+                      ("activate-tab" "9223372036854775808")
+                      ("back" "/tmp") ("forward" "1") ("home" "/tmp") ("close-tab" "1")))
+     (should-error (apply #'sumi-explorer-send (append request '(0.1)))))
+   (should-error (sumi-explorer-activate-tab nil 0.1))
+   (should-error (sumi-explorer-new-tab "/tmp/\0" 0.1))
+   (should-not sumi-explorer--pending)
+   (should (= 0 sumi-explorer--request-id))
+   (should-not (file-exists-p (expand-file-name "request.ini" sumi-explorer--session-directory)))))
+
+(ert-deftest sumi-explorer-workspace-timeout-resumes-same-request ()
+  (sumi-explorer-test--session
+   (setq sumi-explorer--process (make-pipe-process :name "sumi-test" :noquery t))
+   (should-error (sumi-explorer-new-tab nil 0.01))
+   (let ((request (sumi-explorer-test--contents "request.ini")))
+     (should (= 1 sumi-explorer--pending))
+     (should-error (sumi-explorer-home 0.1))
+     (sumi-explorer-test--response (string-replace "request=0" "request=1" sumi-explorer-test--state))
+     (should (sumi-explorer-await 0.1))
+     (should (equal request (sumi-explorer-test--contents "request.ini")))
+     (should (= 1 sumi-explorer--request-id)))))
+
+(ert-deftest sumi-explorer-workspace-error-snapshots ()
+  (sumi-explorer-test--session
+   (sumi-explorer-test--sidecar "workspace.ini" "[WorkspaceError]\nversion=1\nmessage=unavailable 日本語\n")
+   (should (string-match-p "unavailable 日本語"
+                           (condition-case err (sumi-explorer-tabs) (error (error-message-string err)))))
+   (dolist (bad (list "[WorkspaceError]\nversion=2\nmessage=unavailable\n"
+                     "[WorkspaceError]\nversion=1\nmessage=x\nunknown=y\n"
+                     (concat "[WorkspaceError]\nversion=1\nmessage=" (make-string 257 ?界) "\n")
+                     (concat "[WorkspaceError]\nversion=1\nmessage=x\n" (sumi-explorer-test--workspace 1))))
+     (sumi-explorer-test--sidecar "workspace.ini" bad)
+     (should-error (sumi-explorer-tabs)))))
+
+(ert-deftest sumi-explorer-local-path-filter-preserves-platform-identities ()
+  (should (sumi-explorer--local-absolute-path-p (expand-file-name "日本語\n local" temporary-file-directory)))
+  (should-not (sumi-explorer--local-absolute-path-p "/ssh:host:/日本語\n remote"))
+  ;; Exercise the lexical filter when the host's native path predicate accepts
+  ;; Windows drive/UNC forms.  This is not Windows runtime validation.
+  (cl-letf (((symbol-function 'file-name-absolute-p) (lambda (_path) t))
+            ((symbol-function 'file-remote-p) (lambda (_path) nil)))
+    (should (sumi-explorer--local-absolute-path-p "C:/日本語/file"))
+    (should (sumi-explorer--local-absolute-path-p "//server/share/file"))))
 
 (defun sumi-explorer-test--selection-data (paths)
   (concat "[Selection]\nversion=1\nstatus=ok\ndirectory=/tmp\nmessage=\n"

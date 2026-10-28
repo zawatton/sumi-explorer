@@ -128,7 +128,10 @@
 (defun sumi-explorer--local-absolute-path-p (path)
   "Return non-nil when PATH names an absolute local filesystem path."
   (and (stringp path) (file-name-absolute-p path)
-       (not (string-prefix-p "~" path)) (not (file-remote-p path))))
+       (not (string-prefix-p "~" path))
+       ;; Malformed TRAMP names (for example with LF) can evade file-remote-p.
+       (not (string-match-p "\\`/[^/:]+:[^/]*:" path))
+       (not (file-remote-p path))))
 
 (defun sumi-explorer--publish (filename data &optional on-published)
   "Atomically publish bounded UTF-8 DATA to session FILENAME.
@@ -150,12 +153,36 @@ Run ON-PUBLISHED before allowing a quit after publication."
 
 (defun sumi-explorer--submit (command path &optional destination)
   "Validate and submit one COMMAND with PATH and optional DESTINATION."
-  (unless (member command (append '("open" "select" "refresh" "properties" "up" "quit")
+  (unless (member command (append '("open" "select" "refresh" "properties" "up" "quit"
+                                    "new-tab" "new-window" "close-tab" "activate-tab"
+                                    "back" "forward" "home" "filter" "sort" "order"
+                                    "hidden" "view" "bookmark-add" "bookmark-remove"
+                                    "bookmark-open" "clipboard-copy" "clipboard-cut" "paste")
                                   sumi-explorer--mutation-commands))
     (error "Unsupported Explorer command"))
   (let* ((encoded (sumi-explorer--escape (or path "")))
          (needs-destination (member command '("copy" "move" "rename")))
          (encoded-destination (and destination (sumi-explorer--escape destination))))
+    (cond
+     ((member command '("new-tab" "new-window" "bookmark-add" "bookmark-remove" "paste"))
+      (unless (or (string-empty-p (or path "")) (sumi-explorer--local-absolute-path-p path))
+        (error "Workspace directory must be empty or absolute and local")))
+     ((equal command "activate-tab")
+      (sumi-explorer--decimal path 1 sumi-explorer--maximum-request-id))
+     ((member command '("close-tab" "back" "forward" "home" "clipboard-copy" "clipboard-cut"))
+      (unless (string-empty-p (or path "")) (error "Command requires an empty path")))
+     ((equal command "bookmark-open")
+      (unless (sumi-explorer--local-absolute-path-p path) (error "Bookmark must be absolute and local")))
+     ((equal command "filter")
+      (when (> (length (or path "")) 256) (error "Filter exceeds 256 scalar characters")))
+     ((equal command "sort")
+      (unless (member path '("name" "size" "date" "type")) (error "Invalid Explorer sort key")))
+     ((equal command "order")
+      (unless (member path '("asc" "desc")) (error "Invalid Explorer sort order")))
+     ((equal command "hidden")
+      (unless (member path '("show" "hide")) (error "Invalid hidden-file setting")))
+     ((equal command "view")
+      (unless (member path '("list" "details")) (error "Invalid Explorer view"))))
     (when (member command sumi-explorer--mutation-commands)
       (unless (sumi-explorer--local-absolute-path-p path)
         (error "Mutation path must be absolute and local")))
@@ -542,6 +569,201 @@ This durable result is independent of GUI state and does not resolve a request."
        (user-error "Batch Trash cancelled"))
      (list paths)))
   (sumi-explorer--run-batch "trash" paths nil timeout))
+
+;;;###autoload
+(defun sumi-explorer-tabs ()
+  "Read the workspace snapshot as header fields plus a `tabs' alist list.
+IDs, count and booleans remain canonical strings.  Only this independently
+consistent snapshot is read; no durable response or selection is changed."
+  (let* ((groups (sumi-explorer--read-groups "workspace.ini"))
+         (header
+          (progn
+            (when (assoc "WorkspaceError" groups)
+              (let ((fields (cdr (assoc "WorkspaceError" groups))))
+                (sumi-explorer--exact-keys fields '("version" "message"))
+                (unless (and (= (length groups) 1)
+                             (equal (cdr (assoc "version" fields)) "1")
+                             (<= (length (cdr (assoc "message" fields))) 256))
+                  (error "Invalid Explorer workspace error snapshot"))
+                (error "Explorer workspace: %s" (cdr (assoc "message" fields)))))
+            (cdr (assoc "Workspace" groups))))
+         (count (sumi-explorer--decimal (cdr (assoc "count" header)) 1 64))
+         (active (cdr (assoc "active" header))) ids tabs)
+    (sumi-explorer--exact-keys header '("version" "active" "count"))
+    (sumi-explorer--decimal active 1 sumi-explorer--maximum-request-id)
+    (unless (and (equal (cdr (assoc "version" header)) "1")
+                 (equal (mapcar #'car groups)
+                        (cons "Workspace" (cl-loop for index below count collect (format "Tab%d" index)))))
+      (error "Invalid Explorer workspace schema or group order"))
+    (dotimes (index count)
+      (let* ((fields (cdr (assoc (format "Tab%d" index) groups)))
+             (id (cdr (assoc "id" fields)))
+             (directory (cdr (assoc "directory" fields))))
+        (sumi-explorer--exact-keys fields '("id" "directory" "back" "forward"))
+        (sumi-explorer--decimal id 1 sumi-explorer--maximum-request-id)
+        (unless (and (not (member id ids))
+                     (sumi-explorer--local-absolute-path-p directory)
+                     (member (cdr (assoc "back" fields)) '("0" "1"))
+                     (member (cdr (assoc "forward" fields)) '("0" "1")))
+          (error "Invalid Explorer workspace tab"))
+        (push id ids)
+        (push fields tabs)))
+    (unless (member active ids) (error "Explorer active tab is missing"))
+    (append header (list (cons "tabs" (nreverse tabs))))))
+
+;;;###autoload
+(defun sumi-explorer-new-tab (&optional directory timeout)
+  "Open DIRECTORY in a new tab; nil or empty means the current GUI directory."
+  (interactive)
+  (sumi-explorer-send "new-tab" directory timeout))
+
+;;;###autoload
+(defun sumi-explorer-new-window (&optional directory timeout)
+  "Launch an independent window in DIRECTORY, or the current GUI directory."
+  (interactive)
+  (sumi-explorer-send "new-window" directory timeout))
+
+;;;###autoload
+(defun sumi-explorer-close-tab (&optional timeout)
+  "Close the active tab and await completion; closing the last tab is rejected."
+  (interactive)
+  (sumi-explorer-send "close-tab" nil timeout))
+
+;;;###autoload
+(defun sumi-explorer-activate-tab (id &optional timeout)
+  "Activate the positive tab ID, an integer or canonical decimal string."
+  (interactive
+   (list (completing-read "Activate tab ID: "
+                          (mapcar (lambda (tab) (cdr (assoc "id" tab)))
+                                  (cdr (assoc "tabs" (sumi-explorer-tabs)))) nil t)))
+  (sumi-explorer-send "activate-tab" (if (integerp id) (number-to-string id) id) timeout))
+
+;;;###autoload
+(defun sumi-explorer-back (&optional timeout)
+  "Navigate back in the active tab's history and await completion."
+  (interactive) (sumi-explorer-send "back" nil timeout))
+
+;;;###autoload
+(defun sumi-explorer-forward (&optional timeout)
+  "Navigate forward in the active tab's history and await completion."
+  (interactive) (sumi-explorer-send "forward" nil timeout))
+
+;;;###autoload
+(defun sumi-explorer-home (&optional timeout)
+  "Navigate the active tab to the host's home directory and await completion."
+  (interactive) (sumi-explorer-send "home" nil timeout))
+
+(defun sumi-explorer--snapshot-error (groups name)
+  "Raise an explicit bounded NAME error snapshot from GROUPS, if present."
+  (when (assoc name groups)
+    (let ((fields (cdr (assoc name groups))))
+      (sumi-explorer--exact-keys fields '("version" "message"))
+      (unless (and (= (length groups) 1) (equal (cdr (assoc "version" fields)) "1")
+                   (<= (length (cdr (assoc "message" fields))) 256))
+        (error "Invalid Explorer error snapshot"))
+      (error "Explorer %s: %s" name (cdr (assoc "message" fields))))))
+
+;;;###autoload
+(defun sumi-explorer-view-settings ()
+  "Read the last published independent presentation snapshot as string-key fields.
+This is not a durable result or a freshness guarantee after an I/O failure."
+  (let* ((groups (sumi-explorer--read-groups "view.ini"))
+         (fields (cdr (assoc "View" groups))))
+    (sumi-explorer--snapshot-error groups "ViewError")
+    (sumi-explorer--exact-keys fields '("version" "directory" "filter" "sort" "order" "hidden" "view"))
+    (unless (and (equal (mapcar #'car groups) '("View"))
+                 (equal (cdr (assoc "version" fields)) "1")
+                 (sumi-explorer--local-absolute-path-p (cdr (assoc "directory" fields)))
+                 (<= (length (cdr (assoc "filter" fields))) 256)
+                 (member (cdr (assoc "sort" fields)) '("name" "size" "date" "type"))
+                 (member (cdr (assoc "order" fields)) '("asc" "desc"))
+                 (member (cdr (assoc "hidden" fields)) '("0" "1"))
+                 (member (cdr (assoc "view" fields)) '("list" "details")))
+      (error "Invalid Explorer presentation snapshot"))
+    fields))
+
+;;;###autoload
+(defun sumi-explorer-bookmarks ()
+  "Read the last published bookmark header plus ordered paths under `bookmarks'."
+  (let* ((groups (sumi-explorer--read-groups "bookmarks.ini"))
+         (_error (sumi-explorer--snapshot-error groups "BookmarksError"))
+         (header (cdr (assoc "Bookmarks" groups)))
+         (count (sumi-explorer--decimal (cdr (assoc "count" header)) 0 64)) paths)
+    (sumi-explorer--exact-keys header '("version" "count"))
+    (unless (and (equal (cdr (assoc "version" header)) "1")
+                 (equal (mapcar #'car groups)
+                        (cons "Bookmarks" (cl-loop for index below count collect (format "Bookmark%d" index)))))
+      (error "Invalid Explorer bookmarks snapshot"))
+    (dotimes (index count)
+      (let ((fields (cdr (assoc (format "Bookmark%d" index) groups))))
+        (sumi-explorer--exact-keys fields '("path"))
+        (push (cdr (assoc "path" fields)) paths)))
+    (setq paths (sumi-explorer--validated-paths (nreverse paths) t))
+    (append header (list (cons "bookmarks" paths)))))
+
+;;;###autoload
+(defun sumi-explorer-filter (text &optional timeout)
+  "Set literal filename filter TEXT and return its standard acknowledgement."
+  (interactive (list (read-string "Filename filter: ")))
+  (sumi-explorer-send "filter" text timeout))
+
+;;;###autoload
+(defun sumi-explorer-sort (key &optional timeout)
+  "Set the active tab's sort KEY: name, size, date or type."
+  (interactive (list (completing-read "Sort by: " '("name" "size" "date" "type") nil t)))
+  (sumi-explorer-send "sort" key timeout))
+
+;;;###autoload
+(defun sumi-explorer-order (order &optional timeout)
+  "Set the active tab's sort ORDER: asc or desc."
+  (interactive (list (completing-read "Sort order: " '("asc" "desc") nil t)))
+  (sumi-explorer-send "order" order timeout))
+
+;;;###autoload
+(defun sumi-explorer-show-hidden (show &optional timeout)
+  "Show hidden files when SHOW is t, or hide them when SHOW is nil."
+  (interactive (list (y-or-n-p "Show hidden files? ")))
+  (unless (memq show '(t nil)) (error "Hidden visibility requires t or nil"))
+  (sumi-explorer-send "hidden" (if show "show" "hide") timeout))
+
+;;;###autoload
+(defun sumi-explorer-set-view (view &optional timeout)
+  "Set the active tab's VIEW to list or details."
+  (interactive (list (completing-read "File view: " '("list" "details") nil t)))
+  (sumi-explorer-send "view" view timeout))
+
+;;;###autoload
+(defun sumi-explorer-bookmark-add (&optional directory timeout)
+  "Save DIRECTORY as a bookmark; nil means the active directory."
+  (interactive) (sumi-explorer-send "bookmark-add" directory timeout))
+
+;;;###autoload
+(defun sumi-explorer-bookmark-remove (&optional directory timeout)
+  "Remove DIRECTORY from bookmarks; nil means the active directory."
+  (interactive) (sumi-explorer-send "bookmark-remove" directory timeout))
+
+;;;###autoload
+(defun sumi-explorer-bookmark-open (directory &optional timeout)
+  "Open the saved absolute local bookmark DIRECTORY."
+  (interactive (list (completing-read "Open bookmark: "
+                                     (cdr (assoc "bookmarks" (sumi-explorer-bookmarks))) nil t)))
+  (sumi-explorer-send "bookmark-open" directory timeout))
+
+;;;###autoload
+(defun sumi-explorer-clipboard-copy (&optional timeout)
+  "Freeze the visible GUI selection into the system COPY clipboard."
+  (interactive) (sumi-explorer-send "clipboard-copy" nil timeout))
+
+;;;###autoload
+(defun sumi-explorer-clipboard-cut (&optional timeout)
+  "Freeze the visible GUI selection into the host-owned CUT clipboard."
+  (interactive) (sumi-explorer-send "clipboard-cut" nil timeout))
+
+;;;###autoload
+(defun sumi-explorer-paste (&optional directory timeout)
+  "Paste into DIRECTORY, or the active directory, awaiting actual completion.
+Timeout and quit retain the same pending request; `sumi-explorer-await' resumes."
+  (interactive) (sumi-explorer-send "paste" directory timeout))
 
 (defun sumi-explorer-open-directory (directory)
   "Navigate to DIRECTORY."

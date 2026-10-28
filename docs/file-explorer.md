@@ -113,15 +113,58 @@ An active asynchronous copy must not be killed by an ordinary stop timeout.
 Keep the session while the process is finishing; explicit forced disposal is a
 separate action. Startup failure cleanup may forcibly stop its not-ready child.
 
-## Initial file-transfer scope
+## Everyday workflows
 
-Incoming drops accept one local regular file and copy it asynchronously into
-the current directory without overwrite. Multiple files, directories, symlinks
-and MOVE are rejected in this initial implementation. Outbound drag exports the
-selected local paths as a GdkFileList; the receiving application owns its copy
-operation and may support directories. The incoming restriction is not a claim
-about another application's capabilities. A failed copy can leave a partial
-new destination file. The GUI Cancel button also cancels an active incoming
-copy. Atomic destination publication remains future work. The separate operation
-engine supports recursive and multiple copies through the operation bar and Emacs; it does
-not expand the advertised incoming drag formats.
+The [everyday-workflow contract](everyday-features.md) extends the application
+with folder tabs, independent windows, per-tab history/presentation, clipboard
+operations, bookmarks and context actions. Native GUI acceptance and all six
+Emacs/native workflows passed on Linux with the recorded source inputs. Track
+the increment in the [15-criterion usability ledger](../tools/ai/explorer-usability-progress.org).
+Windows/macOS runtime support remains unverified.
+
+Workspace IDs are stable positive signed-int64 values, with at most 64 tabs and
+128 history entries per tab. The last tab cannot close. Independent windows own
+independent sessions and may outlive their parent; a successful new-window
+acknowledgement establishes process spawning rather than child readiness.
+Same-window navigation/presentation is blocked while asynchronous work owns
+the context. Filters are literal case-folded filename text of at most 256 scalar
+characters; sorting, hidden visibility and list/details settings belong to each
+tab. Sorting retains identities; hiding/filtering drops invisible selections.
+
+`workspace.ini`, `view.ini` and session `bookmarks.ini` are independent last
+successfully published snapshots, with bounded exact success/error schemas.
+They are not durable results for an earlier request and cannot guarantee
+freshness after an I/O failure. See the everyday contract for exact keys and
+the README for Emacs examples.
+
+Clipboard Copy/Cut freezes visible selection. Paste takes an absolute directory
+or the active directory, shares global preflight/no-overwrite behavior, and
+acknowledges only actual engine completion. External clipboard lists are
+COPY-only; internal Cut requires the still-owned provider/generation and does
+not promise cross-process external Cut. Partial results preserve completed work
+and never overwrite a newer clipboard generation.
+An unresponsive external selection owner may delay GTK/X11 read cancellation;
+the request/context remain pending and alive until the real callback. No fixed
+cancellation latency is promised for an external owner.
+
+Bookmarks hold up to 64 unique absolute local directories in the platform
+user-config directory. Independent windows serialize edits with exclusive
+locking, reload and atomic replacement. Lock contention/stale locks and corrupt
+data fail explicitly; locks are not stolen and corrupt config is not replaced.
+Context actions and file-view shortcuts retain normal text-editing shortcuts,
+single-target Rename, and confirmation of frozen Trash targets. Archive handling,
+ACL editing, indexing, permanent deletion and undo are outside this increment.
+
+## File transfer
+
+Incoming multiple local file/directory/symlink COPY uses the existing shared
+bounded preflight/worker engine without following symlink entries or bypassing
+traversal limits. MOVE and remote inputs are rejected. Owned paths and context
+last through actual completion, cancellation and partial-output reporting.
+GTK's synchronous drop acceptance means accepted/queued; the source does not
+receive an asynchronous filesystem-completion result. Actual outcomes are
+reported by the GUI/engine. Existing destinations are never replaced or merged.
+A failed copy may leave an explicitly reported partial new destination.
+Outbound drag exports selected local paths as a GdkFileList; the receiving
+application owns its operation. Atomic destination publication remains future
+work.

@@ -55,9 +55,12 @@ def run(args):
             root.mkdir()
         source = roots[0] / "日本語 external.txt"
         source.write_bytes(b"real external COPY\n")
-        folder = roots[0] / "unsupported-directory"
+        folder = roots[0] / "directory-copy"
         folder.mkdir()
-        (folder / "keep.txt").write_bytes(b"must not copy recursively")
+        (folder / "keep.txt").write_bytes(b"directory COPY retains source\n")
+        nested = folder / "nested 日本語"
+        nested.mkdir()
+        (nested / "spaced file.txt").write_bytes(b"nested directory COPY bytes\n")
         try:
             windows = []
             for i, root in enumerate(roots):
@@ -117,7 +120,10 @@ def run(args):
             print("PASS failed command response remains immutable after real mouse selection", flush=True)
             drag((80, file_y), (800, 200))
             destination = roots[1] / source.name
-            wait_for(destination.exists, "interprocess destination creation")
+            wait_for(lambda: destination.exists()
+                     and (state := sessions[1].state())["status"] == "ok"
+                     and state["message"].startswith("1 completed, 0 skipped;"),
+                     "interprocess file COPY completion")
             assert destination.read_bytes() == source.read_bytes()
             assert source.exists(), "COPY deleted source"
             print("PASS real Sumi -> separate Sumi process file-list COPY", flush=True)
@@ -132,10 +138,27 @@ def run(args):
             sessions[1].command("refresh")
             directory_y = row_y(folder)
             drag((80, directory_y), (800, 200))
-            wait_for(lambda: sessions[1].state()["status"] == "error", "directory-drop rejection")
-            assert not (roots[1] / folder.name).exists()
-            assert sessions[1].state()["message"]
-            print("PASS unsupported directory drop reports error without mutation", flush=True)
+            directory_destination = roots[1] / folder.name
+            nested_destination = directory_destination / nested.name / "spaced file.txt"
+            wait_for(lambda: nested_destination.exists()
+                     and (state := sessions[1].state())["status"] == "ok"
+                     and state["message"].startswith("1 completed, 0 skipped;"),
+                     "incoming directory COPY completion")
+            for relative in (Path("keep.txt"), Path(nested.name) / "spaced file.txt"):
+                assert (directory_destination / relative).read_bytes() == (folder / relative).read_bytes()
+                assert (folder / relative).exists(), "Directory COPY deleted source"
+            nested_destination.write_bytes(b"existing nested destination must survive\n")
+            drag((80, directory_y), (800, 200))
+            wait_for(lambda: (state := sessions[1].state())["status"] == "error"
+                     and state["message"].startswith("0 completed, 0 skipped;"),
+                     "directory COPY collision preflight completion")
+            collision_message = sessions[1].state()["message"]
+            assert "exist" in collision_message.lower(), collision_message
+            assert str(folder) in collision_message, collision_message
+            assert nested_destination.read_bytes() == b"existing nested destination must survive\n"
+            assert (nested / "spaced file.txt").read_bytes() == b"nested directory COPY bytes\n"
+            assert (folder / "keep.txt").read_bytes() == b"directory COPY retains source\n"
+            print("PASS real directory COPY preserves nested bytes, source identities and existing destinations", flush=True)
 
             # Right-click must select the row under the pointer, not stale state.
             sessions[0].command("select", str(source))

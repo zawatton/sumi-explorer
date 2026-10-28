@@ -7,7 +7,7 @@ client. GNU Emacs builds it; the resulting desktop executable runs independently
 See the [[file:docs/file-explorer.md][application]], [[file:docs/file-operations.md][operation]], and [[file:docs/file-batches.md][batch contracts]].
 
 The GUI supports navigation, Ctrl/Shift multiple selection, associated-application
-opening, a portable Open/Properties context menu, application Properties, and
+opening, a portable context menu, application Properties, and
 asynchronous copy, move, rename, new-directory, and GIO Trash operations.
 These are application features, not Explorer/Finder extension menus or native
 Properties dialogs.
@@ -19,9 +19,12 @@ never overwritten or merged. Failure/cancellation can leave a reported partial
 new destination; completed batch items remain and untouched items are skipped.
 Move has no copy/delete fallback, so cross-filesystem moves can fail safely.
 
-Incoming DND accepts one local regular file with COPY semantics. Directories,
-multiple files, symlinks, and MOVE drops are unsupported. Outbound DND exports
-every selected path; the receiving application owns its operation.
+Incoming DND accepts multiple local file/directory/symlink COPY drops through
+the shared bounded engine. Incoming MOVE and remote paths are rejected.
+GTK drop acceptance means queued, not a completed filesystem copy; the GUI
+reports actual completion and partial output. Owned paths/context remain alive
+through completion. The sender receives no asynchronous filesystem result.
+Outbound DND exports every selected path; the receiver owns its operation.
 
 * Build and run
 
@@ -35,7 +38,8 @@ an external build-time dependency. Build/test helpers download nothing.
   mkdir -p target/deps
   git clone https://github.com/zawatton/nelisp.git target/deps/nelisp
   git -C target/deps/nelisp checkout f3551799d210ed32f594383997843f0e1bf25e24
-  (ulimit -v 8388608; NELISP_REPO_ROOT="$PWD/target/deps/nelisp" emacs -Q --batch -l explorer/build.el)
+  export NELISP_REPO_ROOT="$PWD/target/deps/nelisp"
+  (ulimit -v 8388608; emacs -Q --batch -l explorer/build.el)
   ./target/sumi-explorer
 #+end_src
 
@@ -55,6 +59,9 @@ application builds, runtime libraries, interaction, and packaging remain
 unverified. Intel Mac object emission currently fails on an unsupported =plt32=
 relocation in the compiler. Object emission is not runtime support. See GTK's
 setup documentation for [[https://www.gtk.org/docs/installations/windows/][Windows]] and [[https://www.gtk.org/docs/installations/macos/][macOS]].
+
+The [[file:docs/windows-validation.md][Windows validation procedure]] is a proposed manual checklist;
+its Windows build, runtime and Shell checks have not been run.
 
 * Emacs commands
 
@@ -105,38 +112,142 @@ Lisp, and never builds shell commands from names. Durable =response.ini= is
 separate from live GUI state. Normal stop requests quit and retains the session
 while an operation finishes. Prefix/explicit forced stop can interrupt a copy.
 
+* Everyday workflows
+
+The [[file:docs/everyday-features.md][everyday-workflow contract]] and [[file:tools/ai/explorer-usability-progress.org][15-criterion usability ledger]] track
+this increment. The native workflows and all six Emacs/native workflows passed
+on Linux with the recorded inputs. Windows/macOS runtime support remains
+unverified.
+
+** Tabs, navigation and presentation
+
+Up to 64 tabs have stable IDs, independent selection and up to 128 history
+entries. New tabs become active; closing the last tab is rejected. A new window
+has its own process/session and can outlive the original window. Its command
+acknowledgement confirms process spawning, not GUI readiness.
+
+#+begin_src emacs-lisp
+  (sumi-explorer-new-tab)                 ; Current GUI directory.
+  (sumi-explorer-new-tab another-directory)
+  (sumi-explorer-tabs)                    ; Independent workspace snapshot.
+  (sumi-explorer-activate-tab tab-id)
+  (sumi-explorer-back)
+  (sumi-explorer-forward)
+  (sumi-explorer-home)
+  (sumi-explorer-close-tab)
+  (sumi-explorer-new-window another-directory)
+
+  (sumi-explorer-filter "literal filename text")
+  (sumi-explorer-sort "size")             ; name, size, date, type.
+  (sumi-explorer-order "desc")            ; asc or desc.
+  (sumi-explorer-show-hidden t)            ; nil hides hidden files.
+  (sumi-explorer-set-view "details")       ; list or details.
+  (sumi-explorer-view-settings)
+#+end_src
+
+Filters are case-folded literal filename matches in the current directory,
+limited to 256 Unicode scalar characters. They are not recursive search or
+indexing. Sorting keeps directories first and preserves selected identities;
+filtering/hiding removes newly invisible selections. Settings belong to each
+tab. Workspace/view snapshots are independently consistent last publications,
+not durable command results or freshness guarantees after an I/O failure.
+
+** Clipboard, context actions and bookmarks
+
+Clipboard commands freeze the visible GUI selection. Paste uses the shared
+no-overwrite engine and acknowledges only actual completion; timeout/C-g leaves
+the same request available to =sumi-explorer-await=.
+
+#+begin_src emacs-lisp
+  (sumi-explorer-clipboard-copy)
+  (sumi-explorer-paste destination-directory) ; nil uses active directory.
+  (sumi-explorer-clipboard-cut)
+  (sumi-explorer-paste)
+
+  (sumi-explorer-bookmark-add)                ; Active directory.
+  (sumi-explorer-bookmark-add another-directory)
+  (sumi-explorer-bookmarks)
+  (sumi-explorer-bookmark-open another-directory)
+  (sumi-explorer-bookmark-remove another-directory)
+#+end_src
+
+External clipboard file lists support COPY only. Cut is authorized only while
+this host still owns its internal clipboard provider/generation; external or
+cross-process Cut compatibility is not promised. Completed Cut entries are
+removed only from that unchanged generation; failed/skipped entries remain.
+An unresponsive external clipboard owner can delay GTK/X11's cancellation
+callback. The request stays pending and its context stays alive until that
+callback; there is no fixed external clipboard cancellation deadline.
+
+Bookmarks store up to 64 unique absolute local directories in the platform's
+user-config =sumi-explorer/bookmarks.ini=. Independent windows lock, reload and
+atomically replace it. A competing/stale exclusive lock or corrupt config
+returns an explicit error without silently stealing the lock or replacing data.
+
+Context actions expose open/new tab/new window, copy/cut/paste, rename,
+new folder, Trash and Properties. Rename stays single-target; prompts and Trash
+confirmation retain frozen targets. Workspace shortcuts are Ctrl+T/N/W,
+Ctrl+Tab/Ctrl+Shift+Tab, Alt+Left/Right/Up, Ctrl+L and F5. File-view actions use
+Ctrl+C/X/V/A, F2, Delete and Ctrl+Shift+N. Editable controls retain normal text
+shortcuts. These workflows do not add permanent deletion, archives, ACL editing,
+indexing or undo.
+
 * Linux validation
 
 Client tests need GNU Emacs, Python 3 for a startup fixture, and standard =cat=
 and =true= utilities. Native tests additionally need the built binary, Xvfb
-(=xvfb-run=), xdotool, Nautilus, and =dbus-run-session=. Python implements tests
-and record verification, not the application. Fixtures/Trash data are isolated.
+(=xvfb-run=), xdotool, xwininfo, ImageMagick's =import=, xclip, Nautilus,
+=dbus-run-session=, =pkg-config= and the
+=CC= compiler driver (default =cc=). They also need the external NeLisp AOT
+compiler for a focused acceptance unit, even after the app has been built.
+Keep the pinned =NELISP_REPO_ROOT= export above for later test commands. The
+helper respects an explicit checkout path (relative paths resolve against this
+repository), otherwise tries =target/deps/nelisp= and then sibling =../nelisp=;
+it requires =nelisp-aot-compiler.el= under =lisp/= or =src/= and downloads nothing.
+Python implements tests and record verification, not the application.
+Fixtures, configuration and Trash data are isolated by the helper.
 
 The helper works from any current directory, downloads nothing, caps its children
 at 8 GiB, and fails on missing dependencies. =client= runs warning-as-error byte
 compilation and client ERT without GTK/a binary. =native= runs all native suites;
 =all= runs both. Optional =SUMI_EXPLORER_TEST_BIN= selects another built executable.
+Before starting any native suite, the helper replaces inherited =XDG_CONFIG_HOME=
+with a private temporary config directory so old and new tests cannot read or
+edit personal bookmarks. Both client and native temporary directories are
+removed on exit or interruption; this does not change global settings.
 
 #+begin_src sh
   sh tools/check.sh client
   sh tools/check.sh all
 #+end_src
 
-Equivalent native suite commands follow. Python suites accept =--artifacts=;
-keep optional diagnostics under ignored =target/=.
+For individual native suites, isolate configuration first, as the helper does.
+Python suites accept =--artifacts=; keep diagnostics under ignored =target/=.
 
 #+begin_src sh
-  (ulimit -v 8388608; xvfb-run -a python3 tests/explorer-gui-test.py --group all)
-  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-dnd-test.py)
+  test_config=$(mktemp -d)
+  export XDG_CONFIG_HOME="$test_config"
+  trap 'rm -r -- "$test_config"' EXIT
+  (ulimit -v 8388608; xvfb-run -a python3 tests/explorer-gui-test.py --binary target/sumi-explorer --group all)
+  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-dnd-test.py --binary target/sumi-explorer)
   (ulimit -v 8388608; xvfb-run -a emacs -Q --batch -L explorer -l tests/sumi-explorer-integration-test.el)
   (ulimit -v 8388608; xvfb-run -a python3 tests/explorer-operations-test.py --binary target/sumi-explorer)
   (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-batches-test.py --binary target/sumi-explorer)
+  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-workspace-test.py --binary target/sumi-explorer)
+  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-everyday-test.py --binary target/sumi-explorer)
 #+end_src
 
-Retained counts are 42 client ERT cases, three real Emacs/native workflows,
-15 batch checks, 12 operation checks, and seven DND checks. The GUI suite also
+The recorded counts are 57 client ERT cases, six real Emacs/native workflows,
+15 batch checks, 12 operation checks, seven DND checks, 12 workspace checks and
+21 everyday checks, plus warning-as-error compilation of three Elisp files.
+The GUI suite also
 covers protocol, rejection controls, and widget activation. These identify
 recorded suites; they do not claim a fresh machine has passed them.
+Everyday checks include actual Nautilus clipboard COPY, external multi-directory
+DND, delayed clipboard-read cancellation/close and popup invalidation. Its
+partial-Cut completion check is an AOT unit using the actual helpers and real
+GDK providers with constructed outcomes; it is not a real partial filesystem
+failure scenario. Earlier binaries fail the new clipboard/geometry controls.
 
 ** Historical validation record
 

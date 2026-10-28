@@ -83,11 +83,14 @@ static int validate(const char *const *paths, unsigned count, char **error)
 #include <windows.h>
 #include <shlobj.h>
 #include <shellapi.h>
+#include <ole2.h>
 extern HWND gdk_win32_surface_get_handle(void *);
 
 typedef struct {
     IContextMenu2 *menu2;
     IContextMenu3 *menu3;
+    int menu_entered;
+    int menu_exited;
 } MenuBridge;
 
 static int hresult_error(char **error, const char *operation, HRESULT result)
@@ -128,6 +131,8 @@ static LRESULT CALLBACK menu_window_proc(HWND window, UINT message,
         CREATESTRUCTW *create = (CREATESTRUCTW *)lparam;
         SetWindowLongPtrW(window, GWLP_USERDATA, (LONG_PTR)create->lpCreateParams);
     }
+    if (bridge && message == WM_ENTERMENULOOP) bridge->menu_entered = 1;
+    if (bridge && message == WM_EXITMENULOOP) bridge->menu_exited = 1;
     if (bridge && (message == WM_INITMENUPOPUP || message == WM_DRAWITEM ||
                    message == WM_MEASUREITEM || message == WM_MENUCHAR)) {
         LRESULT result = 0;
@@ -168,6 +173,29 @@ static HWND menu_owner(HWND parent, MenuBridge *bridge, char **error)
 
 int sumi_explorer_platform_is_windows(void) { return 1; }
 
+static void preserve_shell_clipboard(DWORD before, char **error)
+{
+    DWORD sequence = GetClipboardSequenceNumber(), process = 0;
+    HWND owner;
+    DWORD thread;
+    HRESULT result;
+    if (!sequence || sequence == before) return;
+    owner = GetClipboardOwner();
+    if (!owner) return;
+    thread = GetWindowThreadProcessId(owner, &process);
+    if (process != GetCurrentProcessId() || thread != GetCurrentThreadId()) return;
+    /* Arbitrary handlers do not expose their original OleSetClipboard object.
+     * OleIsCurrentClipboard cannot validate an OleGetClipboard consumer proxy.
+     * Recheck the newly published same-thread ownership immediately before
+     * materializing it for the balanced OLE shutdown. */
+    if (GetClipboardOwner() != owner || GetClipboardSequenceNumber() != sequence) return;
+    result = OleFlushClipboard();
+    if (FAILED(result) && error)
+        *error = g_strdup_printf("Shell command was invoked, but preserving its clipboard data failed "
+                                 "(HRESULT 0x%08lx); do not retry the command",
+                                 (unsigned long)(ULONG)result);
+}
+
 int sumi_explorer_platform_shell(void *surface, const char *const *paths,
                                 unsigned count, char **error)
 {
@@ -186,8 +214,8 @@ int sumi_explorer_platform_shell(void *surface, const char *const *paths,
     if (validate(paths, count, error) < 0) return -1;
     parent = surface_handle(surface, error);
     if (surface && !parent) return -1;
-    result = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-    if (FAILED(result)) return hresult_error(error, "Initialize Shell COM apartment", result);
+    result = OleInitialize(NULL);
+    if (FAILED(result)) return hresult_error(error, "Initialize Shell OLE apartment", result);
     for (i = 0; i < count; ++i) {
         gunichar2 *wide = g_utf8_to_utf16(paths[i], -1, NULL, NULL, NULL);
         SFGAOF attributes = 0;
@@ -227,30 +255,37 @@ int sumi_explorer_platform_shell(void *surface, const char *const *paths,
     command_count = HRESULT_CODE(result);
     if (!command_count) { fail(error, "No native Shell commands are available"); goto cleanup; }
     if (!GetCursorPos(&point)) { win32_error(error, "Read menu position", GetLastError()); goto cleanup; }
-    SetForegroundWindow(parent);
+    SetForegroundWindow(parent ? parent : owner);
     SetLastError(ERROR_SUCCESS);
     {
         UINT selected = (UINT)TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
                                               point.x, point.y, owner, NULL);
         if (!selected) {
             DWORD code = GetLastError();
-            if (code) win32_error(error, "Track native Shell menu", code);
-            else outcome = 0;
+            /* TPM_RETURNCMD uses zero for cancellation as well as failure.
+             * Shell handlers can leave LastError set inside a successful loop. */
+            if (bridge.menu_entered && bridge.menu_exited) outcome = 0;
+            else win32_error(error, "Track native Shell menu", code ? code : ERROR_GEN_FAILURE);
         } else if (selected > 0x7fff || selected - 1 >= command_count)
             fail(error, "Shell returned an out-of-range command");
         else {
             CMINVOKECOMMANDINFOEX invoke = {0};
             UINT offset = selected - 1;
+            DWORD clipboard_before;
             invoke.cbSize = sizeof(invoke);
             invoke.fMask = CMIC_MASK_UNICODE | CMIC_MASK_PTINVOKE;
-            invoke.hwnd = parent;
+            invoke.hwnd = parent ? parent : owner;
             invoke.lpVerb = MAKEINTRESOURCEA(offset);
             invoke.lpVerbW = MAKEINTRESOURCEW(offset);
             invoke.nShow = SW_SHOWNORMAL;
             invoke.ptInvoke = point;
+            clipboard_before = GetClipboardSequenceNumber();
             result = IContextMenu_InvokeCommand(context, (LPCMINVOKECOMMANDINFO)&invoke);
             if (FAILED(result)) hresult_error(error, "Invoke native Shell command", result);
-            else outcome = 1;
+            else {
+                outcome = 1;
+                preserve_shell_clipboard(clipboard_before, error);
+            }
         }
     }
 cleanup:
@@ -262,7 +297,7 @@ cleanup:
     if (folder) IShellFolder_Release(folder);
     CoTaskMemFree(common);
     for (i = 0; i < count; ++i) CoTaskMemFree(objects[i]);
-    CoUninitialize();
+    OleUninitialize();
     return outcome;
 }
 

@@ -4,7 +4,56 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
+#define COBJMACROS
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <ole2.h>
+
+/* Observe the actual OLE calls without substituting their behavior. */
+static unsigned observed_flush_calls;
+static HRESULT WINAPI observe_ole_initialize(void *reserved)
+{
+    HRESULT result = OleInitialize(reserved);
+    DWORD saved_error = GetLastError();
+    observed_flush_calls = 0;
+    printf("DIAG ole-initialize hr=0x%08lx\n", (unsigned long)(ULONG)result);
+    SetLastError(saved_error);
+    return result;
+}
+static HRESULT WINAPI observe_ole_flush(void)
+{
+    DWORD process = 0;
+    HWND owner = GetClipboardOwner();
+    DWORD thread = GetWindowThreadProcessId(owner, &process);
+    DWORD sequence = GetClipboardSequenceNumber();
+    ++observed_flush_calls;
+    HRESULT result = OleFlushClipboard();
+    DWORD saved_error = GetLastError();
+    printf("DIAG ole-flush hr=0x%08lx guarded_sequence=%lu owner=%p owner_pid=%lu owner_thread=%lu "
+           "test_pid=%lu test_thread=%lu resulting_sequence=%lu\n", (unsigned long)(ULONG)result,
+           (unsigned long)sequence, (void *)owner, (unsigned long)process, (unsigned long)thread,
+           (unsigned long)GetCurrentProcessId(), (unsigned long)GetCurrentThreadId(),
+           (unsigned long)GetClipboardSequenceNumber());
+    SetLastError(saved_error);
+    return result;
+}
+static void WINAPI observe_ole_uninitialize(void)
+{
+    DWORD sequence_before = GetClipboardSequenceNumber();
+    OleUninitialize();
+    DWORD saved_error = GetLastError();
+    printf("DIAG ole-uninitialize sequence_before=%lu sequence_after=%lu hdrop_available=%d flush_calls=%u\n",
+           (unsigned long)sequence_before, (unsigned long)GetClipboardSequenceNumber(),
+           IsClipboardFormatAvailable(CF_HDROP), observed_flush_calls);
+    SetLastError(saved_error);
+}
+#define OleInitialize observe_ole_initialize
+#define OleFlushClipboard observe_ole_flush
+#define OleUninitialize observe_ole_uninitialize
 #include <platform.c>
+#undef OleInitialize
+#undef OleFlushClipboard
+#undef OleUninitialize
 
 /* Public GIO ABI. Keep SDK-only syntax checks independent of glibconfig.h. */
 typedef struct _GFile GFile;
@@ -55,7 +104,7 @@ static unsigned owner_count(void)
 static void test_forwarding(void)
 {
     IContextMenu2 fake = {&fake_vtable};
-    MenuBridge bridge = {&fake, NULL};
+    MenuBridge bridge = {&fake, NULL, 0, 0};
     char *error = NULL;
     HWND owner = menu_owner(NULL, &bridge, &error);
     CHECK(owner != NULL && !error, "IContextMenu2-only owner creation");
@@ -63,6 +112,9 @@ static void test_forwarding(void)
         DRAWITEMSTRUCT draw = {0};
         MEASUREITEMSTRUCT measure = {0};
         draw.CtlType = ODT_MENU; measure.CtlType = ODT_MENU;
+        SendMessageW(owner, WM_ENTERMENULOOP, TRUE, 0);
+        SendMessageW(owner, WM_EXITMENULOOP, TRUE, 0);
+        CHECK(bridge.menu_entered && bridge.menu_exited, "owned menu-loop entry and exit accounting");
         CHECK(SendMessageW(owner, WM_DRAWITEM, 0, (LPARAM)&draw) == TRUE,
               "IContextMenu2 WM_DRAWITEM handled return");
         CHECK(SendMessageW(owner, WM_MEASUREITEM, 0, (LPARAM)&measure) == TRUE,

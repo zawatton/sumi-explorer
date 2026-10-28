@@ -21,6 +21,19 @@ int sumi_explorer_platform_shell(void *gdk_surface, const char *const *paths,
 int sumi_explorer_platform_permissions(void *gdk_surface, const char *path,
                                        char **error);
 
+/* Read-only metadata capability for verified local NTFS objects. Returns a
+ * bounded versioned ASCII stamp, or NULL with an optional GLib-owned error.
+ * The caller frees either allocation with g_free; an existing *error is never
+ * replaced. Paths must be NUL-terminated scalar UTF-8 with no hidden NUL.
+ * Reparse components, streams, device/network paths and unsupported filesystems
+ * fail explicitly. Timestamps can be delayed/reset: this is no immutable
+ * generation or atomic exclusion of external writers.
+ * v1 fields: ntfs-v1|volume=GUID|serial=16hex|id=32hex|created=16hex|
+ * changed=16hex|written=16hex|attributes=8hex|size=16hex|links=8hex|
+ * directory=0/1|tag=8hex. Last-access time and pathname aliases are excluded. */
+char *sumi_explorer_platform_metadata_stamp(const char *absolute_utf8_path,
+                                           char **error);
+
 #ifdef __cplusplus
 }
 #endif

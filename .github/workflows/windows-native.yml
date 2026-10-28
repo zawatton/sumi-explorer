@@ -5,12 +5,16 @@ on:
     paths:
       - 'explorer/**'
       - 'tests/explorer-platform-windows-test.c'
+      - 'tests/explorer-platform-metadata-test.c'
+      - 'tests/sumi-explorer-windows-test.el'
       - 'tools/windows-native-check.ps1'
       - '.github/workflows/windows-native.yml'
   pull_request:
     paths:
       - 'explorer/**'
       - 'tests/explorer-platform-windows-test.c'
+      - 'tests/explorer-platform-metadata-test.c'
+      - 'tests/sumi-explorer-windows-test.el'
       - 'tools/windows-native-check.ps1'
       - '.github/workflows/windows-native.yml'
   workflow_dispatch:

@@ -77,6 +77,24 @@ static int validate(const char *const *paths, unsigned count, char **error)
     return 1;
 }
 
+static char *metadata_failure(char **error, const char *message)
+{
+    if (error && !*error) *error = g_strdup(message);
+    return NULL;
+}
+
+static int metadata_validate(const char *path, char **error)
+{
+    char *diagnostic = NULL;
+    if (error && *error) return 0;
+    if (validate(&path, 1, &diagnostic) < 0) {
+        if (error) *error = diagnostic;
+        else g_free(diagnostic);
+        return 0;
+    }
+    return 1;
+}
+
 #ifdef _WIN32
 #define COBJMACROS
 #define WIN32_LEAN_AND_MEAN
@@ -84,6 +102,7 @@ static int validate(const char *const *paths, unsigned count, char **error)
 #include <shlobj.h>
 #include <shellapi.h>
 #include <ole2.h>
+#include <wchar.h>
 extern HWND gdk_win32_surface_get_handle(void *);
 
 typedef struct {
@@ -324,6 +343,167 @@ int sumi_explorer_platform_permissions(void *surface, const char *path, char **e
     return outcome;
 }
 
+static char *metadata_win32_failure(char **error, const char *operation, DWORD code)
+{
+    if (error && !*error)
+        *error = g_strdup_printf("%s failed (Win32 error %lu)", operation, (unsigned long)code);
+    return NULL;
+}
+
+static int metadata_component(const WCHAR *start, size_t length)
+{
+    size_t base = 0;
+    if (!length || start[length - 1] == '.' || start[length - 1] == ' ') return 0;
+    while (base < length && start[base] != '.') ++base;
+    if ((base == 3 && (!_wcsnicmp(start, L"CON", 3) || !_wcsnicmp(start, L"PRN", 3) ||
+                      !_wcsnicmp(start, L"AUX", 3) || !_wcsnicmp(start, L"NUL", 3))) ||
+        (base == 6 && !_wcsnicmp(start, L"CLOCK$", 6)) ||
+        (base == 6 && !_wcsnicmp(start, L"CONIN$", 6)) ||
+        (base == 7 && !_wcsnicmp(start, L"CONOUT$", 7))) return 0;
+    if (base == 4 && (!_wcsnicmp(start, L"COM", 3) || !_wcsnicmp(start, L"LPT", 3)) &&
+        ((start[3] >= '1' && start[3] <= '9') || start[3] == 0x00b9 ||
+          start[3] == 0x00b2 || start[3] == 0x00b3)) return 0;
+    for (size_t i = 0; i < length; ++i)
+        if (start[i] < 32 || wcschr(L":*?\"<>|", start[i])) return 0;
+    return 1;
+}
+
+char *sumi_explorer_platform_metadata_stamp(const char *path, char **error)
+{
+    enum { CAPACITY = 32768 };
+    gunichar2 *wide = NULL;
+    WCHAR *normalized = NULL, *extended = NULL, *final = NULL;
+    WCHAR volume[50] = {0}, filesystem[32] = {0};
+    HANDLE file = INVALID_HANDLE_VALUE;
+    FILE_ID_INFO identity = {0};
+    FILE_BASIC_INFO basic = {0};
+    FILE_STANDARD_INFO standard = {0};
+    FILE_ATTRIBUTE_TAG_INFO attributes = {0};
+    char guid[37] = {0}, identifier[33] = {0}, *stamp = NULL;
+    DWORD length, drive;
+    const DWORD flags = FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS;
+    const DWORD sharing = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
+    if (!metadata_validate(path, error)) return NULL;
+    if (!(((path[0] >= 'A' && path[0] <= 'Z') || (path[0] >= 'a' && path[0] <= 'z')) &&
+          path[1] == ':' && (path[2] == '/' || path[2] == '\\')) || strchr(path + 2, ':'))
+        return metadata_failure(error, "Metadata requires a local rooted drive path without streams or devices");
+    wide = g_utf8_to_utf16(path, -1, NULL, NULL, NULL);
+    if (!wide || wcslen((WCHAR *)wide) >= CAPACITY - 4) {
+        metadata_failure(error, "Metadata path exceeds the supported UTF-16 bound"); goto cleanup;
+    }
+    for (size_t i = 0; wide[i]; ++i) if (wide[i] == '/') wide[i] = '\\';
+    normalized = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, CAPACITY * sizeof(WCHAR));
+    extended = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, CAPACITY * sizeof(WCHAR));
+    final = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, CAPACITY * sizeof(WCHAR));
+    if (!normalized || !extended || !final) { metadata_failure(error, "Cannot allocate bounded metadata paths"); goto cleanup; }
+    /* Rooted drive paths need no process CWD. Normalize their ordinary dot
+     * aliases lexically, then add the extended prefix; GetFullPathNameW itself
+     * otherwise retains a MAX_PATH opt-in requirement for ordinary input. */
+    normalized[0] = wide[0]; normalized[1] = ':'; normalized[2] = '\\';
+    length = 3;
+    for (size_t i = 3; wide[i];) {
+        size_t first = i;
+        while (wide[i] && wide[i] != '\\') ++i;
+        size_t count = i - first;
+        if (wide[i]) ++i;
+        if (!count || (count == 1 && wide[first] == '.')) continue;
+        if (count == 2 && wide[first] == '.' && wide[first + 1] == '.') {
+            while (length > 3 && normalized[length - 1] != '\\') --length;
+            if (length > 3) --length;
+            normalized[length] = 0;
+            continue;
+        }
+        if (!metadata_component((WCHAR *)wide + first, count)) {
+            metadata_failure(error, "Metadata path contains an unsupported device or component"); goto cleanup;
+        }
+        if (length + count + 1 >= CAPACITY - 4) {
+            metadata_failure(error, "Normalized metadata path exceeds the UTF-16 bound"); goto cleanup;
+        }
+        if (length > 3) normalized[length++] = '\\';
+        memcpy(normalized + length, wide + first, count * sizeof(WCHAR));
+        length += (DWORD)count;
+        normalized[length] = 0;
+    }
+    memcpy(extended, L"\\\\?\\", 4 * sizeof(WCHAR));
+    memcpy(extended + 4, normalized, (length + 1) * sizeof(WCHAR));
+    /* OPEN_REPARSE_POINT protects only the last component. Inspect every
+     * ancestor without following it before opening the normalized target. */
+    for (DWORD i = 7; extended[i]; ++i) if (extended[i] == '\\') {
+        FILE_ATTRIBUTE_TAG_INFO ancestor = {0};
+        extended[i] = 0;
+        HANDLE parent = CreateFileW(extended, FILE_READ_ATTRIBUTES, sharing, NULL, OPEN_EXISTING, flags, NULL);
+        extended[i] = '\\';
+        if (parent == INVALID_HANDLE_VALUE) { metadata_win32_failure(error, "Open metadata ancestor", GetLastError()); goto cleanup; }
+        BOOL queried = GetFileInformationByHandleEx(parent, FileAttributeTagInfo, &ancestor, sizeof(ancestor));
+        DWORD code = queried ? ERROR_SUCCESS : GetLastError();
+        CloseHandle(parent);
+        if (!queried) { metadata_win32_failure(error, "Query metadata ancestor", code); goto cleanup; }
+        if (ancestor.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+            metadata_failure(error, "Metadata does not follow reparse components"); goto cleanup;
+        }
+    }
+    file = CreateFileW(extended, FILE_READ_ATTRIBUTES, sharing, NULL, OPEN_EXISTING, flags, NULL);
+    if (file == INVALID_HANDLE_VALUE) { metadata_win32_failure(error, "Open metadata object", GetLastError()); goto cleanup; }
+#define QUERY_METADATA(kind, output) do { \
+    if (!GetFileInformationByHandleEx(file, kind, &(output), sizeof(output))) { \
+        metadata_win32_failure(error, "Query " #kind, GetLastError()); goto cleanup; \
+    } \
+} while (0)
+    QUERY_METADATA(FileIdInfo, identity);
+    QUERY_METADATA(FileBasicInfo, basic);
+    QUERY_METADATA(FileStandardInfo, standard);
+    QUERY_METADATA(FileAttributeTagInfo, attributes);
+#undef QUERY_METADATA
+    if (standard.DeletePending || (attributes.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
+        (basic.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
+        metadata_failure(error, "Metadata rejects delete-pending objects and reparse points"); goto cleanup;
+    }
+    if (standard.EndOfFile.QuadPart < 0 || !standard.NumberOfLinks) {
+        metadata_failure(error, "Metadata provider returned unsupported file information"); goto cleanup;
+    }
+    length = GetFinalPathNameByHandleW(file, final, CAPACITY, FILE_NAME_OPENED | VOLUME_NAME_GUID);
+    if (!length || length >= CAPACITY || length < 49 || wcsncmp(final, L"\\\\?\\Volume{", 11) ||
+        final[47] != '}' || final[48] != '\\') {
+        metadata_failure(error, "Metadata requires a handle-resolved local volume GUID"); goto cleanup;
+    }
+    memcpy(volume, final, 49 * sizeof(WCHAR));
+    drive = GetDriveTypeW(volume);
+    if (drive != DRIVE_FIXED && drive != DRIVE_REMOVABLE) {
+        metadata_failure(error, "Metadata requires a verified local fixed or removable volume"); goto cleanup;
+    }
+    if (!GetVolumeInformationByHandleW(file, NULL, 0, NULL, NULL, NULL, filesystem, 32)) {
+        metadata_win32_failure(error, "Query metadata filesystem", GetLastError()); goto cleanup;
+    }
+    if (_wcsicmp(filesystem, L"NTFS")) { metadata_failure(error, "Metadata supports local NTFS only"); goto cleanup; }
+    for (unsigned i = 0; i < 36; ++i) {
+        WCHAR c = final[11 + i];
+        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') || c == '-')) {
+            metadata_failure(error, "Metadata volume GUID is not ASCII"); goto cleanup;
+        }
+        guid[i] = (char)(c >= 'A' && c <= 'F' ? c + ('a' - 'A') : c);
+    }
+    for (unsigned i = 0; i < 16; ++i) {
+        static const char hex[] = "0123456789abcdef";
+        identifier[i * 2] = hex[identity.FileId.Identifier[i] >> 4];
+        identifier[i * 2 + 1] = hex[identity.FileId.Identifier[i] & 15];
+    }
+    stamp = g_strdup_printf("ntfs-v1|volume=%s|serial=%016llx|id=%s|created=%016llx|changed=%016llx|written=%016llx"
+                            "|attributes=%08lx|size=%016llx|links=%08lx|directory=%u|tag=%08lx", guid,
+                            (unsigned long long)identity.VolumeSerialNumber, identifier,
+                            (unsigned long long)basic.CreationTime.QuadPart, (unsigned long long)basic.ChangeTime.QuadPart,
+                            (unsigned long long)basic.LastWriteTime.QuadPart, (unsigned long)basic.FileAttributes,
+                            standard.Directory ? 0ULL : (unsigned long long)standard.EndOfFile.QuadPart,
+                            (unsigned long)standard.NumberOfLinks, standard.Directory ? 1u : 0u,
+                            (unsigned long)attributes.ReparseTag);
+cleanup:
+    if (file != INVALID_HANDLE_VALUE) CloseHandle(file);
+    if (normalized) HeapFree(GetProcessHeap(), 0, normalized);
+    if (extended) HeapFree(GetProcessHeap(), 0, extended);
+    if (final) HeapFree(GetProcessHeap(), 0, final);
+    g_free(wide);
+    return stamp;
+}
+
 #else
 int sumi_explorer_platform_is_windows(void) { return 0; }
 
@@ -340,5 +520,11 @@ int sumi_explorer_platform_permissions(void *surface, const char *path, char **e
     (void)surface;
     if (validate(&path, 1, error) < 0) return -1;
     return fail(error, "Windows Security property pages are unsupported on this platform");
+}
+
+char *sumi_explorer_platform_metadata_stamp(const char *path, char **error)
+{
+    if (!metadata_validate(path, error)) return NULL;
+    return metadata_failure(error, "Local NTFS metadata is unsupported on this platform");
 }
 #endif

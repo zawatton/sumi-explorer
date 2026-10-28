@@ -150,6 +150,7 @@ try {
     & git status --short | Set-Content (Join-Path $output 'source-status.log')
     Get-FileHash explorer/platform.c, explorer/platform.h, explorer/build.el,
         explorer/sumi-explorer-native.el, tests/explorer-platform-windows-test.c,
+        tests/explorer-platform-metadata-test.c,
         tools/windows-native-check.ps1 -Algorithm SHA256 |
         Export-Csv (Join-Path $output 'source-sha256.csv') -NoTypeInformation
     & $env:CC --version | Set-Content (Join-Path $output 'gcc-version.log')
@@ -232,6 +233,38 @@ try {
     }
     'PASS negative control rejected broken-owner-lifetime' | Add-Content (Join-Path $output 'negative-controls.log')
 
+    function Build-MetadataTest([string]$name, [string[]]$extra) {
+        $binary = Join-Path $output "$name.exe"
+        $arguments = @('-std=c11', '-Wall', '-Wextra', '-Werror', '-Iexplorer') + $cflags + $extra +
+            @('tests/explorer-platform-metadata-test.c', '-o', $binary) +
+            $libs + @('-lshell32', '-lole32', '-luuid', '-luser32', '-ladvapi32')
+        & $env:CC @arguments 2>&1 | Set-Content (Join-Path $output "$name-build.log")
+        if ($LASTEXITCODE -ne 0) { throw "Metadata test compilation failed: $name" }
+        return $binary
+    }
+    $metadata = Build-MetadataTest 'metadata-test' @()
+    & $metadata 2>&1 | Set-Content (Join-Path $output 'metadata-test.log')
+    if ($LASTEXITCODE -ne 0) { throw 'Actual Windows NTFS metadata acceptance failed; inspect metadata-test.log.' }
+    $controls = @(
+        @('metadata-omit-change-time', '-DSUMI_TEST_OMIT_CHANGE_TIME',
+          'PASS DACL control calibrated: all serialized fields except ChangeTime equal',
+          'FAIL DACL-only modification changes stamp'),
+        @('metadata-omit-file-id', '-DSUMI_TEST_OMIT_FILE_ID',
+          'PASS identity control calibrated: all fields except file ID equal',
+          'FAIL same-byte replacement changes file identity stamp')
+    )
+    foreach ($control in $controls) {
+        $name, $define, $calibrated, $expected = $control
+        $mutant = Build-MetadataTest $name @($define)
+        & $mutant 2>&1 | Set-Content (Join-Path $output "$name.log")
+        $exitCode = $LASTEXITCODE
+        $text = Get-Content -Raw (Join-Path $output "$name.log")
+        if ($exitCode -ne 1 -or -not $text.Contains($calibrated) -or -not $text.Contains($expected)) {
+            throw "Metadata omission control did not fail its calibrated behavior assertion: $name exit=$exitCode"
+        }
+        "PASS negative control rejected $name" | Add-Content (Join-Path $output 'negative-controls.log')
+    }
+
     # A console-subsystem app can have a console as MainWindowHandle. Select
     # GTK's actual PID-owned visible top-level window and close that HWND.
     Add-Type -TypeDefinition @'
@@ -301,6 +334,7 @@ public static class SumiOwnedWindows {
     }
     @(
         'PASS Windows native build, ABI runtime tests, behavioral negative controls and GTK window smoke'
+        'PASS local NTFS metadata acceptance, injected failures, and calibrated ChangeTime/file-identity omission controls'
         'NOTRUN Security page visual observation/cancellation, ACL Apply, third-party extension compatibility'
         'NOTRUN Windows ZIP/Undo end-to-end acceptance; these require their own protocol/GUI tests'
         'Shell invocation acknowledgement is not ACL Apply or completion evidence for arbitrary external verbs.'

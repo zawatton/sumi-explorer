@@ -8,6 +8,23 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <ole2.h>
+#include <shlobj.h>
+
+static HWND observed_verb_owner, modeless_fixture;
+static unsigned observed_invocations;
+static HRESULT observe_context_invoke(IContextMenu *context, LPCMINVOKECOMMANDINFO info)
+{
+    DWORD saved_error = GetLastError();
+    observed_verb_owner = info->hwnd;
+    ++observed_invocations;
+    /* The retained modeless window uses exactly the owner passed to the real
+     * verb. An ephemeral owner would destroy it during adapter cleanup. */
+    modeless_fixture = CreateWindowExW(0, L"STATIC", L"Sumi modeless verb lifetime fixture",
+        WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, info->hwnd, NULL, GetModuleHandleW(NULL), NULL);
+    printf("DIAG invoke-owner hwnd=%p modeless_fixture=%p\n", (void *)info->hwnd, (void *)modeless_fixture);
+    SetLastError(saved_error);
+    return context->lpVtbl->InvokeCommand(context, info);
+}
 
 /* Observe the actual OLE calls without substituting their behavior. */
 static unsigned observed_flush_calls;
@@ -50,10 +67,13 @@ static void WINAPI observe_ole_uninitialize(void)
 #define OleInitialize observe_ole_initialize
 #define OleFlushClipboard observe_ole_flush
 #define OleUninitialize observe_ole_uninitialize
+#undef IContextMenu_InvokeCommand
+#define IContextMenu_InvokeCommand(context, info) observe_context_invoke((context), (info))
 #include <platform.c>
 #undef OleInitialize
 #undef OleFlushClipboard
 #undef OleUninitialize
+#undef IContextMenu_InvokeCommand
 
 /* Public GIO ABI. Keep SDK-only syntax checks independent of glibconfig.h. */
 typedef struct _GFile GFile;
@@ -61,6 +81,18 @@ extern GFile *g_file_new_for_path(const char *);
 extern char *g_file_get_path(GFile *);
 extern int g_file_query_exists(GFile *, void *);
 extern void g_object_unref(void *);
+extern void *g_object_ref_sink(void *);
+extern void gtk_init(void);
+extern void *gtk_window_new(void);
+extern void gtk_window_set_title(void *, const char *);
+extern void gtk_window_set_default_size(void *, int, int);
+extern void gtk_window_present(void *);
+extern void gtk_window_destroy(void *);
+extern void *gtk_native_get_surface(void *);
+extern int g_main_context_iteration(void *, int);
+
+static void *test_surface;
+static HWND persistent_parent;
 
 static int failures;
 #define CHECK(condition, name) do { \
@@ -273,7 +305,7 @@ static void test_shell(const char *const *paths, const WCHAR *first, const WCHAR
     CHECK(observe_hook && timer, "owned real menu automation installed");
     if (!observe_hook || !timer) goto done;
     cancel_menu = 1; reset_menu_observation();
-    int result = sumi_explorer_platform_shell(NULL, paths, 2, &error);
+    int result = sumi_explorer_platform_shell(test_surface, paths, 2, &error);
     DWORD returned_error = GetLastError();
     log_shell_result("cancel", result, error, returned_error);
     CHECK(result == 0 && !error && automation_done == 1, "real COM multi-selection menu cancellation");
@@ -284,10 +316,14 @@ static void test_shell(const char *const *paths, const WCHAR *first, const WCHAR
     if (opened) { EmptyClipboard(); CloseClipboard(); }
     DWORD clipboard_before = GetClipboardSequenceNumber();
     cancel_menu = 0; reset_menu_observation();
-    result = sumi_explorer_platform_shell(NULL, paths, 2, &error);
+    result = sumi_explorer_platform_shell(test_surface, paths, 2, &error);
     returned_error = GetLastError();
     log_shell_result("copy", result, error, returned_error);
     CHECK(result == 1 && !error && automation_done == 1, "real COM Copy menu invocation");
+    CHECK(observed_invocations == 1 && observed_verb_owner == persistent_parent && IsWindow(persistent_parent),
+          "Shell verb uses persistent GTK caller ownership");
+    CHECK(modeless_fixture && IsWindow(modeless_fixture), "modeless verb window survives menu-owner cleanup");
+    if (modeless_fixture && IsWindow(modeless_fixture)) DestroyWindow(modeless_fixture);
     int matched = 0, paths_logged = 0;
     unsigned attempts = 0, open_failures = 0;
     UINT seen_count = 0;
@@ -345,7 +381,7 @@ done:
 static void test_error(const char *const *paths, unsigned count, const char *name)
 {
     char *error = NULL;
-    int result = sumi_explorer_platform_shell(NULL, paths, count, &error);
+    int result = sumi_explorer_platform_shell(test_surface, paths, count, &error);
     CHECK(result == -1 && error && *error, name);
     g_free(error);
 }
@@ -366,12 +402,34 @@ int main(int argc, char **argv)
           && permission_error && *permission_error, "Security editor relative path rejected before invocation");
     g_free(permission_error);
     if (argc == 2 && !strcmp(argv[1], "--unit-only")) return failures ? 1 : 0;
+    const char *valid_without_surface[] = {"C:\\fixture"};
+    test_error(valid_without_surface, 1, "Shell invocation without persistent surface explicitly rejected");
+    gtk_init();
+    void *gtk_window = gtk_window_new();
+    g_object_ref_sink(gtk_window);
+    gtk_window_set_title(gtk_window, "Sumi native Shell ownership fixture");
+    gtk_window_set_default_size(gtk_window, 320, 200);
+    gtk_window_present(gtk_window);
+    ULONGLONG gtk_started = GetTickCount64();
+    do {
+        for (unsigned i = 0; i < 64 && g_main_context_iteration(NULL, 0); ++i) { }
+        test_surface = gtk_native_get_surface(gtk_window);
+        if (test_surface) persistent_parent = gdk_win32_surface_get_handle(test_surface);
+        if (persistent_parent && IsWindow(persistent_parent)) break;
+        Sleep(10);
+    } while (GetTickCount64() - gtk_started < 5000);
+    CHECK(test_surface && persistent_parent && IsWindow(persistent_parent), "real GTK surface and persistent native owner");
+    if (!test_surface || !persistent_parent || !IsWindow(persistent_parent)) {
+        gtk_window_destroy(gtk_window); g_object_unref(gtk_window); return 1;
+    }
     WCHAR temp[MAX_PATH], root[MAX_PATH], first[MAX_PATH], second[MAX_PATH];
     int created = GetTempPathW(MAX_PATH, temp) && GetTempFileNameW(temp, L"sum", 0, root);
     CHECK(created, "temporary fixture identity");
-    if (!created) return 1;
+    if (!created) { gtk_window_destroy(gtk_window); g_object_unref(gtk_window); return 1; }
     DeleteFileW(root);
-    if (!CreateDirectoryW(root, NULL)) { CHECK(0, "fixture directory created"); return 1; }
+    if (!CreateDirectoryW(root, NULL)) {
+        CHECK(0, "fixture directory created"); gtk_window_destroy(gtk_window); g_object_unref(gtk_window); return 1;
+    }
     swprintf(first, MAX_PATH, L"%ls\\\u65e5\u672c\u8a9e space.txt", root);
     swprintf(second, MAX_PATH, L"%ls\\\u5225\u306e\u30d5\u30a1\u30a4\u30eb.txt", root);
     const char bytes[] = "Sumi native fixture\r\n";
@@ -412,6 +470,10 @@ int main(int argc, char **argv)
         free(paths[i]);
     }
     CHECK(RemoveDirectoryW(root), "temporary directory cleanup");
+    gtk_window_destroy(gtk_window);
+    g_object_unref(gtk_window);
+    CHECK(!IsWindow(persistent_parent), "owned GTK window cleanup");
+    test_surface = NULL;
     printf("RESULT failures=%d; native invocation does not certify external verb completion or ACL Apply\n", failures);
     return failures ? 1 : 0;
 }

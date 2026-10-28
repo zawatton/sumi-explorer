@@ -216,21 +216,84 @@ try {
         "PASS negative control rejected $name" | Add-Content (Join-Path $output 'negative-controls.log')
     }
 
-    # Observe a real app-owned window, then request its normal close. No
-    # desktop-wide window close, explorer.exe kill or association changes.
+    $before = 'invoke.hwnd = parent;'
+    if (-not $source.Contains($before)) { throw 'Owner lifetime negative control no longer applies.' }
+    $directory = Join-Path $output 'broken-owner-lifetime'
+    New-Item -ItemType Directory -Force $directory | Out-Null
+    $source.Replace($before, 'invoke.hwnd = owner;') |
+        Set-Content -LiteralPath (Join-Path $directory 'platform.c') -Encoding utf8
+    $mutant = Build-NativeTest 'broken-owner-lifetime' $directory
+    & $mutant 2>&1 | Set-Content (Join-Path $output 'broken-owner-lifetime.log')
+    $exitCode = $LASTEXITCODE
+    $text = Get-Content -Raw (Join-Path $output 'broken-owner-lifetime.log')
+    if ($exitCode -ne 1 -or -not $text.Contains('FAIL Shell verb uses persistent GTK caller ownership') -or
+        -not $text.Contains('FAIL modeless verb window survives menu-owner cleanup')) {
+        throw "Owner lifetime negative control did not fail both behavior assertions: exit=$exitCode"
+    }
+    'PASS negative control rejected broken-owner-lifetime' | Add-Content (Join-Path $output 'negative-controls.log')
+
+    # A console-subsystem app can have a console as MainWindowHandle. Select
+    # GTK's actual PID-owned visible top-level window and close that HWND.
+    Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class SumiOwnedWindows {
+    public sealed class Window {
+        public long Handle;
+        public string ClassName, Title;
+        public bool Visible;
+    }
+    delegate bool Visitor(IntPtr window, IntPtr argument);
+    [DllImport("user32.dll")] static extern bool EnumWindows(Visitor callback, IntPtr argument);
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern int GetClassName(IntPtr window, StringBuilder text, int capacity);
+    [DllImport("user32.dll", CharSet=CharSet.Unicode)] static extern int GetWindowText(IntPtr window, StringBuilder text, int capacity);
+    [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr window);
+    [DllImport("user32.dll", SetLastError=true)] static extern bool PostMessage(IntPtr window, uint message, UIntPtr w, IntPtr l);
+    public static Window[] Snapshot(uint process) {
+        var windows = new List<Window>();
+        EnumWindows((handle, argument) => {
+            uint owner; GetWindowThreadProcessId(handle, out owner);
+            if (owner == process) {
+                var name = new StringBuilder(256); var title = new StringBuilder(1024);
+                GetClassName(handle, name, name.Capacity); GetWindowText(handle, title, title.Capacity);
+                windows.Add(new Window { Handle=handle.ToInt64(), ClassName=name.ToString(),
+                    Title=title.ToString(), Visible=IsWindowVisible(handle) });
+            }
+            return true;
+        }, IntPtr.Zero);
+        return windows.ToArray();
+    }
+    public static bool Close(uint process, long handle) {
+        foreach (var window in Snapshot(process))
+            if (window.Handle == handle && window.Visible && window.ClassName == "gdkSurfaceToplevel")
+                return PostMessage(new IntPtr(handle), 0x0010, UIntPtr.Zero, IntPtr.Zero);
+        return false;
+    }
+}
+'@
     $app = Start-Process -FilePath (Join-Path $root 'target/sumi-explorer.exe') -PassThru `
         -RedirectStandardOutput (Join-Path $output 'app-stdout.log') `
         -RedirectStandardError (Join-Path $output 'app-stderr.log')
     try {
         $deadline = [DateTime]::UtcNow.AddSeconds(15)
+        $gtk = @()
         do {
             Start-Sleep -Milliseconds 100
             $app.Refresh()
-        } while (-not $app.HasExited -and $app.MainWindowHandle -eq 0 -and [DateTime]::UtcNow -lt $deadline)
-        if ($app.HasExited -or $app.MainWindowHandle -eq 0) { throw 'No standalone GTK window was observed.' }
-        "PASS standalone native GTK window pid=$($app.Id) handle=$($app.MainWindowHandle)" |
+            $windows = @([SumiOwnedWindows]::Snapshot($app.Id))
+            $gtk = @($windows | Where-Object { $_.Visible -and $_.ClassName -eq 'gdkSurfaceToplevel' })
+        } while (-not $app.HasExited -and $gtk.Count -eq 0 -and [DateTime]::UtcNow -lt $deadline)
+        $windows | ConvertTo-Json -Depth 3 | Set-Content (Join-Path $output 'app-owned-windows.json')
+        if ($app.HasExited -or $gtk.Count -ne 1) { throw "Expected one standalone GTK window; observed $($gtk.Count)." }
+        "PASS standalone native GTK window pid=$($app.Id) handle=$($gtk[0].Handle) class=$($gtk[0].ClassName)" |
             Set-Content (Join-Path $output 'app-window.log')
-        if (-not $app.CloseMainWindow() -or -not $app.WaitForExit(10000)) { throw 'App did not close normally.' }
+        if (-not [SumiOwnedWindows]::Close($app.Id, $gtk[0].Handle) -or -not $app.WaitForExit(10000)) {
+            throw 'App did not close its owned GTK window normally.'
+        }
+        "app_exit=$($app.ExitCode)" | Add-Content (Join-Path $output 'app-window.log')
         if ($app.ExitCode -ne 0) { throw "App closed with exit=$($app.ExitCode)" }
     } finally {
         if (-not $app.HasExited) { $app.Kill($true); $app.WaitForExit() }

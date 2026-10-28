@@ -212,8 +212,9 @@ int sumi_explorer_platform_shell(void *surface, const char *const *paths,
     unsigned i, command_count = 0;
     int outcome = -1;
     if (validate(paths, count, error) < 0) return -1;
+    if (!surface) return fail(error, "Windows Shell menu requires a live persistent GTK window");
     parent = surface_handle(surface, error);
-    if (surface && !parent) return -1;
+    if (!parent) return -1;
     result = OleInitialize(NULL);
     if (FAILED(result)) return hresult_error(error, "Initialize Shell OLE apartment", result);
     for (i = 0; i < count; ++i) {
@@ -255,7 +256,7 @@ int sumi_explorer_platform_shell(void *surface, const char *const *paths,
     command_count = HRESULT_CODE(result);
     if (!command_count) { fail(error, "No native Shell commands are available"); goto cleanup; }
     if (!GetCursorPos(&point)) { win32_error(error, "Read menu position", GetLastError()); goto cleanup; }
-    SetForegroundWindow(parent ? parent : owner);
+    SetForegroundWindow(parent);
     SetLastError(ERROR_SUCCESS);
     {
         UINT selected = (UINT)TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
@@ -274,7 +275,9 @@ int sumi_explorer_platform_shell(void *surface, const char *const *paths,
             DWORD clipboard_before;
             invoke.cbSize = sizeof(invoke);
             invoke.fMask = CMIC_MASK_UNICODE | CMIC_MASK_PTINVOKE;
-            invoke.hwnd = parent ? parent : owner;
+            /* A Shell verb can retain this owner for modeless UI after return.
+             * The menu-only window is destroyed below, so it must not own UI. */
+            invoke.hwnd = parent;
             invoke.lpVerb = MAKEINTRESOURCEA(offset);
             invoke.lpVerbW = MAKEINTRESOURCEW(offset);
             invoke.nShow = SW_SHOWNORMAL;

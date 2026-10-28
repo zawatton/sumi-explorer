@@ -5,8 +5,10 @@
 extern "C" {
 #endif
 
-/* Call on the UI thread with a live GdkSurface owned by the caller, or NULL
- * for standalone native ownership (no foreign window is subclassed).
+/* Call on the UI thread with a live GdkSurface owned by the caller.
+ * Shell invocation requires this persistent window, kept alive for any native
+ * modeless UI; NULL is an explicit error. Permissions may use NULL ownership.
+ * No foreign window is subclassed.
  * Paths are frozen, NUL-terminated scalar UTF-8 filesystem identities.
  * Returns 1 for actual native invocation, 0 for menu cancellation, -1 on error.
  * Invocation never claims that a Shell verb completed or an ACL was applied.

@@ -243,6 +243,8 @@ try {
         return $binary
     }
     $metadata = Build-MetadataTest 'metadata-test' @()
+    & $metadata --handle-probe 2>&1 | Set-Content (Join-Path $output 'metadata-handle-probe.log')
+    if ($LASTEXITCODE -ne 0) { throw 'Bounded own-process handle diagnostics failed; inspect metadata-handle-probe.log.' }
     & $metadata 2>&1 | Set-Content (Join-Path $output 'metadata-test.log')
     if ($LASTEXITCODE -ne 0) { throw 'Actual Windows NTFS metadata acceptance failed; inspect metadata-test.log.' }
     $controls = @(

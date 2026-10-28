@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <aclapi.h>
 #include <winioctl.h>
+#include <processsnapshot.h>
 #include <wchar.h>
 static int injected_query = -1, injected_provider, active_handles, close_failures;
 static unsigned observed_opens, observed_closes;
@@ -137,6 +138,86 @@ static int equal_except(const char *a, const char *b, const char *field)
     return !strcmp(left, right);
 }
 
+static void direct_metadata_open(const WCHAR *path, const char *stage, DWORD flags, int require_denied)
+{
+    WCHAR extended[2052]; swprintf(extended, 2052, L"\\\\?\\%ls", path);
+    HANDLE file = CreateFileW(extended, FILE_READ_ATTRIBUTES, sharing, NULL, OPEN_EXISTING, flags, NULL);
+    DWORD code = file == INVALID_HANDLE_VALUE ? GetLastError() : ERROR_SUCCESS;
+    printf("DIAG direct-open stage=%s flags=%08lx success=%d error=%lu\n", stage,
+           (unsigned long)flags, file != INVALID_HANDLE_VALUE, (unsigned long)code);
+    if (require_denied) CHECK(file == INVALID_HANDLE_VALUE && code == ERROR_ACCESS_DENIED,
+                              "same-flags native open confirms fixture access denial");
+    if (file != INVALID_HANDLE_VALUE) CloseHandle(file);
+}
+
+static void test_restricted_denial(const WCHAR *path, HANDLE process_token)
+{
+    HANDLE restricted = NULL, impersonation = NULL, existing = NULL;
+    DWORD size = 0;
+    GetTokenInformation(process_token, TokenPrivileges, NULL, 0, &size);
+    TOKEN_PRIVILEGES *privileges = malloc(size);
+    LUID backup = {0}, restore = {0};
+    CHECK(LookupPrivilegeValueW(NULL, L"SeBackupPrivilege", &backup) &&
+          LookupPrivilegeValueW(NULL, L"SeRestorePrivilege", &restore), "lookup backup/restore privilege identifiers");
+    BOOL read_privileges = privileges && GetTokenInformation(process_token, TokenPrivileges, privileges, size, &size);
+    CHECK(read_privileges, "read actual process-token privileges");
+    if (read_privileges) {
+        for (DWORD i = 0; i < privileges->PrivilegeCount; ++i) {
+            LUID id = privileges->Privileges[i].Luid;
+            if ((id.LowPart == backup.LowPart && id.HighPart == backup.HighPart) ||
+                (id.LowPart == restore.LowPart && id.HighPart == restore.HighPart))
+                printf("DIAG process-privilege luid=%lu:%ld attributes=%08lx\n", (unsigned long)id.LowPart,
+                       (long)id.HighPart, (unsigned long)privileges->Privileges[i].Attributes);
+        }
+    }
+    free(privileges);
+    const DWORD flags = FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS;
+    direct_metadata_open(path, "process-token/exact-flags", flags, 0);
+    direct_metadata_open(path, "process-token/without-backup", FILE_FLAG_OPEN_REPARSE_POINT, 0);
+    BOOL had_token = OpenThreadToken(GetCurrentThread(), TOKEN_QUERY, TRUE, &existing);
+    DWORD token_error = had_token ? ERROR_SUCCESS : GetLastError();
+    CHECK(!had_token && token_error == ERROR_NO_TOKEN, "fresh test thread has no preexisting impersonation");
+    if (existing) CloseHandle(existing);
+    if (had_token || token_error != ERROR_NO_TOKEN) return;
+    BOOL created = CreateRestrictedToken(process_token, DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL, 0, NULL, &restricted);
+    BOOL duplicated = created && DuplicateTokenEx(restricted, TOKEN_QUERY | TOKEN_IMPERSONATE,
+        NULL, SecurityImpersonation, TokenImpersonation, &impersonation);
+    CHECK(duplicated, "create own thread-only token with privileges disabled");
+    if (duplicated) {
+        size = 0; GetTokenInformation(impersonation, TokenPrivileges, NULL, 0, &size);
+        privileges = malloc(size);
+        read_privileges = privileges && GetTokenInformation(impersonation, TokenPrivileges, privileges, size, &size);
+        BOOL elevated_backup = FALSE;
+        if (read_privileges) for (DWORD i = 0; i < privileges->PrivilegeCount; ++i) {
+            LUID id = privileges->Privileges[i].Luid;
+            if ((id.LowPart == backup.LowPart && id.HighPart == backup.HighPart) ||
+                (id.LowPart == restore.LowPart && id.HighPart == restore.HighPart)) {
+                printf("DIAG restricted-privilege luid=%lu:%ld attributes=%08lx\n", (unsigned long)id.LowPart,
+                       (long)id.HighPart, (unsigned long)privileges->Privileges[i].Attributes);
+                elevated_backup |= !!(privileges->Privileges[i].Attributes & SE_PRIVILEGE_ENABLED);
+            }
+        }
+        CHECK(read_privileges && !elevated_backup, "restricted thread token has no enabled backup/restore privileges");
+        free(privileges);
+    }
+    BOOL impersonated = duplicated && SetThreadToken(NULL, impersonation);
+    CHECK(impersonated, "temporarily use restricted token on this test thread only");
+    if (impersonated) {
+        direct_metadata_open(path, "restricted-thread/exact-flags", flags, 1);
+        char *name = utf8(path), *error = NULL;
+        char *result = sumi_explorer_platform_metadata_stamp(name, &error);
+        printf("DIAG restricted denied stamp=%s error=%s\n", result ? result : "<none>", error ? error : "<none>");
+        CHECK(!result && error && strstr(error, "Win32 error 5") && !active_handles,
+              "genuine DACL read-attributes denial is explicit");
+        free(name); g_free(error); g_free(result);
+        BOOL reverted = RevertToSelf();
+        CHECK(reverted, "restore original test-thread security context");
+        if (!reverted) ExitProcess(1);
+    }
+    if (impersonation) CloseHandle(impersonation);
+    if (restricted) CloseHandle(restricted);
+}
+
 static void test_acl(const WCHAR *path)
 {
     HANDLE token = NULL, file = INVALID_HANDLE_VALUE;
@@ -145,7 +226,7 @@ static void test_acl(const WCHAR *path)
     PSECURITY_DESCRIPTOR descriptor = NULL, changed_descriptor = NULL;
     PACL old_acl = NULL, actual_acl = NULL, changed_acl = NULL;
     char *before = stamp(path), *after = NULL;
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) { CHECK(0, "open own token"); goto done; }
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_DUPLICATE, &token)) { CHECK(0, "open own token"); goto done; }
     GetTokenInformation(token, TokenUser, NULL, 0, &required);
     user = malloc(required);
     if (!user || !GetTokenInformation(token, TokenUser, user, required, &required)) { CHECK(0, "read own SID"); goto done; }
@@ -198,13 +279,20 @@ static void test_acl(const WCHAR *path)
             NULL, NULL, changed_acl, NULL);
         printf("DIAG DACL deny result=%lu\n", (unsigned long)deny_result);
         CHECK(deny_result == ERROR_SUCCESS, "apply fixture-only read-attributes denial");
-        char *name = utf8(path), *denied_error = NULL;
-        char *denied_stamp = sumi_explorer_platform_metadata_stamp(name, &denied_error);
-        printf("DIAG DACL denied stamp=%s error=%s\n", denied_stamp ? denied_stamp : "<none>",
-               denied_error ? denied_error : "<none>");
-        CHECK(!denied_stamp && denied_error && strstr(denied_error, "Win32 error 5") && !active_handles,
-              "genuine DACL read-attributes denial is explicit");
-        free(name); g_free(denied_error); g_free(denied_stamp);
+        PSECURITY_DESCRIPTOR deny_descriptor = NULL;
+        PACL deny_acl = NULL;
+        DWORD inspected = GetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+            NULL, NULL, &deny_acl, NULL, &deny_descriptor);
+        void *first_ace = NULL;
+        BOOL first_denial = inspected == ERROR_SUCCESS && deny_acl && GetAce(deny_acl, 0, &first_ace) &&
+            ((ACE_HEADER *)first_ace)->AceType == ACCESS_DENIED_ACE_TYPE;
+        BOOL same_sid = first_denial && EqualSid(&((ACCESS_DENIED_ACE *)first_ace)->SidStart, user->User.Sid);
+        DWORD mask = first_denial ? ((ACCESS_DENIED_ACE *)first_ace)->Mask : 0;
+        printf("DIAG actual-deny-ACL query=%lu first_denied=%d same_sid=%d mask=%08lx count=%u\n",
+               (unsigned long)inspected, first_denial, same_sid, (unsigned long)mask, deny_acl ? deny_acl->AceCount : 0);
+        CHECK(first_denial && same_sid && (mask & FILE_READ_ATTRIBUTES), "actual DACL begins with own-SID read-attributes denial");
+        if (deny_descriptor) LocalFree(deny_descriptor);
+        test_restricted_denial(path, token);
         restore_result = SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
             NULL, NULL, old_acl, NULL);
         printf("DIAG DACL final restore result=%lu\n", (unsigned long)restore_result);
@@ -312,7 +400,132 @@ static void test_junction(const WCHAR *root, const WCHAR *target_file)
     CHECK(RemoveDirectoryW(junction), "junction fixture cleanup");
 }
 
-int main(void)
+typedef struct { uintptr_t value; WCHAR type[64], name[384]; } HandleRecord;
+typedef struct { unsigned count; HandleRecord records[4096]; } HandleSnapshot;
+
+static HandleSnapshot *snapshot_own_handles(const char *stage)
+{
+    HandleSnapshot *result = calloc(1, sizeof(*result));
+    HPSS snapshot = NULL; HPSSWALK marker = NULL;
+    DWORD before = 0, after = 0, code;
+    CHECK(result != NULL, "allocate bounded own-process handle snapshot");
+    if (!result) return NULL;
+    GetProcessHandleCount(GetCurrentProcess(), &before);
+    code = PssCaptureSnapshot(GetCurrentProcess(), (PSS_CAPTURE_FLAGS)(PSS_CAPTURE_HANDLES |
+        PSS_CAPTURE_HANDLE_NAME_INFORMATION | PSS_CAPTURE_HANDLE_BASIC_INFORMATION), 0, &snapshot);
+    CHECK(code == ERROR_SUCCESS, "capture own-process handles with documented PSS API");
+    if (code != ERROR_SUCCESS) { printf("DIAG PSS capture error=%lu\n", (unsigned long)code); free(result); return NULL; }
+    code = PssWalkMarkerCreate(NULL, &marker);
+    CHECK(code == ERROR_SUCCESS, "create owned PSS walk marker");
+    if (code == ERROR_SUCCESS) {
+        PSS_HANDLE_ENTRY entry;
+        while ((code = PssWalkSnapshot(snapshot, PSS_WALK_HANDLES, marker, &entry, sizeof(entry))) == ERROR_SUCCESS) {
+            if (result->count == 4096) { CHECK(0, "own-process handle snapshot exceeded explicit bound"); break; }
+            HandleRecord *record = &result->records[result->count++];
+            record->value = (uintptr_t)entry.Handle;
+            if ((entry.Flags & PSS_HANDLE_HAVE_TYPE) && entry.TypeName) {
+                size_t length = entry.TypeNameLength / sizeof(WCHAR);
+                if (length > 63) length = 63;
+                memcpy(record->type, entry.TypeName, length * sizeof(WCHAR));
+            }
+            if ((entry.Flags & PSS_HANDLE_HAVE_NAME) && entry.ObjectName) {
+                size_t length = entry.ObjectNameLength / sizeof(WCHAR);
+                if (length > 383) length = 383;
+                memcpy(record->name, entry.ObjectName, length * sizeof(WCHAR));
+            }
+        }
+        CHECK(code == ERROR_NO_MORE_ITEMS, "walk complete bounded own-process snapshot");
+        CHECK(PssWalkMarkerFree(marker) == ERROR_SUCCESS, "free own PSS walk marker");
+    }
+    CHECK(PssFreeSnapshot(GetCurrentProcess(), snapshot) == ERROR_SUCCESS, "free own PSS snapshot");
+    GetProcessHandleCount(GetCurrentProcess(), &after);
+    printf("DIAG PSS stage=%s captured=%u observer_handles_before=%lu observer_handles_after=%lu\n",
+           stage, result->count, (unsigned long)before, (unsigned long)after);
+    return result;
+}
+
+static void compare_handles(const char *stage, const HandleSnapshot *before, const HandleSnapshot *after)
+{
+    if (!before || !after) return;
+    unsigned added = 0;
+    for (unsigned i = 0; i < after->count; ++i) {
+        const HandleRecord *record = &after->records[i];
+        int found = 0;
+        for (unsigned j = 0; j < before->count && !found; ++j)
+            found = record->value == before->records[j].value && !wcscmp(record->type, before->records[j].type) &&
+                    !wcscmp(record->name, before->records[j].name);
+        if (!found) {
+            if (added < 64) {
+                char *type = utf8(record->type), *name = utf8(record->name);
+                printf("DIAG PSS added stage=%s handle=%p type=%s name=%s\n", stage, (void *)record->value,
+                       type ? type : "<encoding>", name ? name : "<encoding>");
+                free(type); free(name);
+            }
+            ++added;
+        }
+    }
+    printf("DIAG PSS delta stage=%s before=%u after=%u added=%u added_print_limit=64\n",
+           stage, before->count, after->count, added);
+}
+
+static void diagnose_own_handles(const WCHAR *path)
+{
+    HANDLE file = CreateFileW(path, FILE_READ_ATTRIBUTES, sharing, NULL, OPEN_EXISTING,
+                             FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    CHECK(file != INVALID_HANDLE_VALUE, "open own isolated handle-probe fixture");
+    if (file == INVALID_HANDLE_VALUE) return;
+    WCHAR final[2048] = {0}, volume[50] = {0}, fs[32] = {0};
+    DWORD length = GetFinalPathNameByHandleW(file, final, 2048, FILE_NAME_OPENED | VOLUME_NAME_GUID);
+    CHECK(length >= 49 && length < 2048, "resolve isolated fixture volume");
+    if (length >= 49 && length < 2048) memcpy(volume, final, 49 * sizeof(WCHAR));
+    char *name = utf8(path);
+    const char *stages[] = {"idle-500ms", "glib-only", "raw-queries", "raw-final-path", "raw-drive-type",
+                           "raw-volume-info", "successful-stamps", "query-failures", "provider-failures"};
+    HandleSnapshot *previous = snapshot_own_handles("initial");
+    for (unsigned stage = 0; stage < sizeof(stages) / sizeof(stages[0]); ++stage) {
+        if (stage == 0) Sleep(500);
+        else for (unsigned repeat = 0; repeat < 32; ++repeat) {
+            if (stage == 1) {
+                char *text = g_strdup_printf("metadata diagnostic %u", repeat);
+                gunichar2 *wide = g_utf8_to_utf16(name, -1, NULL, NULL, NULL);
+                g_free(text); g_free(wide);
+            } else if (stage == 2) {
+                FILE_ID_INFO id; FILE_BASIC_INFO basic; FILE_STANDARD_INFO standard; FILE_ATTRIBUTE_TAG_INFO tag;
+                CHECK(GetFileInformationByHandleEx(file, FileIdInfo, &id, sizeof(id)) &&
+                    GetFileInformationByHandleEx(file, FileBasicInfo, &basic, sizeof(basic)) &&
+                    GetFileInformationByHandleEx(file, FileStandardInfo, &standard, sizeof(standard)) &&
+                    GetFileInformationByHandleEx(file, FileAttributeTagInfo, &tag, sizeof(tag)), "raw own-file queries succeed");
+            } else if (stage == 3) {
+                CHECK(GetFinalPathNameByHandleW(file, final, 2048, FILE_NAME_OPENED | VOLUME_NAME_GUID) > 0,
+                      "raw own-file final-path query succeeds");
+            } else if (stage == 4) {
+                UINT drive = GetDriveTypeW(volume);
+                CHECK(drive == DRIVE_FIXED || drive == DRIVE_REMOVABLE, "raw own-volume drive-type query succeeds");
+            } else if (stage == 5) {
+                CHECK(GetVolumeInformationByHandleW(file, NULL, 0, NULL, NULL, NULL, fs, 32),
+                      "raw own-volume filesystem query succeeds");
+            } else if (stage == 6) {
+                char *error = NULL, *value = sumi_explorer_platform_metadata_stamp(name, &error);
+                CHECK(value && !error && !active_handles, "isolated successful stamp closes owned handles");
+                g_free(value); g_free(error);
+            } else {
+                if (stage == 7) {
+                    FILE_INFO_BY_HANDLE_CLASS kinds[] = {FileIdInfo, FileBasicInfo, FileStandardInfo, FileAttributeTagInfo};
+                    injected_query = kinds[repeat % 4];
+                } else injected_provider = 1 + repeat % 6;
+                rejected(name, "isolated injected failure closes owned handles");
+                injected_query = -1; injected_provider = 0;
+            }
+        }
+        HandleSnapshot *current = snapshot_own_handles(stages[stage]);
+        compare_handles(stages[stage], previous, current);
+        free(previous); previous = current;
+    }
+    free(previous); free(name); CloseHandle(file);
+    CHECK(!active_handles && observed_opens == observed_closes && !close_failures, "isolated adapter ownership remains balanced");
+}
+
+int main(int argc, char **argv)
 {
     WCHAR temp[MAX_PATH], root[MAX_PATH], path[2048], alias[2048], link[2048], stream[2048];
     if (!GetTempPathW(MAX_PATH, temp) || !GetTempFileNameW(temp, L"smd", 0, root)) return 2;
@@ -328,6 +541,11 @@ int main(void)
     CHECK(info != INVALID_HANDLE_VALUE && GetVolumeInformationByHandleW(info, NULL, 0, NULL, NULL, NULL, fs, 32), "query actual fixture filesystem");
     if (info != INVALID_HANDLE_VALUE) CloseHandle(info);
     printf("DIAG actual_filesystem=%ls; OS recorded in environment.json\n", fs);
+    if (argc == 2 && !strcmp(argv[1], "--handle-probe")) {
+        diagnose_own_handles(path);
+        CHECK(DeleteFileW(path) && RemoveDirectoryW(root), "isolated handle-probe fixture cleanup");
+        return failures ? 1 : 0;
+    }
     char *first = stamp(path);
     CHECK(same_bytes(path), "read-only default-stream probe before repeated stamp");
     char *again = stamp(path), *aliased = stamp(alias);

@@ -82,10 +82,13 @@ static HWND active_owner;
 static HHOOK observe_hook;
 static int cancel_menu, automation_done;
 static ULONGLONG menu_started;
+static unsigned menu_initializations, menu_exits, timer_callbacks;
+static UINT automation_target_id, observed_selection;
 
 /* Observe only this thread's adapter-owned menu, without replacing its proc. */
 static LRESULT CALLBACK observe_menu(int code, WPARAM w, LPARAM l)
 {
+    DWORD saved_error = GetLastError();
     if (code >= 0) {
         const CWPSTRUCT *event = (const CWPSTRUCT *)l;
         WCHAR name[80];
@@ -94,17 +97,31 @@ static LRESULT CALLBACK observe_menu(int code, WPARAM w, LPARAM l)
             !wcscmp(name, L"SumiExplorerPlatformMenuOwner")) {
             active_owner = event->hwnd;
             active_menu = (HMENU)event->wParam;
+            ++menu_initializations;
+            printf("DIAG menu-init elapsed_ms=%llu owner=%p menu=%p items=%d\n",
+                   (unsigned long long)(GetTickCount64() - menu_started),
+                   (void *)active_owner, (void *)active_menu, GetMenuItemCount(active_menu));
+        }
+        if (event->hwnd == active_owner && event->message == WM_EXITMENULOOP) ++menu_exits;
+        if (event->hwnd == active_owner && event->message == WM_MENUSELECT &&
+            HIWORD(event->wParam) != 0xffff && !(HIWORD(event->wParam) & MF_POPUP)) {
+            observed_selection = LOWORD(event->wParam);
         }
     }
-    return CallNextHookEx(observe_hook, code, w, l);
+    LRESULT result = CallNextHookEx(observe_hook, code, w, l);
+    SetLastError(saved_error);
+    return result;
 }
 
-static VOID CALLBACK drive_menu(HWND window, UINT message, UINT_PTR timer, DWORD time)
+static void drive_menu_action(void)
 {
-    (void)window; (void)message; (void)timer; (void)time;
+    ++timer_callbacks;
     if (!active_owner || !IsWindow(active_owner)) return;
     if (cancel_menu || GetTickCount64() - menu_started > 8000) {
         automation_done = cancel_menu ? 1 : -1;
+        printf("DIAG menu-cancel requested=%d elapsed_ms=%llu incoming_last_error=%lu\n",
+               cancel_menu, (unsigned long long)(GetTickCount64() - menu_started),
+               (unsigned long)GetLastError());
         SendMessageW(active_owner, WM_CANCELMODE, 0, 0);
         return;
     }
@@ -132,10 +149,68 @@ static VOID CALLBACK drive_menu(HWND window, UINT message, UINT_PTR timer, DWORD
         INPUT clicks[2] = {{0}, {0}};
         clicks[0].type = INPUT_MOUSE; clicks[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
         clicks[1].type = INPUT_MOUSE; clicks[1].mi.dwFlags = MOUSEEVENTF_LEFTUP;
-        if (SetCursorPos(point.x, point.y) && SendInput(2, clicks, sizeof(INPUT)) == 2)
+        if (SetCursorPos(point.x, point.y) && SendInput(2, clicks, sizeof(INPUT)) == 2) {
+            automation_target_id = id;
             automation_done = 1;
+            printf("DIAG menu-copy-click id=%u elapsed_ms=%llu point=%ld,%ld popup=%p\n",
+                   id, (unsigned long long)(GetTickCount64() - menu_started),
+                   (long)point.x, (long)point.y, (void *)hit);
+        }
         return;
     }
+}
+
+static VOID CALLBACK drive_menu(HWND window, UINT message, UINT_PTR timer, DWORD time)
+{
+    DWORD saved_error = GetLastError();
+    (void)window; (void)message; (void)timer; (void)time;
+    drive_menu_action();
+    SetLastError(saved_error);
+}
+
+static void reset_menu_observation(void)
+{
+    automation_done = 0; active_owner = NULL; active_menu = NULL;
+    menu_initializations = 0; menu_exits = 0; timer_callbacks = 0;
+    automation_target_id = 0; observed_selection = 0;
+    menu_started = GetTickCount64();
+}
+
+static void log_shell_result(const char *action, int result, const char *error, DWORD last_error)
+{
+    printf("DIAG shell-%s result=%d error=%s last_error=%lu elapsed_ms=%llu automation=%d "
+           "init=%u exits=%u timers=%u clicked_id=%u selected_id=%u\n", action, result,
+           error ? error : "<none>", (unsigned long)last_error,
+           (unsigned long long)(GetTickCount64() - menu_started), automation_done,
+           menu_initializations, menu_exits, timer_callbacks, automation_target_id, observed_selection);
+    fflush(stdout);
+}
+
+static void log_wide_path(const char *label, const WCHAR *path)
+{
+    char utf8[4096] = {0};
+    int converted = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path, -1,
+                                       utf8, sizeof(utf8), NULL, NULL);
+    printf("DIAG %s utf16_length=%llu utf8=%s\n", label,
+           (unsigned long long)wcslen(path), converted ? utf8 : "<conversion failed>");
+}
+
+/* A Shell clipboard provider can complete work through its own thread windows.
+ * Pump only this test thread's messages and dispatch only its process windows.
+ * The caller retains the original five-second observation deadline. */
+static void pump_owned_messages(void)
+{
+    MSG event;
+    for (unsigned i = 0; i < 64 && PeekMessageW(&event, NULL, 0, 0, PM_REMOVE); ++i) {
+        DWORD process = 0;
+        if (event.message == WM_QUIT) { PostQuitMessage((int)event.wParam); break; }
+        if (event.hwnd) GetWindowThreadProcessId(event.hwnd, &process);
+        if (!event.hwnd || process == GetCurrentProcessId()) {
+            TranslateMessage(&event);
+            DispatchMessageW(&event);
+        }
+    }
+    MsgWaitForMultipleObjectsEx(0, NULL, 50, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
 }
 
 static void test_shell(const char *const *paths, const WCHAR *first, const WCHAR *second)
@@ -145,32 +220,67 @@ static void test_shell(const char *const *paths, const WCHAR *first, const WCHAR
     UINT_PTR timer = SetTimer(NULL, 0, 50, drive_menu);
     CHECK(observe_hook && timer, "owned real menu automation installed");
     if (!observe_hook || !timer) goto done;
-    cancel_menu = 1; automation_done = 0; active_owner = NULL; active_menu = NULL;
-    menu_started = GetTickCount64();
+    cancel_menu = 1; reset_menu_observation();
     int result = sumi_explorer_platform_shell(NULL, paths, 2, &error);
+    DWORD returned_error = GetLastError();
+    log_shell_result("cancel", result, error, returned_error);
     CHECK(result == 0 && !error && automation_done == 1, "real COM multi-selection menu cancellation");
     CHECK(owner_count() == 0, "canceled menu owner cleanup");
     g_free(error); error = NULL;
     int opened = OpenClipboard(NULL);
     CHECK(opened, "clipboard open before Copy");
     if (opened) { EmptyClipboard(); CloseClipboard(); }
-    cancel_menu = 0; automation_done = 0; active_owner = NULL; active_menu = NULL;
-    menu_started = GetTickCount64();
+    DWORD clipboard_before = GetClipboardSequenceNumber();
+    cancel_menu = 0; reset_menu_observation();
     result = sumi_explorer_platform_shell(NULL, paths, 2, &error);
+    returned_error = GetLastError();
+    log_shell_result("copy", result, error, returned_error);
     CHECK(result == 1 && !error && automation_done == 1, "real COM Copy menu invocation");
-    int matched = 0;
-    for (unsigned attempt = 0; attempt < 100 && !matched; ++attempt) {
+    int matched = 0, paths_logged = 0;
+    unsigned attempts = 0, open_failures = 0;
+    UINT seen_count = 0;
+    DWORD open_error = 0, data_error = 0;
+    ULONGLONG clipboard_started = GetTickCount64();
+    log_wide_path("expected-first", first); log_wide_path("expected-second", second);
+    while (!matched && GetTickCount64() - clipboard_started < 5000) {
+        ++attempts;
         if (OpenClipboard(NULL)) {
+            SetLastError(ERROR_SUCCESS);
             HDROP drop = (HDROP)GetClipboardData(CF_HDROP);
-            if (drop && DragQueryFileW(drop, 0xffffffff, NULL, 0) == 2) {
-                WCHAR a[32768], b[32768];
+            data_error = GetLastError();
+            seen_count = drop ? DragQueryFileW(drop, 0xffffffff, NULL, 0) : 0;
+            if (drop && seen_count == 2) {
+                WCHAR a[32768] = {0}, b[32768] = {0};
                 DragQueryFileW(drop, 0, a, 32768); DragQueryFileW(drop, 1, b, 32768);
+                if (!paths_logged) {
+                    log_wide_path("clipboard-first", a); log_wide_path("clipboard-second", b);
+                    paths_logged = 1;
+                }
                 matched = (!wcscmp(a, first) && !wcscmp(b, second)) ||
                           (!wcscmp(a, second) && !wcscmp(b, first));
             }
             CloseClipboard();
-        }
-        if (!matched) Sleep(50);
+        } else { ++open_failures; open_error = GetLastError(); }
+        if (!matched) pump_owned_messages();
+    }
+    DWORD clipboard_process = 0;
+    HWND clipboard_owner = GetClipboardOwner();
+    GetWindowThreadProcessId(clipboard_owner, &clipboard_process);
+    printf("DIAG clipboard matched=%d elapsed_ms=%llu attempts=%u open_failures=%u open_error=%lu "
+           "hdrop_available=%d count=%u data_error=%lu sequence_before=%lu sequence_after=%lu "
+           "owner=%p owner_pid=%lu test_pid=%lu\n", matched,
+           (unsigned long long)(GetTickCount64() - clipboard_started), attempts, open_failures,
+           (unsigned long)open_error, IsClipboardFormatAvailable(CF_HDROP), seen_count,
+           (unsigned long)data_error, (unsigned long)clipboard_before,
+           (unsigned long)GetClipboardSequenceNumber(), (void *)clipboard_owner,
+           (unsigned long)clipboard_process, (unsigned long)GetCurrentProcessId());
+    if (OpenClipboard(NULL)) {
+        UINT format = 0;
+        printf("DIAG clipboard-format-ids");
+        for (unsigned i = 0; i < 16 && (format = EnumClipboardFormats(format)); ++i)
+            printf(" %u", format);
+        printf("\n");
+        CloseClipboard();
     }
     CHECK(matched, "Copy clipboard CF_HDROP contains both frozen Unicode filesystem targets");
     CHECK(owner_count() == 0, "invoked menu owner cleanup");

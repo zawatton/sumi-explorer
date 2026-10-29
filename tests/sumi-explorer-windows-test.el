@@ -192,9 +192,10 @@
 (defun sumi-explorer-windows-test--junction (action alias source)
   "Create/remove only owned ALIAS to SOURCE using bounded Windows ACTION.
 Removal uses nonrecursive Directory.Delete, never traversing the junction."
-  (let* ((powershell (or (executable-find "powershell.exe") (executable-find "pwsh.exe")))
+  (let* ((powershell (or (executable-find "pwsh.exe") (executable-find "powershell.exe")))
          (script (expand-file-name "owned-junction.ps1" sumi-explorer-windows-test--fixture-root))
          (data-file (expand-file-name "owned-junction.json" sumi-explorer-windows-test--fixture-root))
+         (phase-file (concat data-file ".phase"))
          (output (generate-new-buffer " *sumi-owned-junction*"))
          child)
     (unwind-protect
@@ -205,27 +206,43 @@ Removal uses nonrecursive Directory.Delete, never traversing the junction."
           (let ((coding-system-for-write 'utf-8-unix))
             (with-temp-file data-file
               (insert (json-encode `((action . ,action) (alias . ,alias) (source . ,source))))))
+          (when (file-exists-p phase-file) (delete-file phase-file))
           (with-temp-file script
             (insert "param([string]$DataPath)\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','entered')\n"
                     "$ErrorActionPreference='Stop'\n"
                     "if(([IO.FileInfo]$DataPath).Length -gt 65536) { throw 'Oversized junction data' }\n"
                     "$utf8=[Text.UTF8Encoding]::new($false,$true)\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','before-json')\n"
                     "$data=ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($DataPath,$utf8))\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','json-read')\n"
                     "$Action=[string]$data.action; $AliasDirectory=[string]$data.alias; $SourceDirectory=[string]$data.source\n"
                     "if($Action -notin @('Create','Remove')) { throw 'Invalid junction action' }\n"
                     "foreach($field in @('alias','source')) {\n"
                     "$hex=([string]$data.$field).ToCharArray() | Select-Object -First 256 | ForEach-Object { '{0:X4}' -f [int]$_ }\n"
                     "[Console]::WriteLine('DIAG junction '+$field+'_utf16='+($hex -join ','))\n}\n"
-                    "if($Action -eq 'Create') { New-Item -ItemType Junction -Path $AliasDirectory -Target $SourceDirectory | Out-Null }\n"
+                    "if($Action -eq 'Create') {\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','before-create')\n"
+                    "New-Item -ItemType Junction -Path $AliasDirectory -Target $SourceDirectory | Out-Null\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','after-create')\n}\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','before-getitem')\n"
                     "$item=Get-Item -LiteralPath $AliasDirectory -Force\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','after-getitem')\n"
                     "if($item.LinkType -ne 'Junction') { throw 'Owned alias is not a junction' }\n"
-                    "if($Action -eq 'Remove') { [IO.Directory]::Delete($AliasDirectory,$false) }\n"
+                    "if($Action -eq 'Remove') {\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','before-remove')\n"
+                    "[IO.Directory]::Delete($AliasDirectory,$false)\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','after-remove')\n}\n"
+                    "[IO.File]::WriteAllText($DataPath+'.phase','completed')\n"
                     "[Console]::WriteLine('Owned junction action completed: '+$Action)\n"))
           (setq child (make-process :name "sumi-owned-junction" :buffer output :noquery t
                                     :command (list powershell "-NoProfile" "-NonInteractive"
                                                    "-ExecutionPolicy" "Bypass" "-File" script
                                                    "-DataPath" data-file)))
-          (let ((deadline (+ (float-time) 8)))
+          ;; Actual Windows evidence showed a still-running, silent legacy
+          ;; PowerShell at eight seconds.  Prefer pwsh and allow one bounded
+          ;; cold startup/module load, without retrying the filesystem action.
+          (let ((deadline (+ (float-time) 20)))
             (while (and (process-live-p child) (< (float-time) deadline))
               (accept-process-output child 0.02)))
           (let* ((tail (with-current-buffer output
@@ -233,7 +250,12 @@ Removal uses nonrecursive Directory.Delete, never traversing the junction."
                  (encoded (mapconcat (lambda (character)
                                        (if (<= 32 character 126) (char-to-string character)
                                          (format "\\u{%X}" character))) tail "")))
-            (message "DIAG junction helper alive=%S exit=%S output=%s" (process-live-p child)
+            (message "DIAG junction executable=%s phase=%s status=%S alive=%S exit=%S output=%s"
+                     (file-name-nondirectory powershell)
+                     (condition-case nil
+                         (with-temp-buffer (insert-file-contents phase-file nil 0 256) (buffer-string))
+                       (error "not-started-or-unreadable"))
+                     (process-status child) (and (process-live-p child) t)
                      (process-exit-status child) (substring encoded (max 0 (- (length encoded) 2000)))))
           (when (or (process-live-p child) (/= (process-exit-status child) 0))
             (error "Owned junction helper failed or timed out; see bounded output diagnostic")))
@@ -257,26 +279,6 @@ Removal uses nonrecursive Directory.Delete, never traversing the junction."
       (sumi-explorer-windows-test--write second (unibyte-string 0 1 127 128 255 13 10))
       (should (> (length payload) (* 2 65536)))
       (sumi-explorer-windows-test--write large payload)
-      ;; Keep the junction outside ROOT: shared recursive fixture cleanup can
-      ;; never traverse it, even if the explicit nonrecursive removal fails.
-      (let* ((alias-root (make-temp-file "sumi-windows-junction-" t))
-             (alias (expand-file-name "owned source alias" alias-root))
-             (invalid-archive (expand-file-name "must not create.zip" alias)))
-        (unwind-protect
-            (progn
-              (sumi-explorer-windows-test--junction "Create" alias source)
-              (should (file-equal-p alias source))
-              (let ((failure (should-error (sumi-explorer-zip-create invalid-archive (list source) 30))))
-                (should (string-match-p (regexp-quote "Destination aliases the source or a source descendant")
-                                        (error-message-string failure))))
-              (should-not (file-exists-p invalid-archive))
-              (should (equal payload (sumi-explorer-windows-test--bytes large)))
-              (should-not (cdr (assoc "groups" (sumi-explorer-undo-history)))))
-          (when (or (file-exists-p alias) (file-symlink-p alias))
-            (sumi-explorer-windows-test--junction "Remove" alias source))
-          ;; No recursive fallback: a failed unlink intentionally retains this
-          ;; separate test-owned container rather than walking its target.
-          (delete-directory alias-root)))
       (sumi-explorer-zip-create archive (list source) 30)
       (should (file-regular-p archive))
       (let ((archive-id (sumi-explorer-windows-test--top-id "zip-create")))
@@ -302,7 +304,27 @@ Removal uses nonrecursive Directory.Delete, never traversing the junction."
       (should (equal payload (sumi-explorer-windows-test--bytes large)))
       (should (equal (sumi-explorer-windows-test--bytes second)
                      (unibyte-string 0 1 127 128 255 13 10)))
-      (should-not (cdr (assoc "groups" (sumi-explorer-undo-history)))))))
+      (should-not (cdr (assoc "groups" (sumi-explorer-undo-history))))
+      ;; Keep the junction outside ROOT: shared recursive fixture cleanup can
+      ;; never traverse it, even if the explicit nonrecursive removal fails.
+      (let* ((alias-root (make-temp-file "sumi-windows-junction-" t))
+             (alias (expand-file-name "owned source alias" alias-root))
+             (invalid-archive (expand-file-name "must not create.zip" alias)))
+        (unwind-protect
+            (progn
+              (sumi-explorer-windows-test--junction "Create" alias source)
+              (should (file-equal-p alias source))
+              (let ((failure (should-error (sumi-explorer-zip-create invalid-archive (list source) 30))))
+                (should (string-match-p (regexp-quote "Destination aliases the source or a source descendant")
+                                        (error-message-string failure))))
+              (should-not (file-exists-p invalid-archive))
+              (should (equal payload (sumi-explorer-windows-test--bytes large)))
+              (should-not (cdr (assoc "groups" (sumi-explorer-undo-history)))))
+          (when (or (file-exists-p alias) (file-symlink-p alias))
+            (sumi-explorer-windows-test--junction "Remove" alias source))
+          ;; No recursive fallback: a failed unlink intentionally retains this
+          ;; separate test-owned container rather than walking its target.
+          (delete-directory alias-root))))))
 
 (ert-deftest sumi-explorer-windows-copy-undo-and-replacement-refusal ()
   "Undo removes only its own output and refuses a same-byte replacement."

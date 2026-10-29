@@ -1,0 +1,76 @@
+#+TITLE: Sumi Explorer archives undo and native integration
+
+#+NOTE: The same15 criteria are retained. Historical receipt checks bind current source hashes; they do not rerun behavior or independently prove editable evidence. The ZIP/Undo/GUI gates replace obsolete private intermediate receipts after their regressions passed. Windows ACL Apply/Cancel remains pending; clean delivery remains a failing command until its actual receipt exists.
+
+* S1 ZIP operations
+
+** S1.1 ZIP create and extract preserve Unicode nested bytes without overwrite
+cmd: python3 tools/verify-validation.py --check advanced
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+** S1.2 Unsafe entries collisions bounds and cancellation fail safely
+cmd: python3 tools/verify-validation.py --check advanced
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+** S1.3 Actual GUI and Emacs complete ZIP creation and extraction
+cmd: python3 tools/verify-validation.py --check advanced --check emacs_native --check gui
+cmd: python3 tools/verify-windows-validation.py
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+* S2 Undo
+
+** S2.1 Successful outcomes produce bounded identity-checked undo records
+cmd: python3 tools/verify-validation.py --check advanced
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+** S2.2 Undo preserves changed or replaced files and conflicting destinations
+cmd: python3 tools/verify-validation.py --check advanced
+cmd: python3 tools/verify-windows-validation.py
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+** S2.3 Actual GUI and Emacs undo files ZIP and session Trash recovery
+cmd: python3 tools/verify-validation.py --check advanced --check operations --check emacs_native
+cmd: python3 tools/verify-windows-validation.py
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+* S3 Permission editing
+
+** S3.1 Portable mode editing freezes targets and rejects symlink traversal
+cmd: python3 tools/verify-validation.py --check advanced --check emacs_native
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+** S3.2 Windows Security editor adapter compiles against actual SDK interfaces
+cmd: python3 tools/verify-windows-validation.py
+
+** S3.3 Actual Windows permission editor applies and cancels isolated ACL edits
+pending
+
+* S4 Windows Shell menu
+
+** S4.1 Real Shell adapter supports context interfaces Unicode and cleanup
+cmd: python3 tools/verify-windows-validation.py
+
+** S4.2 GUI and Emacs menu entry points preserve frozen identities and errors
+cmd: python3 tools/verify-validation.py --check advanced --check client
+cmd: python3 tools/verify-windows-validation.py
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+** S4.3 Actual Windows Shell menu displays invokes and cancels filesystem verbs
+cmd: python3 tools/verify-windows-validation.py
+
+* S5 Integration and delivery
+
+** S5.1 Existing client and native regression assertions remain intact and pass
+cmd: python3 tools/verify-validation.py
+cmd: python3 tools/verify-windows-validation.py
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+** S5.2 Independent review and source-bound records document verified limitations
+cmd: python3 tools/verify-validation.py
+cmd: python3 tools/verify-windows-validation.py
+cmd: test -s docs/advanced-review.json
+evidence: docs/advanced-review.json sha256=69418a974231c3ec23ab7407bd54ada9b54cce091da8119b149d7122342917a4
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+
+** S5.3 Clean integrated build completes archive undo and permission workflows
+cmd: python3 tools/verify-validation.py --record docs/clean-validation.json

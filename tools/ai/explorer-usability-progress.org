@@ -6,75 +6,75 @@
 
 ** S1.1 Folder tabs retain independent directories and bounded history
 cmd: python3 tools/verify-validation.py --check workspace
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S1.2 New windows use independent sessions and preserve the parent's state
 cmd: python3 tools/verify-validation.py --check workspace
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S1.3 GUI and Emacs open, switch and close tabs and open a second window
 cmd: python3 tools/verify-validation.py --check workspace --check emacs_native
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 * S2 Navigation and presentation
 
 ** S2.1 Back, Forward, Up, Home and address navigation preserve valid history
 cmd: python3 tools/verify-validation.py --check workspace
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S2.2 Folder filtering, hidden visibility and name/size/date/type sorting work
 cmd: python3 tools/verify-validation.py --check everyday
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S2.3 Real GUI navigation and presentation commands show the expected files
 cmd: python3 tools/verify-validation.py --check everyday --check emacs_native
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 * S3 Everyday operations
 
 ** S3.1 Copy, Cut and Paste reuse bounded no-overwrite batch operations
 cmd: python3 tools/verify-validation.py --check everyday --check operations --check batches --check emacs_native
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S3.2 Context menus and shortcuts expose existing file operations safely
 cmd: python3 tools/verify-validation.py --check everyday --check gui --check operations
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S3.3 Actual GUI clipboard and context workflows copy, move and trash fixtures
 cmd: python3 tools/verify-validation.py --check everyday --check emacs_native
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 * S4 File transfer and convenient locations
 
 ** S4.1 Inbound copy accepts multiple local files and directories with preflight
 cmd: python3 tools/verify-validation.py --check everyday --check dnd --check batches
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S4.2 Bookmarked directories persist with isolated test configuration
 cmd: python3 tools/verify-validation.py --check everyday
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S4.3 Real external transfer and bookmark navigation preserve source fixtures
 cmd: python3 tools/verify-validation.py --check everyday --check dnd
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 * S5 Integration and delivery
 
 ** S5.1 Existing client and native safety regressions retain all prior coverage
 cmd: python3 tools/verify-validation.py --check client --check byte_compile --check emacs_native --check gui --check batches --check operations --check dnd --check workspace --check everyday
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S5.2 Documentation and source-bound evidence describe verified limits
 cmd: python3 tools/verify-validation.py
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
-evidence: README.org sha256=d16856155c34429d3ff0be685e643447b9e0a3f899a9d29d34fc76cde2c4a177
-evidence: docs/everyday-features.md sha256=0fa91acf3fac99f877cd9123679b6ca59899ea6ca27ac47f1606757387e6ce06
-evidence: docs/file-explorer.md sha256=047025edec97f6c95ebb365758889a0e40a93be588fd576ed20493f35526712b
-evidence: docs/windows-validation.md sha256=902e3f6b77c66e63729a4a98ec5f8b305f237feba5ceb593a430253dd6e56350
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: README.org sha256=59f350582e5e6b8531d2c6a313dcf15b3106d5563f772ed90b3ec17dd62746b4
+evidence: docs/everyday-features.md sha256=0ed1a7781ad2ff2a01d673e3951c1bc4867186efe2f95d8da2cea2eb8b735e54
+evidence: docs/file-explorer.md sha256=88314e5914795f022fd3d47b7ea51ec2279cb43a41d8e988d2b32897df349fd8
+evidence: docs/windows-validation.md sha256=eb1a43a5c698cdb48a8feef8f6978ce15ab39b5f1562041ee33dc3cbbac8422a
 
 ** S5.3 An independently audited integrated build passes actual native and Emacs workflows
 cmd: python3 tools/verify-validation.py
-evidence: docs/validation.json sha256=7ec6cffaeb84566a85a60ba275dd12657c86959021ce9ab16876ebc2d8a03651
+evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 
 #+NOTE: A separate Astra reviewer accepted the final application, client, test, helper and evidence deltas without rerunning tests. The source/completion audit and original execution diagnostics are retained in the workspace worklog; this portable ledger verifies the published source-bound record and document hashes.

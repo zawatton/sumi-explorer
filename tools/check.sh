@@ -20,16 +20,17 @@ need() {
 client() {
     for dependency in emacs python3 cat true mktemp cp; do need "$dependency"; done
     client_scratch=$(mktemp -d)
-    cp explorer/sumi-explorer.el tests/sumi-explorer-client-test.el tests/sumi-explorer-integration-test.el "$client_scratch/"
+    cp explorer/sumi-explorer.el tests/sumi-explorer-client-test.el tests/sumi-explorer-integration-test.el tests/sumi-explorer-windows-test.el "$client_scratch/"
     emacs -Q --batch -L explorer --eval '(setq byte-compile-error-on-warn t)' \
-        -f batch-byte-compile "$client_scratch/sumi-explorer.el" "$client_scratch/sumi-explorer-client-test.el" "$client_scratch/sumi-explorer-integration-test.el"
+        -f batch-byte-compile "$client_scratch/sumi-explorer.el" "$client_scratch/sumi-explorer-client-test.el" "$client_scratch/sumi-explorer-integration-test.el" "$client_scratch/sumi-explorer-windows-test.el"
     emacs -Q --batch -L explorer -l tests/sumi-explorer-client-test.el -f ert-run-tests-batch-and-exit
 }
 
 native() {
     # Focused developer selectors must never reduce the public acceptance suite.
     unset SUMI_EXPLORER_TEST_SELECTOR
-    for dependency in emacs python3 xvfb-run xdotool xwininfo import xclip pkg-config dbus-run-session nautilus mktemp mkdir; do need "$dependency"; done
+    for dependency in emacs python3 xvfb-run xdotool xwininfo import xclip pkg-config dbus-run-session dbus-daemon nautilus mktemp mkdir; do need "$dependency"; done
+    pkg-config --exists gtk4 libarchive || { echo "Missing pkg-config packages: gtk4 libarchive" >&2; exit 1; }
     need "${CC:-cc}"
     if [ -n "${NELISP_REPO_ROOT:-}" ]; then
         compiler=$NELISP_REPO_ROOT
@@ -54,6 +55,32 @@ native() {
     mkdir "$native_scratch/config"
     XDG_CONFIG_HOME="$native_scratch/config"
     export XDG_CONFIG_HOME
+    python3 - "$root" "$native_scratch" "${CC:-cc}" <<'PY'
+import pathlib
+import shlex
+import subprocess
+import sys
+
+root, scratch = map(pathlib.Path, sys.argv[1:3])
+cc = sys.argv[3]
+cflags = shlex.split(subprocess.check_output(["pkg-config", "--cflags", "gtk4", "libarchive"], text=True))
+libs = shlex.split(subprocess.check_output(["pkg-config", "--libs", "gtk4", "libarchive"], text=True))
+output = scratch / "explorer-platform-test"
+subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", *cflags,
+                "-I" + str(root / "explorer"), str(root / "explorer/platform.c"),
+                str(root / "tests/explorer-platform-test.c"), "-o", str(output), *libs], check=True)
+subprocess.run([str(output)], check=True)
+metadata = scratch / "explorer-platform-metadata-test"
+subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", *cflags,
+                "-I" + str(root / "explorer"), str(root / "tests/explorer-platform-metadata-test.c"),
+                "-o", str(metadata), *libs], check=True)
+subprocess.run([str(metadata)], check=True)
+zip_io = scratch / "explorer-platform-zip-test"
+subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", *cflags,
+                "-I" + str(root / "explorer"), str(root / "tests/explorer-platform-zip-test.c"),
+                "-o", str(zip_io), *libs], check=True)
+subprocess.run([str(zip_io)], check=True)
+PY
     xvfb-run -a python3 tests/explorer-gui-test.py --binary "$binary" --group all
     xvfb-run -a dbus-run-session -- python3 tests/explorer-dnd-test.py --binary "$binary"
     xvfb-run -a emacs -Q --batch -L explorer -l tests/sumi-explorer-integration-test.el
@@ -61,6 +88,7 @@ native() {
     xvfb-run -a dbus-run-session -- python3 tests/explorer-batches-test.py --binary "$binary"
     xvfb-run -a dbus-run-session -- python3 tests/explorer-workspace-test.py --binary "$binary"
     xvfb-run -a dbus-run-session -- python3 tests/explorer-everyday-test.py --binary "$binary"
+    xvfb-run -a dbus-run-session -- python3 tests/explorer-advanced-test.py --binary "$binary"
 }
 
 case "${1:-all}" in

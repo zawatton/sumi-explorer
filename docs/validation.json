@@ -8,20 +8,30 @@
     "os": "linux",
     "architecture": "x86_64"
   },
-  "binary_sha256": "d7517b32093f9d469d25f4991e2e7c48d9dffaac81d766ed9189bfaab90cf7e6",
+  "binary_sha256": "544bbbb7340c0daed35ff5f965dbb6bc726a6a7a40014c75b833e540d4fafaa4",
   "sources": {
-    "explorer/build.el": "9019525c9177f85c4434488f1b10f75ed1a46be2655665b6b7118873003fcaae",
-    "explorer/sumi-explorer-native.el": "a54ecf80fde2749b266ff09dc5ddbc2a397009083d5dfe7dbc362088c9ef693a",
-    "explorer/sumi-explorer.el": "c8c7b836ef8b61df92f5944bb7f18308d3380fa21c802c76016ce0f204f549ee",
+    ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
+    "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
+    "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
+    "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
+    "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
+    "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
+    "explorer/sumi-explorer-native.el": "764cc037998124765464bd931502d300cc5fff0bf8e773ecc4bcd4dcafcd50a8",
+    "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
+    "tests/explorer-advanced-test.py": "8057f2bfac44036488189cae5ed9dd73459db89948ad5b32c7cae486803c678a",
     "tests/explorer-batches-test.py": "cfec3b96b3ce24acb438ff94796624e0f4da023f23968dbecf48a57d59562102",
     "tests/explorer-dnd-test.py": "808a4d84f6d9d1d68eb0d8ca522697a41bdb0b167438e117cdd791dd3a910448",
-    "tests/explorer-everyday-test.py": "bfc177897db27bc03cc01ad5ca1a28652fb6fec51253d8d6f58fef1d3d4c81ff",
+    "tests/explorer-everyday-test.py": "ebcbcfd0e8ee876bfcb526900655b6e6cc7bfc6f1f971bba64dd8ee452796638",
     "tests/explorer-gui-test.py": "9ba503b0510a9a015fd844a78c19f6c4785d4e524e6968a2ffe5b0719e28d7da",
-    "tests/explorer-operations-test.py": "4fe31fb1d9049a651c5b5cc26db9dd557604e440f4eacceafc8dc7df4a96d80c",
+    "tests/explorer-operations-test.py": "0e7c831abe236b08ace3ab4afadf7bdef67da7df246958926444b75feee0fe6b",
+    "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
+    "tests/explorer-platform-test.c": "dd5d10bbe060368715605aec0b5602a7216f54e29aad0df5f76befcc787ee0a1",
+    "tests/explorer-platform-zip-test.c": "28201ed658115dd59ceb707af17f73acad1d644b82901d33ce6830323092a84f",
     "tests/explorer-workspace-test.py": "924e40d90ed98f0dade29b63607d119a7736cbb9ac6767c3db95cabed6769c91",
-    "tests/sumi-explorer-client-test.el": "875e748993ca726acd09c873b29443c36e2726184222025a9cca4bf3fee2c895",
-    "tests/sumi-explorer-integration-test.el": "2fc423eebdc3b4361115dde226e4c0412de372b2cfc88010f36f78741e9a26d6",
-    "tools/check.sh": "1d55b51d75de138c32961fe6aaadaf0ff3da3f80fc59fdee770eabea3dd60c68"
+    "tests/sumi-explorer-client-test.el": "68d0762f882c1c60229dd3a60b11da33885e1bb35ab99fd0fb9df4e14f361954",
+    "tests/sumi-explorer-integration-test.el": "25fccbc984d24600a4fbcc82e4c8e8c702aac7e5e604682ec846c2c8fe137394",
+    "tests/sumi-explorer-windows-test.el": "52a51a3642044e246db410a46aebbd10a3c4db2865938962e249037f66f4c25c",
+    "tools/check.sh": "96089def75816b74ed8db13f1ef2dfd7aff81095bd921e6d983a67379484cdee"
   },
   "checks": {
     "build": {
@@ -33,68 +43,87 @@
     "byte_compile": {
       "status": "pass",
       "exit_code": 0,
-      "cases": 3,
-      "log_sha256": "95dbff0bb99aac4c72bbdfed220e3eb47f6ace342e6d0098c17bfaa7d4984596"
+      "cases": 4,
+      "log_sha256": "dc4d5b3776a9f8a68997179b1bdffd3618b06313492590d48f79e5293184b037"
     },
     "client": {
       "status": "pass",
       "exit_code": 0,
-      "cases": 57,
-      "log_sha256": "95dbff0bb99aac4c72bbdfed220e3eb47f6ace342e6d0098c17bfaa7d4984596"
+      "cases": 65,
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
     },
     "emacs_native": {
       "status": "pass",
       "exit_code": 0,
-      "cases": 6,
-      "log_sha256": "de7cd77fb21041be36578b7b315ffa0dfbb7c154a03afcca8945d6b9afc527e5"
+      "cases": 7,
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
     },
     "gui": {
       "status": "pass",
       "exit_code": 0,
       "cases": 1,
-      "log_sha256": "aeb25f6c464a6abda94aef469eb6c73a25b5987e8ced143c5a919e3d3c5aa8be"
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
     },
     "batches": {
       "status": "pass",
       "exit_code": 0,
       "cases": 15,
-      "log_sha256": "870cc6bf777ee9a7c6ddbb6107ed56df5abb042765ee5cef3e13a8575455527e"
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
     },
     "operations": {
       "status": "pass",
       "exit_code": 0,
       "cases": 12,
-      "log_sha256": "901d4268f64af31bf360d9e5fbe3a8a59c54fab2181411769a3af3897a56f1eb"
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
     },
     "dnd": {
       "status": "pass",
       "exit_code": 0,
       "cases": 7,
-      "log_sha256": "994ccd012b63e3b3011d8d16bd20c1674d07eef2bf755d65580669c03308baba"
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
     },
     "workspace": {
       "status": "pass",
       "exit_code": 0,
       "cases": 12,
-      "log_sha256": "395ebc87eb484a9b31cd3af9d4cbc476491542116d701a794358b0fa7d0b7d7c"
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
     },
     "everyday": {
       "status": "pass",
       "exit_code": 0,
       "cases": 21,
-      "log_sha256": "9d4f4b82570b376413be9de17a4d70b47fb5083663e7d29df30ecfe74f134e19"
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+    },
+    "platform": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 6,
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+    },
+    "metadata_stub": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 4,
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+    },
+    "zip_stub": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 11,
+      "log_sha256": "9d65dcb8f50fa8a7477e5b5fa5b5d422865f8959be0136a6df777d32d251b2b7"
+    },
+    "advanced": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 54,
+      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
     }
   },
   "limitations": [
-    "Historical Linux execution record, not a rerun or independent attestation; tools/verify-validation.py checks source binding, not original log contents or execution.",
-    "Windows and macOS native linking, runtime, packaging and Shell/Finder integration remain unverified; docs/windows-validation.md is an unexecuted manual procedure.",
-    "Current-source COFF x86_64 and Mach-O aarch64 object emission passed. Intel Mach-O x86_64 emission still fails on unsupported plt32 relocation; object emission is not runtime support.",
-    "External file-list paste and inbound multiple-file/directory/symlink drag and drop are COPY-only. Internal Cut requires the still-owned clipboard provider/generation; cross-process external Cut is not promised.",
-    "GTK synchronous drop acceptance means accepted/queued. Owned paths and context survive until the engine result; the drag source receives no asynchronous filesystem-completion result.",
-    "GTK/X11 cancellation completion can wait for an unresponsive external clipboard owner. The request stays pending and context stays alive until the real callback, without a false acknowledgement or filesystem mutation.",
-    "The partial-Cut completion acceptance is an AOT unit using actual helpers and real providers with constructed per-item outcomes, including generation replacement before a real asynchronous callback; it is not a partial-filesystem-failure end-to-end test.",
-    "Folder filtering is literal case-folded current-directory filename matching, not recursive or indexed search. Native shell-extension menus, ACL editing, recycle-bin browsing, archives and operation undo remain separate work.",
-    "Move has no copy/delete fallback; failed or cancelled copies may retain explicitly reported partial destinations. Existing targets are not replaced or merged.",
-    "The former directory-DND rejection test was replaced by real nested directory COPY and collision preservation. Existing file COPY now waits for actual final completion before collision retry; other substantive legacy assertions are retained."
+    "Historical Linux execution: the final full helper passed209 checks; the subsequently integrated11-case ZIP unsupported-stub suite and four current warning-as-error compilation inputs passed focused continuation commands. This editable record checks source binding and does not independently prove or rerun execution.",
+    "The54 advanced groups include real filesystem/GUI workflows and explicitly labeled fake-provider ABI/ownership controls. Eleven ZIP stub checks establish explicit unsupported behavior on Linux, not native Windows execution.",
+    "Windows execution has a separate source-bound record. Native Security page Apply/Cancel, third-party extension coverage, packaging and complete cross-platform interaction remain unverified.",
+    "macOS application runtime remains unverified; Intel Mach-O emission has a compiler plt32 limitation.",
+    "Undo is session-scoped and conservative. External writers can race path-based checks; unsupported Windows identity providers and unverifiable Trash handles do not receive guessed recovery records."
   ]
 }

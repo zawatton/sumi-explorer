@@ -152,8 +152,10 @@ user-config directory. Independent windows serialize edits with exclusive
 locking, reload and atomic replacement. Lock contention/stale locks and corrupt
 data fail explicitly; locks are not stolen and corrupt config is not replaced.
 Context actions and file-view shortcuts retain normal text-editing shortcuts,
-single-target Rename, and confirmation of frozen Trash targets. Archive handling,
-ACL editing, indexing, permanent deletion and undo are outside this increment.
+single-target Rename, and confirmation of frozen Trash targets. The subsequent
+[advanced increment](advanced-features.md) adds bounded ZIP operations, session
+Undo and Windows Shell/Security entry points. Indexing, permanent deletion and
+complete native desktop integration remain outside these increments.
 
 ## File transfer
 

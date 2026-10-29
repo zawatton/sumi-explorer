@@ -8,8 +8,10 @@ folder tabs, independent windows, per-tab navigation, folder filtering, sorting,
 hidden visibility, clipboard operations, context actions, shortcuts, bookmarks
 and inbound multi-item directory copy. The Windows/macOS runtime criteria in
 the existing feature ledger remain unverified. This is not complete Windows
-Shell compatibility: native extension menus, ACL editing, recycle-bin browsing,
-archive management, filesystem indexing and operation undo need separate work.
+Shell compatibility. The subsequent [advanced increment](advanced-features.md)
+adds bounded ZIP operations, session Undo and Windows Shell/Security entry points;
+its [Windows evidence](windows-validation.md) records the narrower native checks.
+Recycle-bin browsing and filesystem indexing remain outside these increments.
 
 ## Stage 1 workspace contract
 

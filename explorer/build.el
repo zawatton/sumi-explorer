@@ -1,5 +1,6 @@
 ;;; build.el --- Build the standalone explorer -*- lexical-binding: t; -*-
 (require 'subr-x)
+(declare-function nelisp-aot-compile-to-object "nelisp-aot-compiler" (form file &rest options))
 (defconst sumi-explorer-build-root
   (expand-file-name ".." (file-name-directory (or load-file-name buffer-file-name))))
 (defun sumi-explorer-build ()
@@ -22,19 +23,31 @@
     (setq scratch (make-temp-file (expand-file-name ".explorer-" target) t))
     (unwind-protect
         (let ((obj (expand-file-name "explorer.o" scratch))
+              (platform-obj (expand-file-name "platform.o" scratch))
               (output (expand-file-name (if windows "explorer.exe" "explorer") scratch))
-              (libs nil))
+              (libs nil) (cflags nil))
           (with-temp-buffer
-            (unless (eq 0 (process-file "pkg-config" nil t nil "--libs" "gtk4"))
+            (unless (eq 0 (process-file "pkg-config" nil t nil "--libs" "gtk4" "libarchive"))
               (error "pkg-config failed: %s" (buffer-string)))
             (setq libs (split-string-and-unquote (string-trim (buffer-string)))))
+          (with-temp-buffer
+            (unless (eq 0 (process-file "pkg-config" nil t nil "--cflags" "gtk4" "libarchive"))
+              (error "GTK/libarchive compiler flags failed: %s" (buffer-string)))
+            (setq cflags (split-string-and-unquote (string-trim (buffer-string)))))
+          (with-temp-buffer
+            (unless (eq 0 (apply #'process-file (or (getenv "CC") "cc") nil t nil
+                                 (append '("-std=c11" "-Wall" "-Wextra") cflags
+                                         (list "-c" (expand-file-name "explorer/platform.c" sumi-explorer-build-root)
+                                               "-o" platform-obj))))
+              (error "Platform bridge compilation failed: %s" (buffer-string))))
           (with-temp-buffer
             (insert-file-contents (expand-file-name "explorer/sumi-explorer-native.el" sumi-explorer-build-root))
             (goto-char (point-min))
             (nelisp-aot-compile-to-object (read (current-buffer)) obj :format format :arch arch))
           (with-temp-buffer
             (unless (eq 0 (apply #'process-file (or (getenv "CC") "cc") nil t nil
-                                 obj "-o" output libs))
+                                 obj platform-obj "-o" output
+                                 (append libs (when windows '("-lshell32" "-lole32" "-luuid" "-luser32" "-ladvapi32")))))
               (error "Link failed: %s" (buffer-string))))
           (rename-file output exe t)
           (princ (format "EXPLORER-BUILD-OK %s\n" exe)))

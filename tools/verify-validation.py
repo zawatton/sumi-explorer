@@ -14,16 +14,23 @@ import sys
 
 
 CHECKS = {
-    "build": 1, "byte_compile": 3, "client": 57, "emacs_native": 6,
+    "build": 1, "byte_compile": 4, "client": 65, "emacs_native": 7,
     "gui": 1, "batches": 15, "operations": 12, "dnd": 7,
     "workspace": 12, "everyday": 21,
+    "platform": 6, "metadata_stub": 4, "zip_stub": 11, "advanced": 54,
 }
 SOURCES = {
+    ".gitattributes",
     "explorer/build.el", "explorer/sumi-explorer-native.el", "explorer/sumi-explorer.el",
     "tests/sumi-explorer-client-test.el", "tests/sumi-explorer-integration-test.el",
     "tests/explorer-gui-test.py", "tests/explorer-batches-test.py",
     "tests/explorer-operations-test.py", "tests/explorer-dnd-test.py", "tools/check.sh",
     "tests/explorer-workspace-test.py", "tests/explorer-everyday-test.py",
+    "explorer/platform.c", "explorer/platform.h",
+    "explorer/platform-zip.h", "explorer/platform-zip.inc",
+    "tests/explorer-platform-test.c", "tests/explorer-platform-metadata-test.c",
+    "tests/explorer-platform-zip-test.c",
+    "tests/explorer-advanced-test.py", "tests/sumi-explorer-windows-test.el",
 }
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -76,7 +83,8 @@ def validate(record, root, requested=()):
                 f"Missing or unsafe source: {name}")
         digest(expected, name)
         require(hashlib.sha256(path.read_bytes()).hexdigest() == expected, f"Stale source: {name}")
-    require(set(sources) == SOURCES, "Source coverage must include exactly the app, build, eight tests, and helper")
+    require(set(sources) == SOURCES,
+            "Source coverage must match exactly the native/client app, platform bridge, build, acceptance tests, and helper")
     checks = record["checks"]
     exact_keys(checks, CHECKS, "checks")
     for name, cases in CHECKS.items():

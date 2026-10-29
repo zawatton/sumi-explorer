@@ -1,0 +1,70 @@
+name: Windows native validation
+
+on:
+  push:
+    paths:
+      - 'explorer/**'
+      - 'tests/explorer-platform-windows-test.c'
+      - 'tests/explorer-platform-metadata-test.c'
+      - 'tests/explorer-platform-zip-test.c'
+      - 'tests/sumi-explorer-windows-test.el'
+      - 'tools/windows-native-check.ps1'
+      - '.github/workflows/windows-native.yml'
+      - '.gitattributes'
+  pull_request:
+    paths:
+      - 'explorer/**'
+      - 'tests/explorer-platform-windows-test.c'
+      - 'tests/explorer-platform-metadata-test.c'
+      - 'tests/explorer-platform-zip-test.c'
+      - 'tests/sumi-explorer-windows-test.el'
+      - 'tools/windows-native-check.ps1'
+      - '.github/workflows/windows-native.yml'
+      - '.gitattributes'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: zawatton/nelisp
+          ref: f3551799d210ed32f594383997843f0e1bf25e24
+          path: target/deps/nelisp
+          persist-credentials: false
+      - uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # official v2 ref
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-gtk4
+            mingw-w64-ucrt-x86_64-libarchive
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-emacs
+      - name: Export native runtime path
+        shell: msys2 {0}
+        run: |
+          printf 'SUMI_UCRT_BIN=%s\n' "$(cygpath -m /ucrt64/bin)" >> "$GITHUB_ENV"
+      - name: Prepare checksum-pinned portable GNU Emacs
+        shell: pwsh
+        run: ./tools/windows-native-check.ps1 -PrepareEmacs
+      - name: Build and exercise native Windows ABI
+        shell: pwsh
+        run: ./tools/windows-native-check.ps1
+      - name: Retain source-bound evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-native-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/windows-native/
+          if-no-files-found: warn
+          retention-days: 14

@@ -8,9 +8,10 @@ See the [[file:docs/file-explorer.md][application]], [[file:docs/file-operations
 
 The GUI supports navigation, Ctrl/Shift multiple selection, associated-application
 opening, a portable context menu, application Properties, and
-asynchronous copy, move, rename, new-directory, and GIO Trash operations.
-These are application features, not Explorer/Finder extension menus or native
-Properties dialogs.
+asynchronous copy, move, rename, new-directory, GIO Trash and ZIP operations,
+plus session Undo. Application Properties is a portable application dialog.
+On Windows, =Native Shell Menu= invokes system handlers and =Permissions= invokes
+the native Security editor. Their validation boundaries are recorded below.
 
 Single-row Copy/Move takes an exact new destination path. Multiple-row Copy/Move
 takes an existing destination directory and preflights the complete batch.
@@ -28,9 +29,11 @@ Outbound DND exports every selected path; the receiver owns its operation.
 
 * Build and run
 
-Install GTK4 development libraries with =pkg-config= metadata, a C compiler/linker
-driver (=cc= by default), GNU Emacs, and Git. The public NeLisp AOT compiler is
-an external build-time dependency. Build/test helpers download nothing.
+Install GTK4 and libarchive development libraries with =pkg-config= metadata,
+a C compiler/linker driver (=cc= by default), GNU Emacs, and Git. The public NeLisp AOT compiler is
+an external build-time dependency. =explorer/build.el= and the Linux
+=tools/check.sh= helper download nothing. The Windows validation driver's
+explicit =-PrepareEmacs= step downloads and checksum-verifies portable GNU Emacs.
 
 #+begin_src sh
   git clone https://github.com/zawatton/sumi-explorer.git
@@ -47,6 +50,9 @@ That compiler revision was used for recorded Linux validation. Set
 =NELISP_REPO_ROOT= for another existing checkout; the builder otherwise looks
 for sibling =../nelisp=. Set =CC= to select another compiler driver. The shell
 memory cap is 8 GiB. Compiler sources and build outputs under =target/= are ignored.
+Both =pkg-config --cflags gtk4 libarchive= and =pkg-config --libs gtk4 libarchive=
+must resolve. The build compiles the small OS adapter alongside the NeLisp
+object; Windows linking additionally uses the system Shell/COM libraries.
 
 The app defaults to the user's home directory and creates a private temporary
 session. =SUMI_EXPLORER_ROOT= chooses its initial directory. A client can supply
@@ -54,14 +60,16 @@ session. =SUMI_EXPLORER_ROOT= chooses its initial directory. A client can supply
 
 The build selects native x86_64/aarch64 ELF, COFF, or Mach-O. Windows output is
 =target/sumi-explorer.exe=. Linux has executable GUI evidence. Windows x86_64
-COFF and Apple Silicon Mach-O object emission were checked; Windows/macOS
-application builds, runtime libraries, interaction, and packaging remain
+COFF and Apple Silicon Mach-O object emission were checked. Native Windows builds,
+dedicated bridge suites and four Emacs/application workflows passed on the
+=windows-2022= runner; see the source-bound Windows evidence. Native ACL
+Apply/Cancel, full Windows interaction/packaging and macOS application runtime remain
 unverified. Intel Mac object emission currently fails on an unsupported =plt32=
 relocation in the compiler. Object emission is not runtime support. See GTK's
 setup documentation for [[https://www.gtk.org/docs/installations/windows/][Windows]] and [[https://www.gtk.org/docs/installations/macos/][macOS]].
 
-The [[file:docs/windows-validation.md][Windows validation procedure]] is a proposed manual checklist;
-its Windows build, runtime and Shell checks have not been run.
+The [[file:docs/windows-validation.md][Windows validation procedure]] separates the automated CI evidence
+from the remaining manual application, native Shell and ACL checks.
 
 * Emacs commands
 
@@ -112,12 +120,69 @@ Lisp, and never builds shell commands from names. Durable =response.ini= is
 separate from live GUI state. Normal stop requests quit and retains the session
 while an operation finishes. Prefix/explicit forced stop can interrupt a copy.
 
+* ZIP, session Undo and native platform operations
+
+The [[file:docs/advanced-features.md][advanced contract]] describes this increment. The native engine, client commands
+and GUI actions are implemented, with Linux regression evidence recorded below.
+The Windows validation procedure records native execution separately.
+
+#+begin_src emacs-lisp
+  (sumi-explorer-zip-create exact-new-archive selected-paths 30)
+  (sumi-explorer-zip-extract archive-path exact-new-directory 30)
+  (sumi-explorer-undo-history)
+  (sumi-explorer-undo nil 30) ; Newest group from one snapshot; no stale retry.
+  (sumi-explorer-permissions target-path)
+  (sumi-explorer-set-permissions target-path "0640" 10) ; POSIX only.
+  (sumi-explorer-shell-menu selected-paths) ; Windows only.
+#+end_src
+
+The mutation/editor functions are also =M-x= commands. Interactive ZIP creation
+freezes the selected input vector before prompting for the exact unused ZIP
+path. Extraction prompts for one archive and an exact unused directory. ZIP
+inputs use the same 256-path/1-MiB manifest bound; extraction rejects unsafe
+names, links, special entries and unsupported content before output. It does
+not overwrite or merge. Only bounded single-disk classic ZIP store/deflate is
+supported, with at most 65535 entries; ZIP64 is unsupported. See the contract for
+streamed size/depth/name limits.
+Timeout/C-g retains the same pending request; resume with =sumi-explorer-await=.
+
+Undo is limited to 32 groups in the current session and is not a persistent
+backup. =sumi-explorer-undo-history= returns newest-first group alists under
+=groups=; an explicit group ID must still be the newest valid group. The host
+revalidates identities/fingerprints and refuses changed objects, existing
+restore targets and stale IDs. Supported app-managed outcomes include copy,
+move, rename, new directory, ZIP outputs and POSIX mode changes. Trash Undo
+requires a unique verified backend handle to the actual trashed object and a
+no-copy-fallback restore; ordinary GIO Trash success alone does not promise
+Undo. Unsupported backends report recovery unavailable. Partial reversal keeps
+unresolved entries. External writers can still race these checks.
+Older groups are rebased only for proven exact-root transitions and bounded
+parent-witness relationships. Other ancestor relationships and shared-batch
+dependencies are conservatively refused rather than treated as arbitrary safe
+Undo chains. On Windows the native identity/metadata stamp supports local NTFS
+only. Missing stamp/provider capability preserves a real mutation's success and
+reports =Undo unavailable=; it never creates a recovery promise from incomplete
+identity evidence.
+
+=sumi-explorer-permissions= opens a single-target portable mode prompt on POSIX
+or the native Windows Security property page. Its acknowledgement means editor
+invocation, not ACL Apply, editor closure or even proof that Security was shown.
+=sumi-explorer-set-permissions= applies an explicit three/four-digit mode in
+=0000..0777= on POSIX and rejects Windows. Symlink targets are rejected.
+=sumi-explorer-shell-menu= freezes explicit targets, or selection/current
+directory, and invokes Windows Shell handlers; other platforms return an error.
+External Shell verbs and native ACL edits are not app-managed Undo outcomes.
+The GUI exposes =Create ZIP=, =Extract ZIP=, =Undo=, =Permissions= and
+=Native Shell Menu=. Prompts retain frozen targets. Native Windows handler
+coverage and ACL Apply/Cancel require their own Windows acceptance. Ctrl+Z
+activates app Undo outside text-editing widgets.
+
 * Everyday workflows
 
 The [[file:docs/everyday-features.md][everyday-workflow contract]] and [[file:tools/ai/explorer-usability-progress.org][15-criterion usability ledger]] track
-this increment. The native workflows and all six Emacs/native workflows passed
-on Linux with the recorded inputs. Windows/macOS runtime support remains
-unverified.
+this increment. The native workflows and seven Emacs/native workflows passed
+on Linux with the recorded inputs. The Windows procedure records its narrower
+native evidence; comprehensive Windows interaction and macOS runtime remain unverified.
 
 ** Tabs, navigation and presentation
 
@@ -197,7 +262,7 @@ indexing or undo.
 Client tests need GNU Emacs, Python 3 for a startup fixture, and standard =cat=
 and =true= utilities. Native tests additionally need the built binary, Xvfb
 (=xvfb-run=), xdotool, xwininfo, ImageMagick's =import=, xclip, Nautilus,
-=dbus-run-session=, =pkg-config= and the
+=dbus-run-session=, =pkg-config= metadata for GTK4/libarchive and the
 =CC= compiler driver (default =cc=). They also need the external NeLisp AOT
 compiler for a focused acceptance unit, even after the app has been built.
 Keep the pinned =NELISP_REPO_ROOT= export above for later test commands. The
@@ -235,11 +300,14 @@ Python suites accept =--artifacts=; keep diagnostics under ignored =target/=.
   (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-batches-test.py --binary target/sumi-explorer)
   (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-workspace-test.py --binary target/sumi-explorer)
   (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-everyday-test.py --binary target/sumi-explorer)
+  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- python3 tests/explorer-advanced-test.py --binary target/sumi-explorer)
 #+end_src
 
-The recorded counts are 57 client ERT cases, six real Emacs/native workflows,
+The recorded counts are 65 client ERT cases, seven real Emacs/native workflows,
 15 batch checks, 12 operation checks, seven DND checks, 12 workspace checks and
-21 everyday checks, plus warning-as-error compilation of three Elisp files.
+21 everyday checks, plus 54 advanced groups, six platform checks, four explicit
+non-Windows metadata checks, eleven ZIP unsupported-stub checks and
+warning-as-error compilation of four Elisp files.
 The GUI suite also
 covers protocol, rejection controls, and widget activation. These identify
 recorded suites; they do not claim a fresh machine has passed them.
@@ -251,7 +319,7 @@ failure scenario. Earlier binaries fail the new clipboard/geometry controls.
 
 ** Historical validation record
 
-=docs/validation.json= records one verified run's compiler revision, Linux
+=docs/validation.json= records verified executions' compiler revision, Linux
 platform, binary hash, input hashes, suite outcomes, and limitations.
 =python3 tools/verify-validation.py= checks its schema and current application,
 build, test, and helper hashes. It works without a binary or compiler checkout.
@@ -263,5 +331,11 @@ identify original diagnostics without publishing private logs; the verifier
 checks their format, not their contents or availability. Run the build/tests
 above for new execution evidence. The [[file:tools/ai/file-explorer-progress.org][20-criterion ledger]] maps criteria to
 named historical checks; Windows/macOS end-to-end criteria stay pending.
+
+=docs/windows-validation.json= separately records the accepted Windows run,
+native binary, actual LF source bytes and suite/log hashes.
+=python3 tools/verify-windows-validation.py= checks that historical source binding.
+The source set includes =.gitattributes= and the workflow; the native driver
+rejects CR bytes before hashing. It does not normalize the tested sources.
 
 The historical-record verifier requires Python 3.9 or newer.

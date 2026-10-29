@@ -14,6 +14,7 @@ from pathlib import Path
 import resource
 import signal
 import shutil
+import shlex
 import subprocess
 import tempfile
 import time
@@ -142,11 +143,20 @@ def cut_completion_unit(artifacts, first, second, third):
 (require 'nelisp-aot-compiler)
 (with-temp-buffer (insert-file-contents {quote(fixture)}) (goto-char (point-min))
  (nelisp-aot-compile-to-object (read (current-buffer)) {quote(obj)} :format 'elf :arch (if (string-prefix-p "aarch64" system-configuration) 'aarch64 'x86_64)))
-(let ((libs (split-string (with-temp-buffer (unless (= 0 (process-file "pkg-config" nil t nil "--libs" "gtk4")) (error "pkg-config failed")) (buffer-string)))))
- (unless (= 0 (apply #'process-file (or (getenv "CC") "cc") nil t nil {quote(obj)} "-o" {quote(exe)} libs)) (error "Fixture link failed")))
 ''')
     with (artifacts / "cut-completion-build.log").open("wb") as log:
         subprocess.run(["emacs", "-Q", "--batch", "-l", str(driver)], check=True, timeout=600, stdout=log, stderr=subprocess.STDOUT)
+        cflags = shlex.split(subprocess.check_output(
+            ["pkg-config", "--cflags", "gtk4", "libarchive"], text=True))
+        libs = shlex.split(subprocess.check_output(
+            ["pkg-config", "--libs", "gtk4", "libarchive"], text=True))
+        platform = artifacts / "platform.o"
+        cc = os.environ.get("CC", "cc")
+        subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", *cflags,
+                        "-c", str(source.parent / "platform.c"), "-o", str(platform)],
+                       check=True, timeout=600, stdout=log, stderr=subprocess.STDOUT)
+        subprocess.run([cc, str(obj), str(platform), "-o", str(exe), *libs],
+                       check=True, timeout=600, stdout=log, stderr=subprocess.STDOUT)
     session, destination = artifacts / "unit-session", artifacts / "unit-destination"
     session.mkdir(exist_ok=True)
     destination.mkdir(exist_ok=True)

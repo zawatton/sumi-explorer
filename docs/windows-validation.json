@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "run": {
+    "repository": "https://github.com/zawatton/sumi-explorer",
+    "id": 40805110576,
+    "attempt": 1,
+    "commit": "e092b03faa6da67afee71ac5c23552ec183b74d8",
+    "conclusion": "success"
+  },
+  "compiler": {
+    "repository": "https://github.com/zawatton/nelisp.git",
+    "revision": "f3551799d210ed32f594383997843f0e1bf25e24"
+  },
+  "platform": {
+    "os": "windows",
+    "architecture": "x86_64"
+  },
+  "emacs": {
+    "version": "30.2",
+    "archive_sha256": "414d3a1a21147af257ebd98bdd15976fdcb5ed0563f6de89f76d4a4b5dad9c72",
+    "executable_sha256": "24848ae901463e3c56dac17031ddd45d58220723aa35102fc778458d17ff2f0b"
+  },
+  "binary_sha256": "a24fd8c1aa69c2667019c2b98296c302478daca3d69de5e1be9203688f0d095f",
+  "limits": {
+    "per_process_private_commit_bytes": 8589934592,
+    "job_private_commit_bytes": 8589934592,
+    "timeout_seconds": 600
+  },
+  "sources": {
+    ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
+    ".github/workflows/windows-native.yml": "12a2e25c2eb40a71b2e624791de1e0a24a08cbac8185bf40b71518b398cfedd3",
+    "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
+    "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
+    "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
+    "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
+    "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
+    "explorer/sumi-explorer-native.el": "764cc037998124765464bd931502d300cc5fff0bf8e773ecc4bcd4dcafcd50a8",
+    "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
+    "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
+    "tests/explorer-platform-windows-test.c": "f530e8c0522da4fd4b01d56c53d026481a1aa873efa4a64a7902962c79bf96de",
+    "tests/explorer-platform-zip-test.c": "28201ed658115dd59ceb707af17f73acad1d644b82901d33ce6830323092a84f",
+    "tests/sumi-explorer-windows-test.el": "52a51a3642044e246db410a46aebbd10a3c4db2865938962e249037f66f4c25c",
+    "tools/windows-native-check.ps1": "96fc0cb663a79f2173ee597d171c5c69e7b6d8e471493da133f829957114f455"
+  },
+  "checks": {
+    "build": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 1,
+      "log_sha256": "753b1337fc5a096303526a820198623a32ab81ba0e6cd95c5c9e478c949ce9b9"
+    },
+    "unicode": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 1,
+      "log_sha256": "5e10bab469923a19e7c10cd6cff03e4053c362f146348429e45f3ddcffc380b7"
+    },
+    "shell": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 59,
+      "log_sha256": "f9ef1da97b43f0d47468aed18ed5b6e75beb47ec28cb7d0f1edda37bae740fd1"
+    },
+    "metadata": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 229,
+      "log_sha256": "768d24b3d5d00e75d32ad1825aaea3709d961bbb459d01061b1ee6b4242981a1"
+    },
+    "zip_io": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 63,
+      "log_sha256": "1ca1826e6bab7cfb41ab40c30c4fdff73c5575ffb6530034c78f00c6d340ee96"
+    },
+    "negative_controls": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 7,
+      "log_sha256": "c145df262e851fff01ec85d927cb03be158f6796c59ba664f3f1e46fb8b95c28"
+    },
+    "emacs_native": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 4,
+      "log_sha256": "a23980dae0933dfe77c674d5f9a7eec803e1be3ae7a92d4d49155c80919e5b00"
+    },
+    "gui": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 1,
+      "log_sha256": "e8314561a62cd872ddd0d10797bd76d8cb57d7df37752768722c2f6dcca185ee"
+    }
+  },
+  "limitations": [
+    "Historical windows-2022 execution from the linked successful public workflow. This editable receipt checks exact source bytes and recorded outcomes; it does not independently prove execution or rerun tests.",
+    "Native Security-page visual observation/Cancel and ACL Apply, third-party extension coverage, external Windows Explorer transfer, packaging and comprehensive GUI interaction were not run. Native editor/verb invocation is not proof of an applied external change.",
+    "FAT/ReFS provider fallback controls inject selected query results; physical FAT/exFAT/ReFS and network-volume runtime support remain unverified. Native Undo identity stamps support local NTFS only.",
+    "Session Undo is conservative and can refuse older dependent groups. Path-based revalidation is not an atomic lock against every external writer; unavailable identity or Trash handles never imply recovery.",
+    "Windows Job Object limits private committed memory, not Linux RLIMIT_AS address space. macOS application runtime remains unverified."
+  ]
+}

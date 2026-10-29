@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import resource
 import shutil
+import signal
 import subprocess
 import tempfile
 import time
@@ -36,9 +37,15 @@ def run(args):
         xdg = base / "xdg"
         xdg.mkdir()
         old_xdg = os.environ.get("XDG_DATA_HOME")
+        old_bus = os.environ.get("DBUS_SESSION_BUS_ADDRESS")
         os.environ["XDG_DATA_HOME"] = str(xdg)
-        session = gui.Session(args.binary.resolve(), root, session_dir)
+        bus = None
+        session = None
         try:
+            # GVfs must inherit this fixture's isolated Trash directory.
+            bus = subprocess.check_output(["dbus-daemon", "--session", "--fork", "--print-address=1", "--print-pid=1"], text=True, timeout=10).splitlines()
+            os.environ["DBUS_SESSION_BUS_ADDRESS"] = bus[0]
+            session = gui.Session(args.binary.resolve(), root, session_dir)
             def begin(command, path, destination=None):
                 assert not (session_dir / "request.ini").exists()
                 session.serial += 1
@@ -130,12 +137,26 @@ def run(args):
                 gui_checks(gui, session, root, wait, begin, finish)
                 dnd_failure_checks(gui, args.binary.resolve(), base, artifacts)
         finally:
-            session.stop()
-            shutil.copyfile(session_dir / "host.log", artifacts / "host.log")
-            if old_xdg is None:
-                os.environ.pop("XDG_DATA_HOME", None)
-            else:
-                os.environ["XDG_DATA_HOME"] = old_xdg
+            try:
+                if session is not None:
+                    session.stop()
+                    shutil.copyfile(session_dir / "host.log", artifacts / "host.log")
+            finally:
+                try:
+                    if bus is not None:
+                        try:
+                            os.kill(int(bus[1]), signal.SIGTERM)
+                        except ProcessLookupError:
+                            pass
+                finally:
+                    if old_bus is None:
+                        os.environ.pop("DBUS_SESSION_BUS_ADDRESS", None)
+                    else:
+                        os.environ["DBUS_SESSION_BUS_ADDRESS"] = old_bus
+                    if old_xdg is None:
+                        os.environ.pop("XDG_DATA_HOME", None)
+                    else:
+                        os.environ["XDG_DATA_HOME"] = old_xdg
         assert session.process.returncode == 0, session.process.returncode
 
 

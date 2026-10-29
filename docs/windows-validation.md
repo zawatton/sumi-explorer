@@ -1,10 +1,13 @@
 # Windows x86_64 validation evidence
 
 Status: **automated native feature acceptance passed**.
-[Run 40819015682](https://github.com/zawatton/sumi-explorer/actions/runs/40819015682)
-tested published main commit `5f0af72d7c9e0f677d07e5102f0d8c53a15b2a85` on the `windows-2022` runner.
+[Run 40822902160](https://github.com/zawatton/sumi-explorer/actions/runs/40822902160)
+tested published main commit `3750b5ca173708296bdca7e2ca906aeff1b9a471` on the `windows-2022` runner.
 The [historical receipt](windows-validation.json) binds the final accepted run
 and its exact source bytes; this is narrower than complete Windows compatibility.
+The folder-navigation increment is included in this native build and startup
+check. New breadcrumb/address/sidebar interactions were exercised on Linux;
+this run does not establish those interactions on Windows.
 
 | Check | Observed result |
 | --- | --- |

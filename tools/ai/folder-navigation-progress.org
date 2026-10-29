@@ -1,5 +1,5 @@
 #+TITLE: Sumi Explorer clickable folder navigation
-#+NOTE: Nine newly defined criteria. Historical design and platform limitations remain separate.
+#+NOTE: Nine newly defined criteria. S3 source/model checks were strengthened without changing the denominator. Historical design and platform limitations remain separate.
 
 * S1 Breadcrumb and address navigation
 
@@ -31,7 +31,7 @@ cmd: python3 tests/explorer-navigation-test.py --verify docs/navigation-validati
 cmd: python3 tools/verify-windows-validation.py
 
 ** S3.2 Independent completion audit accepts the source-bound implementation
-cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/navigation-review.json")); assert r["status"]=="accepted-for-delivery" and all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in r["sources"].items())'
+cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/navigation-review.json")); required={"explorer/sumi-explorer-native.el","tests/explorer-navigation-test.py","docs/navigation-validation.json","docs/windows-validation.json","docs/navigation-desktop.json","docs/images/explorer-navigation.png"}; assert r["status"]=="accepted-for-delivery" and r["reviewer"]["model"]=="gpt-6-astra" and r["reviewer"]["reasoning_effort"]=="ultra" and len(r["sources"])>=30 and required.issubset(r["sources"]) and all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in r["sources"].items())'
 
 ** S3.3 Updated application is launched and visually reviewed on the desktop
-cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/navigation-desktop.json")); assert hashlib.sha256(Path("explorer/sumi-explorer-native.el").read_bytes()).hexdigest()==r["native_source_sha256"] and hashlib.sha256(Path(r["published_screenshot"]).read_bytes()).hexdigest()==r["published_screenshot_sha256"]'
+cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/navigation-desktop.json")); assert hashlib.sha256(Path("explorer/sumi-explorer-native.el").read_bytes()).hexdigest()==r["native_source_sha256"] and hashlib.sha256(Path("target/sumi-explorer").read_bytes()).hexdigest()==r["binary_sha256"] and hashlib.sha256(Path(r["published_screenshot"]).read_bytes()).hexdigest()==r["published_screenshot_sha256"]'

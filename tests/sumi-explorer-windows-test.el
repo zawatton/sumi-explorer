@@ -380,9 +380,8 @@ Removal uses nonrecursive Directory.Delete, never traversing the junction."
         (when (file-exists-p output) (set-file-modes output original-mode))))))
 
 (defconst sumi-explorer-windows-test--cancel-helper
-  "param([uint32]$NativePid, [string]$Receipt)
+  "param([uint32]$NativePid, [string]$Receipt, [string]$ReadyReceipt)
 $ErrorActionPreference = 'Stop'
-$deadline = [DateTime]::UtcNow.AddSeconds(9)
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -431,6 +430,8 @@ public static class SumiOwnedMenuCancel {
     }
 }
 '@
+[IO.File]::WriteAllText($ReadyReceipt, \"native_pid=$NativePid`nhelper_pid=$PID`n\")
+$deadline = [DateTime]::UtcNow.AddSeconds(9)
 while ([DateTime]::UtcNow -lt $deadline) {
     if ([SumiOwnedMenuCancel]::CancelOwnedMenu($NativePid)) {
         $record = \"owned_menu_observed=1`ncancel_posted=1`nnative_pid=$NativePid`n\"
@@ -443,7 +444,7 @@ while ([DateTime]::UtcNow -lt $deadline) {
 throw 'Owned native menu was not observed/cancelled before the deadline'
 "
   "Bounded PowerShell helper cancelling only this host's active native menu.
-The Emacs parent also enforces a ten-second helper lifetime.")
+The parent allows twenty seconds for readiness, then ten seconds for the menu.")
 
 (ert-deftest sumi-explorer-windows-native-shell-menu-cancel ()
   "Reach the real host's Shell menu from Emacs and cancel only its owned HWND."
@@ -453,7 +454,8 @@ The Emacs parent also enforces a ten-second helper lifetime.")
            (targets (list first second))
            (script (expand-file-name "cancel-owned-menu.ps1" root))
            (receipt (expand-file-name "cancel-owned-menu.receipt" root))
-           (powershell (or (executable-find "powershell.exe") (executable-find "pwsh.exe")))
+           (ready (expand-file-name "cancel-owned-menu.ready" root))
+           (powershell (or (executable-find "pwsh.exe") (executable-find "powershell.exe")))
            (output (generate-new-buffer " *sumi-owned-menu-cancel*"))
            helper)
       (unwind-protect
@@ -468,7 +470,7 @@ The Emacs parent also enforces a ten-second helper lifetime.")
             (let ((selection (sumi-explorer-selected-files))
                   (history (sumi-explorer-undo-history))
                   (native-pid (process-id sumi-explorer--process))
-                  (deadline (+ (float-time) 10)))
+                  (deadline (+ (float-time) 20)))
               (should (and (integerp native-pid) (> native-pid 0)))
               (let ((coding-system-for-write 'utf-8-unix))
                 (write-region sumi-explorer-windows-test--cancel-helper nil script nil 'silent))
@@ -477,7 +479,18 @@ The Emacs parent also enforces a ten-second helper lifetime.")
                                   :command (list powershell "-NoProfile" "-NonInteractive"
                                                  "-ExecutionPolicy" "Bypass" "-File" script
                                                  "-NativePid" (number-to-string native-pid)
-                                                 "-Receipt" receipt)))
+                                                 "-Receipt" receipt "-ReadyReceipt" ready)))
+              (let ((expected (format "native_pid=%d\nhelper_pid=%d\n" native-pid (process-id helper))))
+                (while (and (process-live-p helper) (< (float-time) deadline)
+                            (not (equal expected
+                                        (condition-case nil (sumi-explorer-windows-test--bytes ready)
+                                          (error nil)))))
+                  (accept-process-output helper 0.02))
+                (unless (and (process-live-p helper)
+                             (equal expected (condition-case nil (sumi-explorer-windows-test--bytes ready)
+                                               (error nil))))
+                  (error "Owned menu helper did not establish matching PID readiness")))
+              (setq deadline (+ (float-time) 10))
               (let ((failure (should-error (sumi-explorer-shell-menu targets 10))))
                 (should (string-match-p (regexp-quote "Native menu cancelled without invoking a command")
                                         (error-message-string failure))))
@@ -494,8 +507,21 @@ The Emacs parent also enforces a ten-second helper lifetime.")
               (should (equal (sumi-explorer-windows-test--bytes second) (unibyte-string 66 128 10)))
               (sumi-explorer-refresh)
               (should (file-equal-p root (cdr (assoc "directory" (sumi-explorer-state)))))))
+        (condition-case nil
+            (let* ((tail (with-current-buffer output
+                           (buffer-substring-no-properties (max (point-min) (- (point-max) 1400)) (point-max))))
+                   (text (format "DIAG shell helper executable=%s ready=%S status=%S output=%s"
+                                 (file-name-nondirectory (or powershell "unavailable"))
+                                 (condition-case nil
+                                     (with-temp-buffer (insert-file-contents-literally ready nil 0 256) (buffer-string))
+                                   (error "not-ready"))
+                                 (and helper (process-status helper)) tail))
+                   (encoded (mapconcat (lambda (character)
+                                         (if (<= 32 character 126) (char-to-string character)
+                                           (format "\\u{%X}" character))) text "")))
+              (message "%s" (substring encoded 0 (min 2000 (length encoded)))))
+          (error (message "DIAG shell helper output unavailable")))
         (when (and helper (process-live-p helper)) (delete-process helper))
-        (message "Owned Shell cancellation helper output: %s" (with-current-buffer output (buffer-string)))
         (kill-buffer output)))))
 
 (provide 'sumi-explorer-windows-test)

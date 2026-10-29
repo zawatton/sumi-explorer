@@ -39,7 +39,7 @@
  (data-blob zip_lpt "lpt\0" rodata)
  (data-blob zip_slash "/\0" rodata)
  (data-blob zip_classic "Unsupported ZIP variant or ambiguous raw ZIP metadata; only bounded single-disk classic ZIP store/deflate is supported\0" rodata)
- (data-blob zip_options "zip:compression=deflate,zip:!zip64\0" rodata)
+ (data-blob zip_options "zip:compression=deflate,zip:!zip64,zip:hdrcharset=UTF-8\0" rodata)
  (data-blob zip_cleanup_warning "Temporary ZIP snapshot cleanup failed; may remain: %s\0" rodata)
  (data-blob zip_warning_format "%s\n%s\0" rodata)
  (data-blob undo_command "undo\0" rodata)
@@ -3907,13 +3907,11 @@
                ((sumi_explorer_same cmd (data-addr quit)) (seq (sumi_explorer_publish ctx 1 (data-addr empty)) (sumi_explorer_close_window 0 ctx)))
                ((sumi_explorer_same cmd (data-addr select))
                 (seq
-                 (setq row (extern-call gtk_widget_get_first_child (ptr-read-u64 ctx 16)))
-                 (while (and (= (= row 0) 0) (= found 0))
-                   (if (sumi_explorer_same path (extern-call g_object_get_data row (data-addr identity)))
-                     (seq (setq found 1) (ptr-write-u64 ctx 80 1) (extern-call gtk_list_box_unselect_all (ptr-read-u64 ctx 16))
-                          (extern-call gtk_list_box_select_row (ptr-read-u64 ctx 16) row) (ptr-write-u64 ctx 80 0)
-                          (extern-call gtk_widget_grab_focus row))
-                     (setq row (extern-call gtk_widget_get_next_sibling row))))
+                 (setq row (sumi_explorer_find_row ctx path))
+                 (if row
+                   (seq (setq found 1) (ptr-write-u64 ctx 80 1) (extern-call gtk_list_box_unselect_all (ptr-read-u64 ctx 16))
+                        (extern-call gtk_list_box_select_row (ptr-read-u64 ctx 16) row) (ptr-write-u64 ctx 80 0)
+                        (extern-call gtk_widget_grab_focus row)))
                  (sumi_explorer_publish ctx found (if found (data-addr empty) (data-addr missing)))))
                (t (sumi_explorer_publish ctx 0 (data-addr invalid)))))
             ;; Snapshot once before returning to the loop. Later GUI/copy events

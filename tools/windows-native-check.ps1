@@ -189,10 +189,16 @@ try {
         'explorer/sumi-explorer-native.el', 'explorer/sumi-explorer.el',
         'tests/sumi-explorer-windows-test.el', 'tests/explorer-platform-windows-test.c',
         'tests/explorer-platform-metadata-test.c', 'tests/explorer-platform-zip-test.c',
-        'tools/windows-native-check.ps1', '.github/workflows/windows-native.yml'
+        'tools/windows-native-check.ps1', '.github/workflows/windows-native.yml', '.gitattributes'
     )
-    if ($sourcePaths.Count -ne 13 -or @($sourcePaths | Sort-Object -Unique).Count -ne 13) {
-        throw 'Native source manifest must contain exactly 13 distinct paths.'
+    if ($sourcePaths.Count -ne 14 -or @($sourcePaths | Sort-Object -Unique).Count -ne 14) {
+        throw 'Native source manifest must contain exactly 14 distinct paths.'
+    }
+    foreach ($sourcePath in $sourcePaths) {
+        $sourceBytes = [System.IO.File]::ReadAllBytes((Join-Path $root $sourcePath))
+        if ([System.Array]::IndexOf($sourceBytes, [byte]13) -ge 0) {
+            throw "Bound source contains CR bytes; LF checkout is required: $sourcePath"
+        }
     }
     Get-FileHash -LiteralPath $sourcePaths -Algorithm SHA256 |
         Export-Csv (Join-Path $output 'source-sha256.csv') -NoTypeInformation

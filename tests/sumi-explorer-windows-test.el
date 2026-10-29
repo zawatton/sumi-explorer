@@ -7,6 +7,7 @@
 (require 'sumi-explorer)
 
 (defvar sumi-explorer-windows-test--fixture-root nil)
+(defvar sumi-explorer-windows-test--native-buffer nil)
 (defconst sumi-explorer-windows-test--source-coding
   (list buffer-file-coding-system enable-multibyte-characters coding-system-for-read)
   "Source loading coding/buffer state for dependency diagnostics.")
@@ -98,6 +99,30 @@
     (should (cdr (assoc "id" group)))
     (cdr (assoc "id" group))))
 
+(defun sumi-explorer-windows-test--native-output-diagnostic ()
+  "Report only the owned host's final output on failure, within 8192 ASCII bytes."
+  (condition-case nil
+      (let* ((process sumi-explorer--owned-process)
+             (buffer (and (processp process) (process-buffer process))))
+        (if (and (eq process sumi-explorer--process)
+                 (buffer-live-p buffer)
+                 (eq buffer sumi-explorer-windows-test--native-buffer))
+            (with-current-buffer buffer
+              (let* ((tail (buffer-substring-no-properties (max (point-min) (- (point-max) 8192)) (point-max)))
+                     (encoded (mapconcat
+                               (lambda (character)
+                                 (cond ((= character ?\n) "\\n")
+                                       ((= character ?\r) "\\r")
+                                       ((= character ?\t) "\\t")
+                                       ((<= 32 character 126) (char-to-string character))
+                                       (t (format "\\u{%X}" character)))) tail "")))
+                ;; Escaping may expand Unicode; retain the ending within the
+                ;; byte budget rather than emitting a larger diagnostic.
+                (message "DIAG owned-native-tail escaped source-chars=%d: %s" (length tail)
+                         (substring encoded (max 0 (- (length encoded) 8000))))))
+          (message "DIAG owned-native-tail unavailable: no live test-owned output buffer")))
+    (error (message "DIAG owned-native-tail unavailable: inspection failed"))))
+
 (defmacro sumi-explorer-windows-test--session (&rest body)
   "Run BODY with one real Windows host and disposable ROOT directory."
   (declare (indent 0) (debug t))
@@ -106,6 +131,7 @@
      (let* ((binary (getenv "SUMI_EXPLORER_TEST_BIN"))
             (root (make-temp-file "sumi-windows-acceptance-" t))
             (sumi-explorer-windows-test--fixture-root root)
+            (sumi-explorer-windows-test--native-buffer nil)
             (process-environment (copy-sequence process-environment))
             (sumi-explorer--session-directory nil)
             (sumi-explorer--owned-session nil)
@@ -126,6 +152,9 @@
              (setenv "XDG_DATA_HOME" (expand-file-name "data" root))
              (setenv "SUMI_EXPLORER_SESSION" nil)
              (sumi-explorer-start root binary)
+             (setq sumi-explorer-windows-test--native-buffer
+                   (generate-new-buffer " *sumi-windows-native-output*"))
+             (set-process-buffer sumi-explorer--process sumi-explorer-windows-test--native-buffer)
              (should (process-live-p sumi-explorer--process))
              (should (file-equal-p root (cdr (assoc "directory" (sumi-explorer-state)))))
              ,@body
@@ -138,11 +167,14 @@
                (should-not sumi-explorer--session-directory)))
              ((error quit)
               (let ((inhibit-quit t))
+                (sumi-explorer-windows-test--native-output-diagnostic)
                 (sumi-explorer-windows-test--diagnostic "before-cleanup" root)
                 (condition-case nil (sumi-explorer-windows-test--dotnet-diagnostic) (error nil)))
               (signal (car failure) (cdr failure))))
          ;; Forced disposal is only failure cleanup for this owned test host.
          (sumi-explorer-stop t)
+         (when (buffer-live-p sumi-explorer-windows-test--native-buffer)
+           (kill-buffer sumi-explorer-windows-test--native-buffer))
          (delete-directory root t)))))
 
 (ert-deftest sumi-explorer-windows-zip-and-top-undo ()

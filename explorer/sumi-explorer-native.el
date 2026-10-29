@@ -27,6 +27,12 @@
  (data-blob zip_extract "zip-extract\0" rodata)
  (data-blob zip_failure "ZIP preflight, integrity, type, encryption, name or resource limit rejected\0" rodata)
  (data-blob zip_changed "Archive or source changed during ZIP processing\0" rodata)
+ (data-blob zip_trace_format "ZIP-DIAG stage=%.32s expected=%.256s actual=%.256s expected_type=%lld actual_type=%u frozen_size=%lld used=%lld last_read=%lld\n\0" rodata)
+ (data-blob zip_trace_null "<NULL>\0" rodata)
+ (data-blob zip_trace_path "path-before-open\0" rodata)
+ (data-blob zip_trace_stream_before "stream-before-read\0" rodata)
+ (data-blob zip_trace_stream_after "stream-after-read\0" rodata)
+ (data-blob zip_trace_count "read-count\0" rodata)
  (data-blob zip_snapshot_pattern "sumi-zip-input-XXXXXX\0" rodata)
  (data-blob zip_info_attrs "standard::name,standard::type,standard::size,id::file,id::filesystem,time::modified,time::modified-usec,etag::value\0" rodata)
  (data-blob zip_usec "time::modified-usec\0" rodata)
@@ -1621,6 +1627,13 @@
       (if parent (extern-call g_object_unref parent))
       (if (= good 0) (sumi_explorer_job_fail job (data-addr zip_failure))) good)))
 
+ ;; Diagnostic-only: one failed item stops the loop, so total output is bounded.
+ (defun sumi_explorer_zip_trace (job stage item actual kind used count)
+   (seq
+    (if (= (ptr-read-u64 job 32) 0) (extern-call g_printerr (data-addr zip_trace_format) stage
+      (if (ptr-read-u64 item 32) (ptr-read-u64 item 32) (data-addr zip_trace_null))
+      (if actual actual (data-addr zip_trace_null)) (ptr-read-u64 item 16) kind
+      (ptr-read-u64 item 24) used count)) 0))
  (defun sumi_explorer_zip_create_pass (job)
    (let ((writer (extern-call archive_write_new)) (i 0) (item 0) (entry 0) (file 0) (input 0) (info 0) (finger 0)
          (count 0) (used 0) (good 1) (status 0))
@@ -1646,7 +1659,8 @@
          (if (= info 0) (setq good 0)
            (seq
             (setq finger (sumi_explorer_zip_fingerprint job info))
-            (if (or (= (sumi_explorer_same finger (ptr-read-u64 item 32)) 0) (= (= (extern-call g_file_info_get_file_type info) (ptr-read-u64 item 16)) 0)) (setq good 0))
+            (if (or (= (sumi_explorer_same finger (ptr-read-u64 item 32)) 0) (= (= (extern-call g_file_info_get_file_type info) (ptr-read-u64 item 16)) 0))
+              (seq (sumi_explorer_zip_trace job (data-addr zip_trace_path) item finger (extern-call g_file_info_get_file_type info) used count) (setq good 0)))
             (extern-call g_free finger) (extern-call g_object_unref info)))
          (if (and good (= (ptr-read-u64 item 16) 1))
            (seq
@@ -1656,7 +1670,8 @@
                (setq info (extern-call g_file_input_stream_query_info input (data-addr zip_info_attrs) (ptr-read-u64 job 24) (+ job 32)))
                (if (= info 0) (setq good 0)
                  (seq (setq finger (sumi_explorer_zip_fingerprint job info))
-                      (if (= (sumi_explorer_same finger (ptr-read-u64 item 32)) 0) (setq good 0))
+                      (if (= (sumi_explorer_same finger (ptr-read-u64 item 32)) 0)
+                        (seq (sumi_explorer_zip_trace job (data-addr zip_trace_stream_before) item finger (extern-call g_file_info_get_file_type info) used count) (setq good 0)))
                       (extern-call g_free finger) (extern-call g_object_unref info)))))))
          (if good
            (seq
@@ -1677,13 +1692,15 @@
                (if (or (> used (ptr-read-u64 item 24)) (> (ptr-read-u64 job 184) 4294967296)) (setq good 0)
                  (if (= (= (extern-call archive_write_data writer (ptr-read-u64 job 200) count) count) 0) (setq good (sumi_explorer_zip_error job writer))))
                (if good (setq count (extern-call g_input_stream_read input (ptr-read-u64 job 200) 65536 (ptr-read-u64 job 24) (+ job 32))))))
-            (if (or (< count 0) (= (= used (ptr-read-u64 item 24)) 0)) (setq good 0))
+            (if (or (< count 0) (= (= used (ptr-read-u64 item 24)) 0))
+              (seq (sumi_explorer_zip_trace job (data-addr zip_trace_count) item 0 0 used count) (setq good 0)))
             (if good
               (seq
                (setq info (extern-call g_file_input_stream_query_info input (data-addr zip_info_attrs) (ptr-read-u64 job 24) (+ job 32)))
                (if (= info 0) (setq good 0)
                  (seq (setq finger (sumi_explorer_zip_fingerprint job info))
-                      (if (= (sumi_explorer_same finger (ptr-read-u64 item 32)) 0) (setq good 0))
+                      (if (= (sumi_explorer_same finger (ptr-read-u64 item 32)) 0)
+                        (seq (sumi_explorer_zip_trace job (data-addr zip_trace_stream_after) item finger (extern-call g_file_info_get_file_type info) used count) (setq good 0)))
                       (extern-call g_free finger) (extern-call g_object_unref info)))))))
          (if input (seq (extern-call g_input_stream_close input 0 0) (extern-call g_object_unref input) (setq input 0)))
          (extern-call g_object_unref file)

@@ -279,6 +279,52 @@ static void log_wide_path(const char *label, const WCHAR *path)
            (unsigned long long)wcslen(path), converted ? utf8 : "<conversion failed>");
 }
 
+static void probe_shell_separators(const char *native_path)
+{
+    char *forward = g_strdup(native_path), *canonical = NULL;
+    GFile *file = NULL;
+    PIDLIST_ABSOLUTE objects[3] = {NULL, NULL, NULL};
+    gunichar2 *wide[3] = {NULL, NULL, NULL};
+    SFGAOF attributes[3] = {0, 0, 0};
+    HRESULT parsed[3] = {E_INVALIDARG, E_INVALIDARG, E_INVALIDARG};
+    const char *labels[] = {"native", "raw-forward", "gio-canonical-forward"};
+    CHECK(forward != NULL, "allocate owned Unicode separator probe alias");
+    if (!forward) return;
+    for (char *cursor = forward; *cursor; ++cursor) if (*cursor == '\\') *cursor = '/';
+    file = g_file_new_for_path(forward);
+    if (file) canonical = g_file_get_path(file);
+    CHECK(canonical != NULL && file && g_file_query_exists(file, NULL),
+          "GIO forward-slash Unicode alias names the existing fixture");
+    const char *inputs[] = {native_path, forward, canonical};
+    HRESULT initialized = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    CHECK(SUCCEEDED(initialized), "initialize real COM separator probe apartment");
+    if (FAILED(initialized)) goto done;
+    for (unsigned i = 0; i < 3; ++i) {
+        if (inputs[i]) wide[i] = g_utf8_to_utf16(inputs[i], -1, NULL, NULL, NULL);
+        if (wide[i]) {
+            log_wide_path(labels[i], (LPCWSTR)wide[i]);
+            parsed[i] = SHParseDisplayName((LPCWSTR)wide[i], NULL, &objects[i],
+                SFGAO_FILESYSTEM, &attributes[i]);
+        }
+        BOOL same = SUCCEEDED(parsed[0]) && SUCCEEDED(parsed[i]) && objects[0] && objects[i] &&
+            ILIsEqual(objects[0], objects[i]);
+        printf("DIAG Shell separator form=%s hresult=0x%08lx attributes=0x%08lx pidl_present=%d same_native_pidl=%d\n",
+               labels[i], (unsigned long)parsed[i], (unsigned long)attributes[i], objects[i] != NULL, same);
+    }
+    CHECK(SUCCEEDED(parsed[0]) && objects[0] && (attributes[0] & SFGAO_FILESYSTEM),
+          "native Unicode Shell parsing resolves a filesystem PIDL");
+    CHECK(SUCCEEDED(parsed[2]) && objects[2] && (attributes[2] & SFGAO_FILESYSTEM) &&
+          objects[0] && ILIsEqual(objects[0], objects[2]),
+          "GIO-canonical forward Unicode alias resolves the same real Shell PIDL");
+    /* Raw-forward parsing is observational until this Windows run proves the
+     * cause. Do not turn the existing native Cancel/Copy checks into guesses. */
+done:
+    for (unsigned i = 0; i < 3; ++i) { CoTaskMemFree(objects[i]); g_free(wide[i]); }
+    if (SUCCEEDED(initialized)) CoUninitialize();
+    if (file) g_object_unref(file);
+    g_free(canonical); g_free(forward);
+}
+
 /* A Shell clipboard provider can complete work through its own thread windows.
  * Pump only this test thread's messages and dispatch only its process windows.
  * The caller retains the original five-second observation deadline. */
@@ -452,6 +498,8 @@ int main(int argc, char **argv)
         g_free(roundtrip); g_object_unref(gio);
     }
     const char *frozen[] = {paths[0], paths[1]};
+    probe_shell_separators(paths[0]);
+    probe_shell_separators(paths[1]);
     const char *duplicates[] = {paths[0], paths[0]};
     test_error(duplicates, 2, "duplicate frozen paths rejected");
     char *absent = g_strdup_printf("%s.missing", paths[0]);

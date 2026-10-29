@@ -29,9 +29,13 @@ Outbound DND exports every selected path; the receiver owns its operation.
 
 * Desktop layout
 
-Tabs stay above the navigation and command bars. Use the left pane for Home
-and bookmarks, and the central pane for files. The address field opens a typed
-directory; the separate filter matches names in the current folder only.
+Tabs stay above the navigation and command bars. Use the left pane for Home,
+existing standard folders and bookmarks, and the central pane for files.
+Click a breadcrumb ancestor to navigate. =Edit location= or =Ctrl+L= opens the
+address entry; =Enter= navigates and =Esc= restores the current folder. The
+separate filter matches names in the current folder only. Standard folders use
+the OS-configured locations and omit missing or repeated destinations; see the
+[[file:docs/folder-navigation.md][folder navigation contract]].
 
 The command bar groups everyday actions. =Sort= and =View= contain presentation
 settings; =More= contains less frequent operations. Clipboard =Copy= / =Cut=
@@ -40,7 +44,7 @@ followed by =Paste= uses the current destination folder. =Copy to...= and
 archive actions request their inputs when needed. The bottom status area keeps
 operation feedback and cancellation together.
 
-[[file:docs/images/explorer-redesign.png]]
+[[file:docs/images/explorer-navigation.png]]
 
 * Build and run
 
@@ -303,6 +307,20 @@ Layout-record verification checks the retained local binary, logs and screenshot
 it does not rerun the GUI. Regenerate that record in a fresh checkout before
 using it for local progress measurement. See the [[file:docs/explorer-redesign.md][interaction contract]].
 
+The separate folder-navigation suite checks breadcrumbs, address editing,
+history/tabs, configured and omitted standard folders, and a file workflow:
+
+#+begin_src sh
+  (ulimit -v 8388608; xvfb-run -a -s '-screen 0 2200x1200x24' dbus-run-session -- \
+    python3 tests/explorer-navigation-test.py --binary target/sumi-explorer --artifacts target/navigation-local)
+  (ulimit -v 8388608; python3 tests/explorer-navigation-test.py \
+    --verify target/navigation-local/navigation-validation.json)
+#+end_src
+
+Its receipt also requires retained local artifacts. Native Windows CI checks
+build and existing provider/application behavior; it does not establish the new
+breadcrumb interactions on Windows or application runtime on macOS.
+
 The helper works from any current directory, downloads nothing, caps its children
 at 8 GiB, and fails on missing dependencies. =client= runs warning-as-error byte
 compilation and client ERT without GTK/a binary. =native= runs all native suites;
@@ -369,11 +387,14 @@ native binary, actual LF source bytes and suite/log hashes.
 The source set includes =.gitattributes= and the workflow; the native driver
 rejects CR bytes before hashing. It does not normalize the tested sources.
 
-=docs/clean-validation.json= records a fresh anonymous public clone of main
-=b9ea315cb5e743177d7fdf7533b07db06b7b918f=, a separately fetched public compiler
+=docs/clean-validation.json= retains the earlier anonymous public clone of main
+=5f0af72d7c9e0f677d07e5102f0d8c53a15b2a85=, a separately fetched public compiler
 at the pinned revision, a clean build and the complete helper: 220 defined Linux
 checks passed. GTK/system tools and the isolated libarchive SDK remain build
-dependencies. Check this receipt with
-=python3 tools/verify-validation.py --record docs/clean-validation.json=.
+dependencies. This receipt predates folder navigation; its source-binding check
+deliberately rejects the changed current sources. The current local Linux run is
+=docs/validation.json=. Inspect the earlier receipt with
+=python3 tools/verify-validation.py --record docs/clean-validation.json= in the
+matching historical source checkout.
 
 The historical-record verifier requires Python 3.9 or newer.

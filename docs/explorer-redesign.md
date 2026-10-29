@@ -13,9 +13,9 @@ Primary references:
 ## Layout contract
 
 1. Put a compact tab strip at the top, with the active folder and a new-tab affordance. Tab actions must remain accessible from the overflow menu or the tab strip.
-2. Place Back, Forward, Up and Refresh together beside an expanding editable address field. Keep the current-folder filter separate and label its limited scope honestly; do not imply recursive search.
+2. Place Back, Forward, Up and Refresh together beside an expanding address region. The [folder navigation increment](folder-navigation.md) uses clickable breadcrumbs by default and reveals the editable address with `Edit location` or Ctrl+L. Keep the current-folder filter separate and label its limited scope honestly; do not imply recursive search.
 3. Put common file actions on a compact command bar: New folder, Cut, Copy, Paste, Rename, Trash, Undo. Use coherent symbolic icons, tooltips and accessible names. Group infrequent commands under Sort, View and More popovers rather than displaying every control continuously.
-4. Put Home and real existing bookmarks in a left navigation pane. Distinguish navigation from view controls. Do not display fictional drives, cloud services, or unsupported actions.
+4. Put Home, existing OS-configured standard folders and real existing bookmarks in a left navigation pane. Distinguish navigation from view controls. Do not display fictional drives, cloud services, or unsupported actions.
 5. Give the central file list the remaining width and height, with consistent row spacing and selection feedback. Keep the status/error and progress region unobtrusive at the bottom.
 6. Remove the permanently visible destination entry and duplicated bottom operation buttons. Show operation-specific modal or popover input for exact-path Copy/Move, Rename, New folder and ZIP actions. Preserve confirmation, frozen selection, async cancellation and non-overwrite semantics.
 7. All existing operations must remain available, including Properties, Permissions, native Shell menu, ZIP create/extract, Undo, bookmarks, presentation controls, new/close tab and new window. Keep Emacs and data-only protocol behavior unchanged.

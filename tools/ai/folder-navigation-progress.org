@@ -1,0 +1,37 @@
+#+TITLE: Sumi Explorer clickable folder navigation
+#+NOTE: Nine newly defined criteria. Historical design and platform limitations remain separate.
+
+* S1 Breadcrumb and address navigation
+
+** S1.1 Clickable ancestors navigate through the real GUI
+cmd: python3 tests/explorer-navigation-test.py --verify docs/navigation-validation.json --check breadcrumbs
+
+** S1.2 Address edit entry shortcuts cancellation and failure work
+cmd: python3 tests/explorer-navigation-test.py --verify docs/navigation-validation.json --check address
+
+** S1.3 Real GUI history tabs and long paths remain usable
+cmd: python3 tests/explorer-navigation-test.py --verify docs/navigation-validation.json --check workspace
+
+* S2 Sidebar and regression
+
+** S2.1 Existing configured standard folders are navigable without invented paths
+cmd: python3 tests/explorer-navigation-test.py --verify docs/navigation-validation.json --check folders
+
+** S2.2 Absent aliases and repeated standard directories are omitted
+cmd: python3 tests/explorer-navigation-test.py --verify docs/navigation-validation.json --check omissions
+
+** S2.3 Existing Linux and design suites plus a navigation file workflow pass
+cmd: python3 tools/verify-validation.py
+cmd: python3 tests/explorer-design-test.py --verify docs/design-validation.json
+cmd: python3 tests/explorer-navigation-test.py --verify docs/navigation-validation.json --check workflow
+
+* S3 Integration and delivery
+
+** S3.1 Actual Windows build and native behavior checks pass on current sources
+cmd: python3 tools/verify-windows-validation.py
+
+** S3.2 Independent completion audit accepts the source-bound implementation
+cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/navigation-review.json")); assert r["status"]=="accepted-for-delivery" and all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in r["sources"].items())'
+
+** S3.3 Updated application is launched and visually reviewed on the desktop
+cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/navigation-desktop.json")); assert hashlib.sha256(Path("explorer/sumi-explorer-native.el").read_bytes()).hexdigest()==r["native_source_sha256"] and hashlib.sha256(Path(r["published_screenshot"]).read_bytes()).hexdigest()==r["published_screenshot_sha256"]'

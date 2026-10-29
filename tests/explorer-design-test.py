@@ -39,7 +39,7 @@ BASELINE_ASSERTIONS = {
     "tests/explorer-workspace-test.py": 44,
 }
 COMMON = ["New folder", "Cut", "Copy", "Paste", "Rename", "Trash", "Undo", "Sort", "View", "More"]
-NAV = ["Back", "Forward", "Up", "Refresh", "Location", "Filter current folder"]
+NAV = ["Back", "Forward", "Up", "Refresh", "Edit location", "Filter current folder"]
 
 
 def digest(path):
@@ -164,6 +164,7 @@ class DesignRun:
         return parser
 
     def address(self, path):
+        self.key("ctrl+l")
         self.ui.click("Location", "text"); self.text(path); self.key("Return")
         self.wait(lambda: self.session.state()["directory"] == str(path), "Address navigation")
 
@@ -248,7 +249,7 @@ class DesignRun:
         require(home[0]+home[2] < row[0] and home[1] > command_rects[0][1], "Home must occupy the left navigation pane")
         self.check("sidebar")
         texts = [n for n in self.ui.nodes() if n.get_role_name() == "text" and n.get_state_set().contains(self.ui.api.StateType.SHOWING)]
-        require(len(texts) == 2 and {n.get_name() for n in texts} == {"Location", "Filter current folder"}, "Permanent destination/extra editor remains")
+        require(len(texts) == 1 and {n.get_name() for n in texts} == {"Filter current folder"}, "Permanent destination/extra editor remains")
         self.check("no-permanent-destination")
 
     def actions(self):

@@ -170,11 +170,11 @@ def run(args):
             gui.xdo("key", "ctrl+l")
             gui.xdo("key", "ctrl+a")
             gui.xdo("type", "--clearmodifiers", "--", str(a))
-            gui.xdo("key", "Return")
-            wait(lambda: session.state()["directory"] == str(a), "Ctrl+L editable location")
             # Editing shortcuts must not create/close tabs while entry owns focus.
             gui.xdo("key", "ctrl+w")
             assert len(workspace()[1]) == 2
+            gui.xdo("key", "Return")
+            wait(lambda: session.state()["directory"] == str(a), "Ctrl+L editable location")
             session.ui().row_click(a / "keyboard-row")
             gui.xdo("key", "alt+Left")
             wait(lambda: session.state()["directory"] == str(root), "Alt+Left")

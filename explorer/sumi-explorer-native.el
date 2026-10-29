@@ -27,6 +27,8 @@
 ;; Common action buttons Copy80 Cut88 Paste96 Rename104 New-folder112
 ;; Trash120 Undo128; exact-target menu buttons Copy136 Move144; prompt-error152.
 ;; Existing context offsets and worker/provider ownership are unchanged.
+;; Navigation widgets are borrowed sibling references on the Location entry;
+;; breadcrumb/sidebar buttons own their destination strings through GObject data.
 (seq
  (data-blob ui_class "sumi-explorer\0" rodata)
  (data-blob nav_class "sumi-nav\0" rodata)
@@ -39,6 +41,25 @@
  (data-blob active_class "suggested-action\0" rodata)
  (data-blob ui_css ".sumi-explorer .sumi-nav, .sumi-explorer .sumi-commands, .sumi-explorer .sumi-tabs { padding: 5px 10px; border-bottom: 1px solid alpha(@theme_fg_color,0.12); } .sumi-explorer button { min-height: 24px; padding: 4px 8px; } .sumi-explorer .sumi-tabs button { padding: 4px 12px; } .sumi-explorer .sumi-sidebar { padding: 12px 8px; border-right: 1px solid alpha(@theme_fg_color,0.12); background: alpha(@theme_fg_color,0.025); } .sumi-explorer .sumi-sidebar button { border: none; box-shadow: none; background: transparent; } .sumi-explorer list row { min-height: 32px; padding: 0 10px; } .sumi-explorer .sumi-status { padding: 4px 12px; border-top: 1px solid alpha(@theme_fg_color,0.12); } .sumi-dialog { padding: 18px; } .sumi-explorer popover box { padding: 4px; }\0" rodata)
  (data-blob location_label "Location\0" rodata)
+ (data-blob edit_location_label "Edit location\0" rodata)
+ (data-blob breadcrumb_label "Folder ancestry\0" rodata)
+ (data-blob breadcrumb_separator "›\0" rodata)
+ (data-blob location_stack_key "sumi-location-stack\0" rodata)
+ (data-blob breadcrumb_box_key "sumi-breadcrumb-box\0" rodata)
+ (data-blob breadcrumb_scroll_key "sumi-breadcrumb-scroll\0" rodata)
+ (data-blob adjustment_changed "changed\0" rodata)
+ (data-blob desktop_label "Desktop\0" rodata)
+ (data-blob documents_label "Documents\0" rodata)
+ (data-blob downloads_label "Downloads\0" rodata)
+ (data-blob pictures_label "Pictures\0" rodata)
+ (data-blob music_label "Music\0" rodata)
+ (data-blob videos_label "Videos\0" rodata)
+ (data-blob icon_desktop "user-desktop-symbolic\0" rodata)
+ (data-blob icon_documents "folder-documents-symbolic\0" rodata)
+ (data-blob icon_downloads "folder-download-symbolic\0" rodata)
+ (data-blob icon_pictures "folder-pictures-symbolic\0" rodata)
+ (data-blob icon_music "folder-music-symbolic\0" rodata)
+ (data-blob icon_videos "folder-videos-symbolic\0" rodata)
  (data-blob filter_label "Filter current folder\0" rodata)
  (data-blob sort_label "Sort\0" rodata)
  (data-blob view_label "View\0" rodata)
@@ -753,7 +774,11 @@
                          (extern-call gtk_widget_is_ancestor focus (ptr-read-u64 ctx 200)))))
       (cond
        ((and (= (= (logand state 4) 0) 0) (or (= keyval 108) (= keyval 76)))
-        (seq (extern-call gtk_widget_grab_focus (ptr-read-u64 ctx 24)) (extern-call gtk_editable_select_region (ptr-read-u64 ctx 24) 0 -1) 1))
+        (seq (sumi_explorer_location_edit 0 ctx) 1))
+       ((and (= keyval 65307)
+             (extern-call g_object_get_data (ptr-read-u64 ctx 24) (data-addr location_stack_key))
+             (= (extern-call gtk_stack_get_visible_child (extern-call g_object_get_data (ptr-read-u64 ctx 24) (data-addr location_stack_key))) (ptr-read-u64 ctx 24)))
+        (seq (sumi_explorer_location_cancel ctx) 1))
        ((and (= (= (logand state 4) 0) 0) (or (= keyval 65289) (= keyval 65056)))
         (seq
          (setq index (+ (ptr-read-u64 ctx 360) (if (= (= (logand state 1) 0) 0) -1 1)))
@@ -3195,12 +3220,153 @@
          (extern-call gtk_check_button_set_active (ptr-read-u64 ctx 528) (ptr-read-u64 tab 88))
          (ptr-write-u64 ctx 544 0))) 0)))
 
+ ;; Navigation can rebuild and destroy the emitting breadcrumb. Own the target
+ ;; before entering the shared busy/history path and never read the widget again.
+ (defun sumi_explorer_destination_clicked (widget ctx)
+   (let ((path (extern-call g_strdup (extern-call g_object_get_data widget (data-addr identity)))))
+     (seq (sumi_explorer_navigate ctx path) (extern-call g_free path) 0)))
+
+ (defun sumi_explorer_location_edit (widget ctx)
+   (let ((entry (ptr-read-u64 ctx 24)) (stack 0))
+     (seq
+      (setq stack (extern-call g_object_get_data entry (data-addr location_stack_key)))
+      (if stack (extern-call gtk_stack_set_visible_child stack entry))
+      (extern-call gtk_widget_grab_focus entry)
+      (extern-call gtk_editable_select_region entry 0 -1) 0)))
+
+ (defun sumi_explorer_location_cancel (ctx)
+   (let ((entry (ptr-read-u64 ctx 24)) (stack 0) (scroll 0))
+     (seq
+      (setq stack (extern-call g_object_get_data entry (data-addr location_stack_key)))
+      (setq scroll (extern-call g_object_get_data entry (data-addr breadcrumb_scroll_key)))
+      (extern-call gtk_editable_set_text entry (ptr-read-u64 ctx 40))
+      (if (and stack scroll)
+        (seq
+         (extern-call gtk_stack_set_visible_child stack scroll)
+         (sumi_explorer_breadcrumb_changed (extern-call gtk_scrolled_window_get_hadjustment scroll) 0)))
+      (extern-call gtk_widget_grab_focus (ptr-read-u64 ctx 16)) 0)))
+
+ ;; GTK clamps this value to upper-page-size. Defer until GTK has finished
+ ;; configuring layout; changing the value inside changed can be overwritten.
+ (defun sumi_explorer_breadcrumb_scroll (adjustment)
+   (seq
+    (extern-call gtk_adjustment_set_value adjustment (:f64 1.0e20)) 0))
+
+ (defun sumi_explorer_breadcrumb_changed (adjustment unused)
+   (seq
+    (extern-call g_idle_add_full 200 (addr-of sumi_explorer_breadcrumb_scroll) (extern-call g_object_ref adjustment) (addr-of sumi_explorer_unref)) 0))
+
+ ;; Called only after a successful directory render, including tabs, history,
+ ;; presentation changes and refresh. Extracted fixtures may have no address UI.
+ (defun sumi_explorer_breadcrumbs (ctx)
+   (let ((entry (ptr-read-u64 ctx 24)) (box 0) (stack 0) (scroll 0)
+         (file 0) (parent 0) (path 0) (base 0) (button 0) (label 0))
+     (seq
+      (setq box (extern-call g_object_get_data entry (data-addr breadcrumb_box_key)))
+      (if box
+        (seq
+         (setq button (extern-call gtk_widget_get_first_child box))
+         (while button
+           (seq (extern-call gtk_box_remove box button) (setq button (extern-call gtk_widget_get_first_child box))))
+         (setq file (extern-call g_file_new_for_path (ptr-read-u64 ctx 40)))
+         (while file
+           (seq
+            (setq parent (extern-call g_file_get_parent file))
+            (setq path (extern-call g_file_get_path file))
+            (setq base (if parent (extern-call g_file_get_basename file) (extern-call g_strdup path)))
+            (setq button (extern-call gtk_button_new_with_label base))
+            (sumi_explorer_ui_name button base)
+            (extern-call gtk_widget_set_tooltip_text button path)
+            (extern-call g_object_set_data_full button (data-addr identity) path (addr-of sumi_explorer_free_path))
+            (setq label (extern-call gtk_button_get_child button))
+            (extern-call gtk_label_set_ellipsize label 3)
+            (extern-call gtk_label_set_max_width_chars label 18)
+            (extern-call g_signal_connect_data button (data-addr clicked) (addr-of sumi_explorer_destination_clicked) ctx 0 0)
+            (if (extern-call gtk_widget_get_first_child box)
+              (extern-call gtk_box_prepend box (extern-call gtk_label_new (data-addr breadcrumb_separator))))
+            (extern-call gtk_box_prepend box button)
+            (extern-call g_free base) (extern-call g_object_unref file) (setq file parent)))
+         (setq stack (extern-call g_object_get_data entry (data-addr location_stack_key)))
+         (setq scroll (extern-call g_object_get_data entry (data-addr breadcrumb_scroll_key)))
+         (extern-call gtk_stack_set_visible_child stack scroll)
+         (sumi_explorer_breadcrumb_changed (extern-call gtk_scrolled_window_get_hadjustment scroll) 0))) 0)))
+
+ (defun sumi_explorer_location_ui (ctx)
+   (let ((box (extern-call gtk_box_new 0 3)) (stack (extern-call gtk_stack_new))
+         (scroll (extern-call gtk_scrolled_window_new)) (crumbs (extern-call gtk_box_new 0 2))
+         (viewport (extern-call gtk_viewport_new 0 0))
+         (entry (ptr-read-u64 ctx 24)) (button (extern-call gtk_button_new)))
+     (seq
+      (extern-call gtk_widget_set_hexpand box 1)
+      (extern-call gtk_widget_set_hexpand stack 1)
+      (extern-call gtk_stack_set_hhomogeneous stack 0)
+      (extern-call gtk_stack_set_vhomogeneous stack 0)
+      (extern-call gtk_scrolled_window_set_policy scroll 1 2)
+      (extern-call gtk_scrolled_window_set_propagate_natural_width scroll 0)
+      (extern-call gtk_scrolled_window_set_min_content_width scroll 0)
+      (sumi_explorer_ui_name scroll (data-addr breadcrumb_label))
+      ;; Keep each bounded label at its natural width rather than compressing
+      ;; all ancestors to their ellipsis minimum when the ancestry is deep.
+      (extern-call gtk_scrollable_set_hscroll_policy viewport 1)
+      (extern-call gtk_viewport_set_child viewport crumbs)
+      (extern-call gtk_scrolled_window_set_child scroll viewport)
+      (extern-call g_signal_connect_data (extern-call gtk_scrolled_window_get_hadjustment scroll) (data-addr adjustment_changed) (addr-of sumi_explorer_breadcrumb_changed) 0 0 0)
+      (extern-call gtk_stack_add_child stack scroll)
+      (extern-call gtk_widget_set_hexpand entry 1)
+      (extern-call gtk_editable_set_width_chars entry 12)
+      (extern-call gtk_editable_set_max_width_chars entry 12)
+      (sumi_explorer_ui_name entry (data-addr location_label))
+      (extern-call gtk_stack_add_child stack entry)
+      (extern-call gtk_stack_set_visible_child stack scroll)
+      (extern-call g_object_set_data entry (data-addr location_stack_key) stack)
+      (extern-call g_object_set_data entry (data-addr breadcrumb_box_key) crumbs)
+      (extern-call g_object_set_data entry (data-addr breadcrumb_scroll_key) scroll)
+      (extern-call gtk_box_append box stack)
+      (sumi_explorer_ui_icon button (data-addr edit_location_label) (data-addr icon_rename) 0)
+      (extern-call g_signal_connect_data button (data-addr clicked) (addr-of sumi_explorer_location_edit) ctx 0 0)
+      (extern-call gtk_box_append box button) box)))
+
+ ;; GLib owns the nullable special-directory string. The seen array temporarily
+ ;; owns GFiles, including Home, so normalized aliases and repeated paths vanish.
+ (defun sumi_explorer_special_folder (ctx box seen id text icon)
+   (let ((path (extern-call g_get_user_special_dir id)) (file 0) (other 0) (i 0) (duplicate 0) (button 0))
+     (seq
+      (if path
+        (seq
+         (setq file (extern-call g_file_new_for_path path))
+         (if (= (extern-call g_file_query_file_type file 0 0) 2)
+           (seq
+            (while (< i (ptr-read-u32 seen 8))
+              (seq
+               (setq other (ptr-read-u64 (ptr-read-u64 seen 0) (* i 8)))
+               (if (extern-call g_file_equal file other) (setq duplicate 1))
+               (setq i (+ i 1))))
+            (if (= duplicate 0)
+              (seq
+               (setq button (extern-call gtk_button_new))
+               (sumi_explorer_ui_icon button text icon 1)
+               (extern-call gtk_widget_set_tooltip_text button path)
+               (extern-call g_object_set_data_full button (data-addr identity) (extern-call g_strdup path) (addr-of sumi_explorer_free_path))
+               (extern-call g_signal_connect_data button (data-addr clicked) (addr-of sumi_explorer_destination_clicked) ctx 0 0)
+               (extern-call gtk_box_append box button)
+               (extern-call g_ptr_array_add seen file) (setq file 0)))))
+         (if file (extern-call g_object_unref file)))) 0)))
+
  (defun sumi_explorer_sidebar (ctx)
-   (let ((box (extern-call gtk_box_new 1 6)) (scroll 0))
+   (let ((box (extern-call gtk_box_new 1 6)) (scroll 0)
+         (seen (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_unref))))
      (seq
       (extern-call gtk_widget_set_size_request box 192 -1)
       (extern-call gtk_widget_add_css_class box (data-addr sidebar_class))
       (sumi_explorer_ui_workspace box (data-addr home_label) (data-addr icon_home) 7 ctx 1)
+      (extern-call g_ptr_array_add seen (extern-call g_file_new_for_path (extern-call g_get_home_dir)))
+      (sumi_explorer_special_folder ctx box seen 0 (data-addr desktop_label) (data-addr icon_desktop))
+      (sumi_explorer_special_folder ctx box seen 1 (data-addr documents_label) (data-addr icon_documents))
+      (sumi_explorer_special_folder ctx box seen 2 (data-addr downloads_label) (data-addr icon_downloads))
+      (sumi_explorer_special_folder ctx box seen 4 (data-addr pictures_label) (data-addr icon_pictures))
+      (sumi_explorer_special_folder ctx box seen 3 (data-addr music_label) (data-addr icon_music))
+      (sumi_explorer_special_folder ctx box seen 7 (data-addr videos_label) (data-addr icon_videos))
+      (extern-call g_ptr_array_unref seen)
       (extern-call gtk_box_append box (extern-call gtk_separator_new 0))
       (extern-call gtk_box_append box (extern-call gtk_label_new (data-addr bookmarks_label)))
       (ptr-write-u64 ctx 536 (extern-call gtk_box_new 1 3))
@@ -3490,6 +3656,7 @@
                (setq i (+ i 1))))
             (ptr-write-u64 ctx 80 0)
             (ptr-write-u64 ctx 384 1)
+            (sumi_explorer_breadcrumbs ctx)
             ;; The workspace owner commits history/tab identity before exposing
             ;; successful state. Do not publish a transient new directory here.
             (if (= (ptr-read-u64 ctx 376) 0) (sumi_explorer_publish ctx 1 (data-addr empty)))))))
@@ -3529,7 +3696,11 @@
      (seq (sumi_explorer_navigate_mode ctx path 1 0) (extern-call g_free path) 0)))
 
  (defun sumi_explorer_entry_activate (widget ctx)
-   (sumi_explorer_navigate ctx (extern-call gtk_editable_get_text widget)))
+   (let ((stack (extern-call g_object_get_data widget (data-addr location_stack_key))))
+     (seq
+      (sumi_explorer_navigate ctx (extern-call gtk_editable_get_text widget))
+      (if (and stack (= (= (extern-call gtk_stack_get_visible_child stack) widget) 0))
+        (extern-call gtk_widget_grab_focus (ptr-read-u64 ctx 16))) 0)))
 
  (defun sumi_explorer_show_properties (widget ctx)
    (sumi_explorer_properties_path ctx (ptr-read-u64 ctx 48)))
@@ -4401,10 +4572,7 @@
         (sumi_explorer_ui_icon button (data-addr refresh_label) (data-addr icon_refresh) 0)
         (extern-call g_signal_connect_data button (data-addr clicked) (addr-of sumi_explorer_do_refresh) ctx 0 0)
         (extern-call gtk_box_append bar button)
-        (extern-call gtk_widget_set_hexpand (ptr-read-u64 ctx 24) 1)
-        (extern-call gtk_editable_set_width_chars (ptr-read-u64 ctx 24) 12)
-        (sumi_explorer_ui_name (ptr-read-u64 ctx 24) (data-addr location_label))
-        (extern-call gtk_box_append bar (ptr-read-u64 ctx 24))
+        (extern-call gtk_box_append bar (sumi_explorer_location_ui ctx))
         (ptr-write-u64 ctx 496 (extern-call gtk_entry_new))
         (extern-call gtk_editable_set_width_chars (ptr-read-u64 ctx 496) 20)
         (sumi_explorer_ui_name (ptr-read-u64 ctx 496) (data-addr filter_label))

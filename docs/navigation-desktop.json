@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "platform": "Linux X11",
+  "binary_sha256": "c1c3c65c4f344ce08c1b3519e991d87494414fa86896b5427877929019d47793",
+  "native_source_sha256": "0584904ed166d0e7e23dca33ae88c2f02478277ce92ae84edc49205dd2fc69f5",
+  "visible_window_title": "Sumi Explorer",
+  "observed_state": "[Explorer]\nversion=1\nrequest=0\nstatus=ok\ndirectory=/home/madblack-21/Cowork/Notes/dev/sumi-explorer\nselected=\nmessage=\n",
+  "application_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "desktop_screenshot_sha256": "d55795bcbcb2de6600a3fba461d1e098e907a293929bce0a4c402f58e242a8fe",
+  "published_screenshot": "docs/images/explorer-navigation.png",
+  "published_screenshot_sha256": "d55795bcbcb2de6600a3fba461d1e098e907a293929bce0a4c402f58e242a8fe",
+  "scope": "Actual desktop startup, owned visible native window and screenshot inspection. This does not establish new Windows breadcrumb interaction or macOS runtime."
+}

@@ -562,13 +562,7 @@ char *sumi_explorer_platform_metadata_stamp(const char *path, char **error)
 #ifdef _WIN32
 #include <aclapi.h>
 #include <sddl.h>
-extern void *g_malloc0(uintptr_t);
-extern void *g_malloc(uintptr_t);
-extern char *g_strconcat(const char *, ...);
-extern const char *g_getenv(const char *);
-extern const char *g_get_user_state_dir(void);
-extern int g_mkdir_with_parents(const char *, int);
-extern char *g_uuid_string_random(void);
+/* platform.h imports the official GIO/GLib declarations, including dllimport. */
 typedef struct { char *path; HANDLE directory; PSID user; } JournalProfile;
 typedef struct { JournalProfile *profile; char *name; HANDLE lock; } JournalHandle;
 

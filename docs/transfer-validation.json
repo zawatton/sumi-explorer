@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "kind": "sumi-transfer-real",
+  "sources": {
+    "explorer/sumi-explorer-native.el": "d6ee68984584998dc993daac09217d621a87375c0a34018608be7aedabdeb563",
+    "explorer/sumi-explorer.el": "0a25dbd2a36869830afc63d60bd673e2924595f9180320242f8a309d9f394101",
+    "explorer/platform.c": "c39396a2a2279973295957cf71cb76f4888d49fcd33cd23f8658847b50732931",
+    "explorer/platform.h": "b9dd68e79926bb737742ff6bed16ec3984cd064092ddd43c8682a30669a32e5b",
+    "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
+    "tests/explorer-transfer-test.py": "3efbe6eaeb01c2c52a8bc5b1a91f3169d63221c93459076f9c7eec6ba0c8b057",
+    "tests/explorer-gui-test.py": "3a7e9a03a317f46adbc9390501a3d936c9302694de131f4c6b66cef156a582ed",
+    "tests/explorer-design-test.py": "eca38c2f35278e262c180926e8abdca2081746b8f67d77283195fcb3ebfddb6d",
+    "tests/explorer-navigation-test.py": "15e922795aa4563784d34d8333e0f73a51c241f14f64a44ee4d039e16b3498f4",
+    "tests/explorer-everyday-test.py": "9a1b7313c0828b2b164df27ace767887a909002f4113521afcea92e9c85c2a2d",
+    "tests/explorer-advanced-test.py": "f543092bb76a7b897cc46d935cce106efc948fd735000bad7e2307fa9dfc9743"
+  },
+  "binary": {
+    "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/sumi-explorer",
+    "sha256": "9e9c06a625198a73d116b5e719d68a7c98e574659a0199731e179f59e6019eae"
+  },
+  "groups": {
+    "conflicts": {
+      "status": "pass",
+      "checks": [
+        "replace-undo",
+        "merge-preserves",
+        "merge-replace-undo",
+        "skip",
+        "mismatch",
+        "self-descendant",
+        "symlink",
+        "hardlink-alias",
+        "move-merge-skip-retains",
+        "move-replace-undo",
+        "bounded-retention"
+      ],
+      "error": "",
+      "log": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/transfer/conflicts.jsonl",
+      "sha256": "6a1d1410e4dd73b2cd9b73af50549216e588bc7afb367b33e7ab637b148f5961"
+    },
+    "recovery": {
+      "status": "pass",
+      "checks": [
+        "restart-replacement-undo",
+        "restart-merge-undo",
+        "changed-backup-refused",
+        "changed-output-refused",
+        "unavailable-journal-refuses",
+        "interrupted-backup-retained"
+      ],
+      "error": "",
+      "log": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/transfer/recovery.jsonl",
+      "sha256": "96abefed508f930b0743e1d23e0d1aa050276f5ae699dfbdae5e60fe91aed922"
+    },
+    "workflow": {
+      "status": "pass",
+      "checks": [
+        "gui-policy-cancel",
+        "gui-replace-undo",
+        "emacs-transfer"
+      ],
+      "error": "",
+      "log": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/transfer/workflow.jsonl",
+      "sha256": "01c14be8754d5ee1859e951e27a5b368e7ef775ad554ace3a9e1997cef7c361d"
+    },
+    "move-success": {
+      "status": "pass",
+      "checks": [
+        "external-move-sender-cleanup",
+        "external-move-undo-restores-source"
+      ],
+      "error": "",
+      "log": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/transfer/move-success.jsonl",
+      "sha256": "129060a181b183de628116db08e391cbf76ec4400cc505e132da0c477cd2b680"
+    },
+    "move-failure": {
+      "status": "pass",
+      "checks": [
+        "external-collision-none",
+        "external-invalid-manifest-none",
+        "external-partial-cancel-none",
+        "external-partial-restart-undo",
+        "external-partial-eviction-cleanup",
+        "external-postcommit-cancel-restart-undo",
+        "external-retained-original-changed-refused",
+        "external-close-none"
+      ],
+      "error": "",
+      "log": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/transfer/move-failure.jsonl",
+      "sha256": "66f01591709d0c7194e2a6dc66870e02a41dd2b68b0297f2aec487195e9f69b6"
+    },
+    "move-workflow": {
+      "status": "pass",
+      "checks": [
+        "external-copy-default",
+        "external-move-restart-undo"
+      ],
+      "error": "",
+      "log": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/transfer/move-workflow.jsonl",
+      "sha256": "fe84d7ec5d235c312baf6ffa267a3a7076361ff325369cf00c30e6d385011d26"
+    },
+    "inverse-window": {
+      "status": "pass",
+      "checks": [
+        "destination-change-after-source-restore-refused",
+        "quarantine-race-retained-source-refused",
+        "negative-completed-decoder-refused"
+      ],
+      "error": "",
+      "log": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/transfer/inverse-window.jsonl",
+      "sha256": "f1c7c0e396bd1d9ea20e5e88fdc490d0235573791ddc4207f3aca27191e14b54"
+    },
+    "copy-links": {
+      "status": "pass",
+      "checks": [
+        "external-copy-link-manifest",
+        "external-move-link-manifest-none",
+        "external-copy-worker-close-none"
+      ],
+      "error": "",
+      "log": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/transfer/copy-links.jsonl",
+      "sha256": "aabc4c26988f4194a18ec856a098ff54c2188a6d0972f8661e21f2be73bbcfd9"
+    }
+  }
+}

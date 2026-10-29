@@ -1,3 +1,6 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 /* Native NTFS capability acceptance. Fault/omission controls still execute the
  * real adapter and real filesystem APIs; only the selected query is altered. */
 #include <stdio.h>

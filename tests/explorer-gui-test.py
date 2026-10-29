@@ -40,6 +40,7 @@ class Session:
         self.serial = 0
         self.log = (session / "host.log").open("wb")
         environment = dict(os.environ, GTK_A11Y="atspi", SUMI_EXPLORER_ROOT=str(root), SUMI_EXPLORER_SESSION=str(session))
+        environment.setdefault("SUMI_EXPLORER_UNDO_DIR", str(session / "undo-profile"))
         # A previous GUI inspection may have pinned another temporary bus.
         # GTK must discover the provider belonging to this child's session.
         environment.pop("AT_SPI_BUS_ADDRESS", None)
@@ -51,6 +52,9 @@ class Session:
         )
         try:
             self.wait(lambda state: state["request"] == "0")
+            # Initial state can precede X11 mapping. Return only after this
+            # process owns its visible main window, including under load.
+            xdo("search", "--sync", "--all", "--onlyvisible", "--pid", str(self.process.pid), "--name", "^Sumi Explorer$")
         except BaseException:
             self.stop()
             raise

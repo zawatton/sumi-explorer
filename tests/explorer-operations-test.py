@@ -255,15 +255,22 @@ def dnd_failure_checks(gui, binary, base, artifacts):
     try:
         windows = []
         for index, root in enumerate((source, target)):
-            previous = set(gui.xdo("search", "--name", "^Sumi Explorer$").splitlines())
             directory = base / f"dnd-session-{index}"
             directory.mkdir()
             peer = gui.Session(binary, root, directory)
             sessions.append(peer)
-            # GTK publishes initial state before mapping its native window.
+            # An unrelated window can disappear during X_QueryTree. Retry that
+            # transient failure, and identify this peer by PID rather than a
+            # global before/after window-set difference.
             def mapped():
-                found = set(gui.xdo("search", "--name", "^Sumi Explorer$").splitlines()) - previous
-                return next(iter(found)) if found else None
+                result = subprocess.run(
+                    ["xdotool", "search", "--all", "--onlyvisible", "--pid", str(peer.process.pid), "--name", "^Sumi Explorer$"],
+                    text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8)
+                if result.returncode == 1 and (not result.stderr.strip() or "BadWindow" in result.stderr):
+                    return None
+                result.check_returncode()
+                found = result.stdout.splitlines()
+                return found[-1] if found else None
             window = wait(mapped, "peer native window")
             windows.append(window)
             gui.xdo("windowsize", window, "1000", "700")

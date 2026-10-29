@@ -8,30 +8,30 @@
     "os": "linux",
     "architecture": "x86_64"
   },
-  "binary_sha256": "c1c3c65c4f344ce08c1b3519e991d87494414fa86896b5427877929019d47793",
+  "binary_sha256": "9e9c06a625198a73d116b5e719d68a7c98e574659a0199731e179f59e6019eae",
   "sources": {
     ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
     "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
     "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
     "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
-    "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
-    "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
-    "explorer/sumi-explorer-native.el": "0584904ed166d0e7e23dca33ae88c2f02478277ce92ae84edc49205dd2fc69f5",
-    "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
-    "tests/explorer-advanced-test.py": "c606a21981c5fe20c772d4e1f4b053972d6ca5b9c8ac5666627353ec9a3ee6e8",
+    "explorer/platform.c": "c39396a2a2279973295957cf71cb76f4888d49fcd33cd23f8658847b50732931",
+    "explorer/platform.h": "b9dd68e79926bb737742ff6bed16ec3984cd064092ddd43c8682a30669a32e5b",
+    "explorer/sumi-explorer-native.el": "d6ee68984584998dc993daac09217d621a87375c0a34018608be7aedabdeb563",
+    "explorer/sumi-explorer.el": "0a25dbd2a36869830afc63d60bd673e2924595f9180320242f8a309d9f394101",
+    "tests/explorer-advanced-test.py": "f543092bb76a7b897cc46d935cce106efc948fd735000bad7e2307fa9dfc9743",
     "tests/explorer-batches-test.py": "ff09c2e50eb81648f18f876a038e540f4b1219b0cde4e4321d2d2b658b8d390f",
     "tests/explorer-dnd-test.py": "9a2ada101618b74d834887ce0c18163a4b75d96e05bc039f789eb5e78085b393",
-    "tests/explorer-everyday-test.py": "6401a66361fca2750119f2bb378323ff80d38c321a522ab8896fa7a66dc79a05",
-    "tests/explorer-gui-test.py": "492629080073bef845e8e0aa16d1a15a58bac1528513ce630d2f3ed47adcf58b",
-    "tests/explorer-operations-test.py": "386840888cc758f8f49c16244fb9b6bfaa2fae463b94f13834f9d9b7561abfe7",
-    "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
+    "tests/explorer-everyday-test.py": "9a1b7313c0828b2b164df27ace767887a909002f4113521afcea92e9c85c2a2d",
+    "tests/explorer-gui-test.py": "3a7e9a03a317f46adbc9390501a3d936c9302694de131f4c6b66cef156a582ed",
+    "tests/explorer-operations-test.py": "0f0050ef08989b48122a187314bf6bc51e09a95458663e51a90c55c78d0073a8",
+    "tests/explorer-platform-metadata-test.c": "45da9d768d0b2bd9c1aa986008aa13fa5f5ec7a504b99a2f8e64b091c819bdb1",
     "tests/explorer-platform-test.c": "dd5d10bbe060368715605aec0b5602a7216f54e29aad0df5f76befcc787ee0a1",
     "tests/explorer-platform-zip-test.c": "28201ed658115dd59ceb707af17f73acad1d644b82901d33ce6830323092a84f",
     "tests/explorer-workspace-test.py": "89215f451e9409ee6dc1af8b7a545868d05b63886908de3eded24fc7b10521cd",
     "tests/sumi-explorer-client-test.el": "68d0762f882c1c60229dd3a60b11da33885e1bb35ab99fd0fb9df4e14f361954",
     "tests/sumi-explorer-integration-test.el": "25fccbc984d24600a4fbcc82e4c8e8c702aac7e5e604682ec846c2c8fe137394",
     "tests/sumi-explorer-windows-test.el": "52a51a3642044e246db410a46aebbd10a3c4db2865938962e249037f66f4c25c",
-    "tools/check.sh": "e7c3860e863a5adfb9196a0825ebe5273e20dac6a844e1019ddc4bbf7935d6b3"
+    "tools/check.sh": "32921a282198e7f637cb6b96b26b5c4bc2d31b2421896126bb72a6090ef48706"
   },
   "checks": {
     "build": {
@@ -44,84 +44,84 @@
       "status": "pass",
       "exit_code": 0,
       "cases": 4,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "client": {
       "status": "pass",
       "exit_code": 0,
       "cases": 65,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "emacs_native": {
       "status": "pass",
       "exit_code": 0,
       "cases": 7,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "gui": {
       "status": "pass",
       "exit_code": 0,
       "cases": 1,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "batches": {
       "status": "pass",
       "exit_code": 0,
       "cases": 15,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "operations": {
       "status": "pass",
       "exit_code": 0,
       "cases": 12,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "dnd": {
       "status": "pass",
       "exit_code": 0,
       "cases": 7,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "workspace": {
       "status": "pass",
       "exit_code": 0,
       "cases": 12,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "everyday": {
       "status": "pass",
       "exit_code": 0,
       "cases": 21,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "platform": {
       "status": "pass",
       "exit_code": 0,
       "cases": 6,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "metadata_stub": {
       "status": "pass",
       "exit_code": 0,
       "cases": 4,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "zip_stub": {
       "status": "pass",
       "exit_code": 0,
       "cases": 11,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     },
     "advanced": {
       "status": "pass",
       "exit_code": 0,
       "cases": 54,
-      "log_sha256": "19870eac7a7b187d03e820732248dcf592039d35b10f805ae57af2a7673d154a"
+      "log_sha256": "cc80c58c8ba7a2526fedcb64e7db095f46ca92145b6c72f494bfc4fbe99d8257"
     }
   },
   "limitations": [
-    "All 220 retained Linux checks passed after the clickable folder navigation increment. The separate 28 design and 33 navigation GUI checks are recorded in design-validation.json and navigation-validation.json.",
-    "This historical source-bound record does not rerun the application when verified.",
-    "Native Windows CI covers its existing suites and startup, not the new breadcrumb interactions. Windows ACL Apply/Cancel, third-party Shell extensions, broader Windows Properties/external transfer and macOS runtime remain unverified."
+    "All 220 retained Linux checks passed on the merged five-feature implementation. Separate source-bound receipts record 24 search, 38 transfer, 32 ZIP64, 29 durable Undo, 10 mode inverse, 28 design, 33 navigation and 19 integrated desktop checks; their verifier controls also passed.",
+    "This historical source-bound record does not rerun the application when verified. Private disposable XDG directories and bounded cleanup isolate the retained tests from user configuration.",
+    "Native Windows CI is recorded separately. Windows ACL Apply/Cancel, third-party Shell extensions, comprehensive Windows Properties/external-transfer interaction and macOS application runtime remain unverified."
   ]
 }

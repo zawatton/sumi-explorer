@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "kind": "sumi-zip64",
+  "sources": {
+    "explorer/sumi-explorer-native.el": "d6ee68984584998dc993daac09217d621a87375c0a34018608be7aedabdeb563",
+    "explorer/platform.c": "c39396a2a2279973295957cf71cb76f4888d49fcd33cd23f8658847b50732931",
+    "explorer/platform.h": "b9dd68e79926bb737742ff6bed16ec3984cd064092ddd43c8682a30669a32e5b",
+    "tests/explorer-gui-test.py": "3a7e9a03a317f46adbc9390501a3d936c9302694de131f4c6b66cef156a582ed",
+    "tests/explorer-zip64-test.py": "cff396e6f0ae7f4662acc4e273288d1a9bf08a194bcf593ac8c9848a6ad844d5"
+  },
+  "binary": {
+    "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/sumi-explorer",
+    "sha256": "9e9c06a625198a73d116b5e719d68a7c98e574659a0199731e179f59e6019eae"
+  },
+  "groups": {
+    "parse": {
+      "status": "pass",
+      "checks": [
+        "forced-local64",
+        "forced-eocd64",
+        "descriptor64-signed",
+        "descriptor64-unsigned",
+        "streaming-marker64",
+        "classic-retained",
+        "offset64-version45",
+        "disk64-version45"
+      ],
+      "error": ""
+    },
+    "safety": {
+      "status": "pass",
+      "checks": [
+        "locator-disk",
+        "locator-offset",
+        "eocd64-overflow",
+        "eocd64-count",
+        "eocd64-size",
+        "missing-extra",
+        "truncated-extra",
+        "duplicate-extra",
+        "local-disagreement",
+        "descriptor-disagreement",
+        "central-overlap",
+        "encrypted",
+        "traversal",
+        "crc",
+        "resource-limit",
+        "local-offset-int64-max",
+        "offset64-version20",
+        "disk64-version20"
+      ],
+      "error": ""
+    },
+    "workflow": {
+      "status": "pass",
+      "checks": [
+        "large-create",
+        "large-independent-reader",
+        "large-extract",
+        "count-create",
+        "count-independent-reader",
+        "count-extract"
+      ],
+      "error": ""
+    }
+  },
+  "artifacts": [
+    {
+      "group": "parse",
+      "kind": "events",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/zip64/parse/events.json",
+      "sha256": "a12bb743853fd17b2526cde68214af639acfde2383d1bcb0fe25210cf15ba310"
+    },
+    {
+      "group": "parse",
+      "kind": "log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/zip64/parse/runtime.log",
+      "sha256": "092206ac3615c5221ff738c1eb46fc00d6d022cd4087ceaa97a92ff80af713de"
+    },
+    {
+      "group": "safety",
+      "kind": "events",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/zip64/safety/events.json",
+      "sha256": "a9dc08444048de93fdee711b2671733314a74411984be3088c8dbcd01b561845"
+    },
+    {
+      "group": "safety",
+      "kind": "log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/zip64/safety/runtime.log",
+      "sha256": "05484f2d57d1412b07d41715e366493c25c21fb4eb3ce524faf39e7042adaad8"
+    },
+    {
+      "group": "workflow",
+      "kind": "events",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/zip64/workflow/events.json",
+      "sha256": "bed3355dbeff9afb87abe6c7ffcafff11cb18b14f65ff5efd398e944a6e04aec"
+    },
+    {
+      "group": "workflow",
+      "kind": "log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/zip64/workflow/runtime.log",
+      "sha256": "40d4d033d194b9ac44cfc06f559356c059ace2eb3dc1f16cb9ec8e4352d70add"
+    }
+  ]
+}

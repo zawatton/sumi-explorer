@@ -454,7 +454,7 @@ def run(args):
                 closing_directory.mkdir()
                 closing = gui.Session(args.binary.resolve(), root, closing_directory)
                 peers.append(closing)
-                closing_window = gui.xdo("search", "--sync", "--name", "^Sumi Explorer$").splitlines()[-1]
+                closing_window = gui.xdo("search", "--sync", "--all", "--onlyvisible", "--pid", str(closing.process.pid), "--name", "^Sumi Explorer$").splitlines()[-1]
                 pause_owner(owner)
                 pending = begin_paste(closing, pending_target)
                 wait(lambda: closing.state().get("message") == "Reading clipboard files", "close pending clipboard read")

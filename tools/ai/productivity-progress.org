@@ -1,0 +1,72 @@
+#+TITLE: Sumi Explorer search transfers ZIP64 and durable Undo
+#+NOTE: Eighteen new criteria for all five requested features. Earlier objectives and OS limitations remain separate.
+#+NOTE: S6.3 was strengthened to the strict integration verifier, including both concurrent-close completion orders. The denominator remains eighteen.
+
+* S1 Recursive search
+
+** S1.1 Recursive Unicode search returns bounded correct results
+cmd: python3 tests/explorer-search-test.py --verify docs/search-validation.json --check behavior
+
+** S1.2 Cancellation inaccessible paths and symlink boundaries are safe
+cmd: python3 tests/explorer-search-test.py --verify docs/search-validation.json --check safety
+
+** S1.3 GUI and Emacs search open and select a real nested result
+cmd: python3 tests/explorer-search-test.py --verify docs/search-validation.json --check workflow
+
+* S2 Replacement and folder merging
+
+** S2.1 Explicit conflict choices preserve default no-overwrite behavior
+cmd: python3 tests/explorer-transfer-test.py --verify docs/transfer-validation.json --check conflicts
+
+** S2.2 Partial failure cancellation backups and unrelated contents are safe
+cmd: python3 tests/explorer-transfer-test.py --verify docs/transfer-validation.json --check recovery
+
+** S2.3 GUI and Emacs replace and merge complete and undo real file changes
+cmd: python3 tests/explorer-transfer-test.py --verify docs/transfer-validation.json --check workflow
+
+* S3 External MOVE drop
+
+** S3.1 Real external sender receives MOVE only after complete copying
+cmd: python3 tests/explorer-transfer-test.py --verify docs/transfer-validation.json --check move-success
+
+** S3.2 Rejected partial and cancelled drops never acknowledge successful MOVE
+cmd: python3 tests/explorer-transfer-test.py --verify docs/transfer-validation.json --check move-failure
+
+** S3.3 External move workflow checks source cleanup and destination bytes
+cmd: python3 tests/explorer-transfer-test.py --verify docs/transfer-validation.json --check move-workflow
+
+* S4 ZIP64
+
+** S4.1 ZIP64 sizes offsets and extended counts parse correctly
+cmd: python3 tests/explorer-zip64-test.py --verify docs/zip64-validation.json --check parse
+
+** S4.2 Malformed ZIP64 headers overflow unsafe names and corruption reject safely
+cmd: python3 tests/explorer-zip64-test.py --verify docs/zip64-validation.json --check safety
+
+** S4.3 Real ZIP64 create extract and independent-reader workflow passes
+cmd: python3 tests/explorer-zip64-test.py --verify docs/zip64-validation.json --check workflow
+
+* S5 Durable Undo
+
+** S5.1 Committed history IDs and inverse actions survive process restart
+cmd: python3 tests/explorer-durable-undo-test.py --verify docs/durable-undo-validation.json --check persistence
+
+** S5.2 Corruption external changes and concurrent journals cannot cause unsafe inverse actions
+cmd: python3 tests/explorer-durable-undo-test.py --verify docs/durable-undo-validation.json --check integrity
+
+** S5.3 Replace merge and ordinary operations undo correctly after application restart
+cmd: python3 tests/explorer-durable-undo-test.py --verify docs/durable-undo-validation.json --check workflow
+
+* S6 Integration and delivery
+
+** S6.1 Retained Linux design navigation and actual Windows checks pass on current sources
+cmd: python3 tools/verify-validation.py
+cmd: python3 tests/explorer-design-test.py --verify docs/design-validation.json
+cmd: python3 tests/explorer-navigation-test.py --verify docs/navigation-validation.json
+cmd: python3 tools/verify-windows-validation.py
+
+** S6.2 Independent Astra audit accepts all five features and current evidence
+cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/productivity-review.json")); required={"explorer/sumi-explorer-native.el","docs/productivity-expansion.md","docs/search-validation.json","docs/transfer-validation.json","docs/zip64-validation.json","docs/durable-undo-validation.json"}; assert r["status"]=="accepted-for-delivery" and r["reviewer"]["model"]=="gpt-6-astra" and r["reviewer"]["reasoning_effort"]=="ultra" and required.issubset(r["sources"]) and len(r["sources"])>=35 and all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in r["sources"].items())'
+
+** S6.3 Updated desktop application completes a real integrated five-feature workflow
+cmd: python3 tests/explorer-productivity-test.py --verify docs/productivity-desktop.json

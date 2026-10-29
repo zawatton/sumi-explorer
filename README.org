@@ -9,22 +9,23 @@ See the [[file:docs/file-explorer.md][application]], [[file:docs/file-operations
 The GUI supports navigation, Ctrl/Shift multiple selection, associated-application
 opening, a portable context menu, application Properties, and
 asynchronous copy, move, rename, new-directory, GIO Trash and ZIP operations,
-plus session Undo. Application Properties is a portable application dialog.
+plus durable Undo. Application Properties is a portable application dialog.
 On Windows, =Native Shell Menu= invokes system handlers and =Permissions= invokes
 the native Security editor. Their validation boundaries are recorded below.
 
 Single-row Copy/Move takes an exact new destination path. Multiple-row Copy/Move
 takes an existing destination directory and preflights the complete batch.
-Trash confirms frozen targets; Cancel is cooperative. Existing targets are
-never overwritten or merged. Failure/cancellation can leave a reported partial
+Trash confirms frozen targets; Cancel is cooperative. Ordinary Copy/Move refuses
+existing targets. Explicit conflict transfers offer Replace, Merge,
+Merge-and-replace and Skip. Failure/cancellation can leave a reported partial
 new destination; completed batch items remain and untouched items are skipped.
 Move has no copy/delete fallback, so cross-filesystem moves can fail safely.
 
-Incoming DND accepts multiple local file/directory/symlink COPY drops through
-the shared bounded engine. Incoming MOVE and remote paths are rejected.
-GTK drop acceptance means queued, not a completed filesystem copy; the GUI
-reports actual completion and partial output. Owned paths/context remain alive
-through completion. The sender receives no asynchronous filesystem result.
+Incoming DND accepts local COPY and MOVE through asynchronous GTK completion.
+MOVE copies first and acknowledges success only after every destination and its
+source-restoring Undo are durably recorded. The sender owns source cleanup.
+Rejected or partial drops receive no successful MOVE acknowledgement. Remote
+paths are rejected. Owned paths/context remain alive through completion.
 Outbound DND exports every selected path; the receiver owns its operation.
 
 * Desktop layout
@@ -139,7 +140,7 @@ Lisp, and never builds shell commands from names. Durable =response.ini= is
 separate from live GUI state. Normal stop requests quit and retains the session
 while an operation finishes. Prefix/explicit forced stop can interrupt a copy.
 
-* ZIP, session Undo and native platform operations
+* ZIP, durable Undo and native platform operations
 
 The [[file:docs/advanced-features.md][advanced contract]] describes this increment. The native engine, client commands
 and GUI actions are implemented, with Linux regression evidence recorded below.
@@ -160,13 +161,18 @@ freezes the selected input vector before prompting for the exact unused ZIP
 path. Extraction prompts for one archive and an exact unused directory. ZIP
 inputs use the same 256-path/1-MiB manifest bound; extraction rejects unsafe
 names, links, special entries and unsupported content before output. It does
-not overwrite or merge. Only bounded single-disk classic ZIP store/deflate is
-supported, with at most 65535 entries; ZIP64 is unsupported. See the contract for
-streamed size/depth/name limits.
+not overwrite or merge. Single-disk ZIP/ZIP64 store/deflate is supported, bounded
+to 100000 entries, 16 GiB per member, 32 GiB expanded data, 34 GiB archive input
+and 32 MiB encoded metadata. See the contract for additional depth/name limits.
 Timeout/C-g retains the same pending request; resume with =sumi-explorer-await=.
 
-Undo is limited to 32 groups in the current session and is not a persistent
-backup. =sumi-explorer-undo-history= returns newest-first group alists under
+Undo retains 32 groups per journal across application restarts in a private OS
+state directory. =SUMI_EXPLORER_UNDO_DIR= selects a deliberate isolated profile.
+Multiple windows use separately locked journals; interrupted destructive work
+retains recovery intent and backups and blocks unsafe continuation.
+Established profiles with missing/corrupt sequence state, including prerelease
+profiles without the establishment marker, fail closed and require recovery.
+=sumi-explorer-undo-history= returns newest-first group alists under
 =groups=; an explicit group ID must still be the newest valid group. The host
 revalidates identities/fingerprints and refuses changed objects, existing
 restore targets and stale IDs. Supported app-managed outcomes include copy,
@@ -175,6 +181,9 @@ requires a unique verified backend handle to the actual trashed object and a
 no-copy-fallback restore; ordinary GIO Trash success alone does not promise
 Undo. Unsupported backends report recovery unavailable. Partial reversal keeps
 unresolved entries. External writers can still race these checks.
+On Windows, legacy output Undo retains and reports its durable quarantine.
+Windows/macOS opaque Trash Undo refuses before mutation when the required
+filesystem durability barrier is unavailable; ordinary Trash remains available.
 Older groups are rebased only for proven exact-root transitions and bounded
 parent-witness relationships. Other ancestor relationships and shared-batch
 dependencies are conservatively refused rather than treated as arbitrary safe
@@ -230,11 +239,36 @@ acknowledgement confirms process spawning, not GUI readiness.
 #+end_src
 
 Filters are case-folded literal filename matches in the current directory,
-limited to 256 Unicode scalar characters. They are not recursive search or
-indexing. Sorting keeps directories first and preserves selected identities;
+limited to 256 Unicode scalar characters. =More → Search subfolders= or Ctrl+F
+opens a separate recursive filename search with full result paths and an action
+to open the containing folder and select the result. Search supports cancellation
+and reports inaccessible paths and truncation. It does not follow static
+directory symlinks/reparse points; concurrent hostile ancestor replacement is
+outside its path-based traversal guarantees. Sorting keeps directories first and preserves selected identities;
 filtering/hiding removes newly invisible selections. Settings belong to each
 tab. Workspace/view snapshots are independently consistent last publications,
 not durable command results or freshness guarantees after an I/O failure.
+
+** Recursive search and conflict transfers
+
+The additional productivity commands use the same running desktop session:
+
+#+begin_src emacs-lisp
+  (sumi-explorer-search "invoice" 30)
+  (sumi-explorer-begin-search "invoice") ; Nonblocking; read search-results later.
+  (sumi-explorer-search-results)
+  (sumi-explorer-open-search-result absolute-result-path)
+  (sumi-explorer-cancel-search)
+  (sumi-explorer-transfer source destination 'replace 'copy 30)
+  (sumi-explorer-transfer source-directory destination-directory 'merge-replace 'move 30)
+#+end_src
+
+Search is bounded to 2000 matches, 100000 visited entries and depth 64. Explicit
+transfers are bounded to 256 changed roots, 100000 traversal nodes, depth 64 and a
+1 MiB recovery action list. Merge preserves unrelated destination contents;
+replacement retains owned backups until successful Undo or durable history eviction.
+See [[file:docs/productivity-expansion.md][the five-feature contract]] and
+=tools/ai/productivity-progress.org= for source-bound acceptance criteria.
 
 ** Clipboard, context actions and bookmarks
 
@@ -320,6 +354,30 @@ history/tabs, configured and omitted standard folders, and a file workflow:
 Its receipt also requires retained local artifacts. Native Windows CI checks
 build and existing provider/application behavior; it does not establish the new
 breadcrumb interactions on Windows or application runtime on macOS.
+
+The productivity suites exercise recursive search, explicit conflict transfers,
+real external GTK senders, ZIP64, and fresh-process Undo:
+
+#+begin_src sh
+  (ulimit -v 8388608; xvfb-run -a -s '-screen 0 1920x1080x24' dbus-run-session -- \
+    python3 tests/explorer-search-test.py --binary target/sumi-explorer --artifacts target/search-local --negative-controls)
+  (ulimit -v 8388608; xvfb-run -a -s '-screen 0 2200x1200x24' dbus-run-session -- \
+    python3 tests/explorer-transfer-test.py --binary target/sumi-explorer --artifacts target/transfer-local --negative-controls)
+  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- \
+    python3 tests/explorer-zip64-test.py --binary target/sumi-explorer --artifacts target/zip64-local)
+  (ulimit -v 8388608; python3 tests/explorer-zip64-test.py --negative-controls target/zip64-local/receipt.json)
+  (ulimit -v 8388608; xvfb-run -a -s '-screen 0 1920x1080x24' dbus-run-session -- \
+    python3 tests/explorer-durable-undo-test.py --binary target/sumi-explorer --artifacts target/undo-local --negative-controls)
+  (ulimit -v 8388608; xvfb-run -a dbus-run-session -- \
+    python3 tests/explorer-zero-mode-test.py --binary target/sumi-explorer --artifacts target/zero-mode-local)
+  (ulimit -v 8388608; xvfb-run -a -s '-screen 0 2200x1200x24' dbus-run-session -- \
+    python3 tests/explorer-productivity-test.py --binary target/sumi-explorer --artifacts target/productivity-local --negative-controls)
+#+end_src
+
+ZIP64 workflow acceptance writes a real logical member larger than 4 GiB and
+65537 archive entries; allow adequate temporary disk space. The external MOVE
+sender regressions cover GTK/X11 on Linux. Native Windows Explorer drag/drop and
+macOS desktop interactions require separate acceptance.
 
 The helper works from any current directory, downloads nothing, caps its children
 at 8 GiB, and fails on missing dependencies. =client= runs warning-as-error byte

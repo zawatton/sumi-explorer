@@ -2,7 +2,7 @@
 
 ## Goal and boundaries
 
-Implement ZIP creation/extraction, safe session undo, editable permissions, and
+Implement ZIP creation/extraction, durable undo, editable permissions, and
 the real Windows Shell context menu. Keep file-manager policy and operations
 in NeLisp; a small C ABI adapter may host Windows COM/Win32 interfaces which
 cannot be expressed as ordinary imported C functions. No Rust or application
@@ -25,12 +25,12 @@ platform or GUI action has passed.
   nesting, total expanded bytes, per-entry bytes and encoded names; enforce
   streamed byte limits as well as declared sizes. No overwrite or merge.
   Preflight consumes all entry data, using an immutable private input snapshot
-  for both passes. Compressed input is capped at 4 GiB + 16 MiB, expanded total
-  at 4 GiB, each entry at 1 GiB, entry count at 65535, depth at 64 and encoded
-  manifest names at 1 MiB. Reject NFC/casefold collisions, Windows device names,
+  for both passes. Archive input is capped at 34 GiB, expanded total
+  at 32 GiB, each entry at 16 GiB, entry count at 100000, depth at 64 and encoded
+  metadata at 32 MiB. Reject NFC/casefold collisions, Windows device names,
   alternate streams and trailing-dot/space components on every platform.
-  Only single-disk classic ZIP store/deflate is supported; reject ZIP64 and
-  ambiguous raw/local/central metadata rather than accepting another variant.
+  Single-disk ZIP/ZIP64 store/deflate is supported. Validate ZIP64 EOCD, locator,
+  extended fields and descriptors and reject ambiguous raw/local/central metadata.
   Creation requests use the exact indexed batch schema with frozen paths and
   an exact archive destination; extraction uses the exact single-operation
   schema and rejects indexed fields. Empty path never means mutable selection.
@@ -45,7 +45,9 @@ platform or GUI action has passed.
   a legacy identity fallback is limited to explicit FAT-family capability
   failures. Unsupported providers fail before archive output. Injected fallback
   tests do not certify actual FAT/exFAT, network, or remote filesystem support.
-- Undo is session-scoped and bounded to 32 groups. Record only successful app-managed
+- Undo persists across application restarts and is bounded to 32 groups per journal.
+  Follow the private-profile, locking, atomic commit, intent and recovery contract
+  in [the productivity expansion](productivity-expansion.md). Record only successful app-managed
   outcomes, including completed items of a partially failed batch. Validate
   current identities and file/tree fingerprints before undo. Never overwrite,
   delete a modified copy, or move a changed/replaced object merely to undo an

@@ -1,7 +1,11 @@
-/* OS ABI bridge only: no application file operations or ACL mutation policy. */
+/* OS ABI bridge only: application serialization and recovery policy live in NeLisp. */
+#ifndef _WIN32
+#define _GNU_SOURCE
+#endif
 #include "platform.h"
 #include <string.h>
 #include <stdint.h>
+#include <stdio.h>
 #ifdef _WIN32
 /* Narrow GLib/GDK imports use their public C ABI, independent of a host's
  * generated glibconfig.h.  Win32/COM types below always come from the SDK. */
@@ -553,3 +557,459 @@ char *sumi_explorer_platform_metadata_stamp(const char *path, char **error)
 #endif
 
 #include "platform-zip.inc"
+
+/* Opaque handles bind a private directory and a stable lock to byte I/O. */
+#ifdef _WIN32
+#include <aclapi.h>
+#include <sddl.h>
+extern void *g_malloc0(uintptr_t);
+extern void *g_malloc(uintptr_t);
+extern char *g_strconcat(const char *, ...);
+extern const char *g_getenv(const char *);
+extern const char *g_get_user_state_dir(void);
+extern int g_mkdir_with_parents(const char *, int);
+extern char *g_uuid_string_random(void);
+typedef struct { char *path; HANDLE directory; PSID user; } JournalProfile;
+typedef struct { JournalProfile *profile; char *name; HANDLE lock; } JournalHandle;
+
+static WCHAR *journal_wide(const char *path)
+{ return (WCHAR *)g_utf8_to_utf16(path, -1, NULL, NULL, NULL); }
+
+static int journal_private_handle(HANDLE handle, PSID user)
+{
+    PSID owner = NULL; PACL acl = NULL; PSECURITY_DESCRIPTOR sd = NULL;
+    int good = 0;
+    if (GetSecurityInfo(handle, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION |
+                        DACL_SECURITY_INFORMATION, &owner, NULL, &acl, NULL, &sd) != ERROR_SUCCESS)
+        return 0;
+    if (!owner || !EqualSid(owner, user) || !acl) goto out;
+    for (DWORD i = 0; i < acl->AceCount; ++i) {
+        ACCESS_ALLOWED_ACE *ace = NULL;
+        if (!GetAce(acl, i, (void **)&ace) || ace->Header.AceType != ACCESS_ALLOWED_ACE_TYPE ||
+            !EqualSid((PSID)&ace->SidStart, user)) goto out;
+    }
+    good = acl->AceCount > 0;
+out:
+    LocalFree(sd); return good;
+}
+
+static int journal_plain(HANDLE handle, int directory)
+{
+    FILE_ATTRIBUTE_TAG_INFO tag; FILE_STANDARD_INFO info;
+    return GetFileInformationByHandleEx(handle, FileAttributeTagInfo, &tag, sizeof(tag)) &&
+        !(tag.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+        !!(tag.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) == directory &&
+        GetFileInformationByHandleEx(handle, FileStandardInfo, &info, sizeof(info)) &&
+        (directory || info.NumberOfLinks == 1);
+}
+
+static HANDLE journal_win_open(JournalProfile *p, const char *name, DWORD access,
+                                DWORD share, DWORD create)
+{
+    char *path = g_strconcat(p->path, "/", name, NULL);
+    WCHAR *wide = journal_wide(path); HANDLE file = INVALID_HANDLE_VALUE;
+    DWORD open_error = ERROR_INVALID_DATA;
+    PSECURITY_DESCRIPTOR sd = NULL; LPWSTR sid = NULL;
+    if (wide && ConvertSidToStringSidW(p->user, &sid)) {
+        size_t n = wcslen(sid) + 32; WCHAR *sddl = g_malloc(n * sizeof(WCHAR));
+        swprintf(sddl, n, L"D:P(A;;FA;;;%ls)", sid);
+        if (ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl, SDDL_REVISION_1, &sd, NULL)) {
+            SECURITY_ATTRIBUTES sa = {sizeof(sa), sd, FALSE};
+            file = CreateFileW(wide, access | READ_CONTROL, share, &sa, create,
+                               FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+            if (file == INVALID_HANDLE_VALUE) open_error = GetLastError();
+        }
+        g_free(sddl);
+    }
+    LocalFree(sid); LocalFree(sd); g_free(wide); g_free(path);
+    if (file != INVALID_HANDLE_VALUE &&
+        (!journal_plain(file, 0) || !journal_private_handle(file, p->user))) {
+        CloseHandle(file); file = INVALID_HANDLE_VALUE; open_error = ERROR_ACCESS_DENIED;
+    }
+    if (file == INVALID_HANDLE_VALUE) SetLastError(open_error);
+    return file;
+}
+#else
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+typedef struct { char *path; int directory; } JournalProfile;
+typedef struct { JournalProfile *profile; char *name; int lock; } JournalHandle;
+static int journal_private_stat(int fd, int directory)
+{
+    struct stat st;
+    return fstat(fd, &st) == 0 && st.st_uid == geteuid() && !(st.st_mode & 0077) &&
+        (directory ? S_ISDIR(st.st_mode) : (S_ISREG(st.st_mode) && st.st_nlink == 1));
+}
+#endif
+
+static int journal_name(const char *name)
+{
+    if (name && (!strcmp(name, "sequence") || !strcmp(name, "established"))) return 1;
+    if (!name || strlen(name) != 46 || strncmp(name, "j-", 2) || strcmp(name + 38, ".journal")) return 0;
+    for (size_t i = 2; i < 38; ++i)
+        if (!((name[i] >= '0' && name[i] <= '9') || (name[i] >= 'a' && name[i] <= 'f') || name[i] == '-')) return 0;
+    return 1;
+}
+
+void *sumi_explorer_platform_profile_open(void)
+{
+    JournalProfile *p = g_malloc0(sizeof(*p));
+#ifndef _WIN32
+    p->directory = -1;
+#endif
+    const char *override = g_getenv("SUMI_EXPLORER_UNDO_DIR");
+    p->path = override ? g_strdup(override) : g_strconcat(g_get_user_state_dir(), "/sumi-explorer/undo", NULL);
+    if (!p->path || !absolute_path(p->path) || strlen(p->path) > 16384 ||
+        !g_utf8_validate(p->path, -1, NULL)) goto bad;
+#ifdef _WIN32
+    HANDLE token = NULL; DWORD bytes = 0; TOKEN_USER *user = NULL;
+    WCHAR *wide = NULL; LPWSTR sid = NULL; PSECURITY_DESCRIPTOR sd = NULL;
+    p->directory = INVALID_HANDLE_VALUE;
+    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) goto bad;
+    GetTokenInformation(token, TokenUser, NULL, 0, &bytes);
+    user = g_malloc0(bytes);
+    if (!GetTokenInformation(token, TokenUser, user, bytes, &bytes)) { CloseHandle(token); g_free(user); goto bad; }
+    CloseHandle(token);
+    p->user = g_malloc(GetLengthSid(user->User.Sid)); CopySid(GetLengthSid(user->User.Sid), p->user, user->User.Sid); g_free(user);
+    wide = journal_wide(p->path);
+    if (!wide || !ConvertSidToStringSidW(p->user, &sid)) { g_free(wide); goto bad; }
+    size_t n = wcslen(sid) + 32; WCHAR *sddl = g_malloc(n * sizeof(WCHAR));
+    swprintf(sddl, n, L"D:P(A;;FA;;;%ls)", sid);
+    int secure = ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl, SDDL_REVISION_1, &sd, NULL);
+    g_free(sddl); LocalFree(sid);
+    if (!secure) { g_free(wide); goto bad; }
+    /* Parents are user state folders; the actual profile receives a protected
+     * current-user-only DACL at creation, never a post-creation chmod window. */
+    char *slash = strrchr(p->path, '/');
+    if (slash) { char saved = *slash; *slash = 0; g_mkdir_with_parents(p->path, 0700); *slash = saved; }
+    SECURITY_ATTRIBUTES sa = {sizeof(sa), sd, FALSE};
+    if (!CreateDirectoryW(wide, &sa) && GetLastError() != ERROR_ALREADY_EXISTS) { LocalFree(sd); g_free(wide); goto bad; }
+    LocalFree(sd);
+    p->directory = CreateFileW(wide, GENERIC_READ | READ_CONTROL, FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    g_free(wide);
+    if (p->directory == INVALID_HANDLE_VALUE || !journal_plain(p->directory, 1) ||
+        !journal_private_handle(p->directory, p->user)) goto bad;
+#else
+    p->directory = -1;
+    if (g_mkdir_with_parents(p->path, 0700) != 0) goto bad;
+    p->directory = open(p->path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if (p->directory < 0 || !journal_private_stat(p->directory, 1)) goto bad;
+#endif
+    return p;
+bad:
+    sumi_explorer_platform_profile_close(p); return NULL;
+}
+
+const char *sumi_explorer_platform_profile_path(void *profile)
+{ return profile ? ((JournalProfile *)profile)->path : NULL; }
+
+void sumi_explorer_platform_profile_close(void *profile)
+{
+    JournalProfile *p = profile; if (!p) return;
+#ifdef _WIN32
+    if (p->directory && p->directory != INVALID_HANDLE_VALUE) CloseHandle(p->directory);
+    g_free(p->user);
+#else
+    if (p->directory >= 0) close(p->directory);
+#endif
+    g_free(p->path); g_free(p);
+}
+
+void *sumi_explorer_platform_journal_open(void *profile, const char *name)
+{ return sumi_explorer_platform_journal_open_status(profile, name, NULL); }
+
+void *sumi_explorer_platform_journal_open_status(void *profile, const char *name, int *status)
+{
+    JournalProfile *p = profile; JournalHandle *j; char *lockname; char *uuid = NULL;
+    if (status) *status = 2;
+    if (!p) return NULL;
+    j = g_malloc0(sizeof(*j)); j->profile = p;
+    if (!name) { uuid = g_uuid_string_random(); j->name = g_strconcat("j-", uuid, ".journal", NULL); g_free(uuid); }
+    else j->name = g_strdup(name);
+    if (!journal_name(j->name)) { g_free(j->name); g_free(j); return NULL; }
+    lockname = g_strconcat(j->name, ".lock", NULL);
+#ifdef _WIN32
+    j->lock = journal_win_open(p, lockname, GENERIC_READ | GENERIC_WRITE, 0, OPEN_ALWAYS);
+    DWORD lock_error = j->lock == INVALID_HANDLE_VALUE ? GetLastError() : ERROR_SUCCESS;
+    g_free(lockname);
+    if (j->lock == INVALID_HANDLE_VALUE) {
+        if (status && (lock_error == ERROR_SHARING_VIOLATION || lock_error == ERROR_LOCK_VIOLATION)) *status = 1;
+        g_free(j->name); g_free(j); return NULL;
+    }
+#else
+    j->lock = openat(p->directory, lockname, O_RDWR | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0600);
+    g_free(lockname);
+    if (j->lock < 0 || !journal_private_stat(j->lock, 0)) {
+        if (j->lock >= 0) close(j->lock);
+        g_free(j->name); g_free(j); return NULL;
+    }
+    if (flock(j->lock, LOCK_EX | LOCK_NB) != 0) {
+        int error = errno;
+        if (status && (error == EWOULDBLOCK || error == EAGAIN)) *status = 1;
+        close(j->lock); g_free(j->name); g_free(j); return NULL;
+    }
+#endif
+    if (status) *status = 0;
+    return j;
+}
+
+unsigned long long sumi_explorer_platform_journal_stamp(void *journal)
+{
+    JournalHandle *j = journal; if (!j) return 0;
+#ifdef _WIN32
+    HANDLE file = journal_win_open(j->profile, j->name, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING);
+    FILETIME modified; unsigned long long stamp = 0;
+    if (file != INVALID_HANDLE_VALUE) {
+        if (GetFileTime(file, NULL, NULL, &modified)) stamp = ((uint64_t)modified.dwHighDateTime << 32) | modified.dwLowDateTime;
+        CloseHandle(file);
+    }
+    return stamp;
+#else
+    struct stat st;
+    if (fstatat(j->profile->directory, j->name, &st, AT_SYMLINK_NOFOLLOW) != 0) return 0;
+#ifdef __APPLE__
+    return (unsigned long long)st.st_mtimespec.tv_sec * 1000000000ULL + st.st_mtimespec.tv_nsec;
+#else
+    return (unsigned long long)st.st_mtim.tv_sec * 1000000000ULL + st.st_mtim.tv_nsec;
+#endif
+#endif
+}
+
+int sumi_explorer_platform_journal_status(void *journal)
+{
+    JournalHandle *j = journal;
+    if (!j) return -1;
+#ifdef _WIN32
+    char *path = g_strconcat(j->profile->path, "/", j->name, NULL);
+    WCHAR *wide = journal_wide(path); DWORD error = ERROR_INVALID_PARAMETER;
+    HANDLE file = wide ? CreateFileW(wide, GENERIC_READ | READ_CONTROL,
+        FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT, NULL) : INVALID_HANDLE_VALUE;
+    if (file == INVALID_HANDLE_VALUE) error = GetLastError();
+    g_free(wide); g_free(path);
+    if (file == INVALID_HANDLE_VALUE) return error == ERROR_FILE_NOT_FOUND ? 0 : -1;
+    int good = journal_plain(file, 0) && journal_private_handle(file, j->profile->user);
+    CloseHandle(file); return good ? 1 : -1;
+#else
+    struct stat st;
+    if (fstatat(j->profile->directory, j->name, &st, AT_SYMLINK_NOFOLLOW) != 0)
+        return errno == ENOENT ? 0 : -1;
+    return S_ISREG(st.st_mode) && st.st_nlink == 1 && st.st_uid == geteuid() &&
+        !(st.st_mode & 0077) ? 1 : -1;
+#endif
+}
+
+char *sumi_explorer_platform_journal_read(void *journal, unsigned long long *size)
+{
+    JournalHandle *j = journal; char *data = NULL; uint64_t length = 0, used = 0;
+    if (size) *size = 0;
+    if (!j || !size) return NULL;
+#ifdef _WIN32
+    HANDLE file = journal_win_open(j->profile, j->name, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING);
+    LARGE_INTEGER bytes;
+    if (file == INVALID_HANDLE_VALUE) return NULL;
+    if (!GetFileSizeEx(file, &bytes) || bytes.QuadPart < 0 || bytes.QuadPart > 16777216) goto out;
+    length = bytes.QuadPart; data = g_malloc(length + 1);
+    while (used < length) { DWORD count = 0;
+        if (!ReadFile(file, data + used, (DWORD)(length - used), &count, NULL) || !count) { g_free(data); data = NULL; goto out; }
+        used += count;
+    }
+out:
+    CloseHandle(file);
+#else
+    int file = openat(j->profile->directory, j->name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+    struct stat st;
+    if (file < 0) return NULL;
+    if (!journal_private_stat(file, 0) || fstat(file, &st) != 0 || st.st_size < 0 || st.st_size > 16777216) goto out;
+    length = st.st_size; data = g_malloc(length + 1);
+    while (used < length) { ssize_t count = read(file, data + used, length - used);
+        if (count < 0 && errno == EINTR) continue;
+        if (count <= 0) { g_free(data); data = NULL; goto out; } used += count;
+    }
+out:
+    close(file);
+#endif
+    if (data) { data[length] = 0; *size = length; }
+    return data;
+}
+
+int sumi_explorer_platform_journal_write(void *journal, const void *data, unsigned long long size)
+{
+    JournalHandle *j = journal; uint64_t used = 0; int good = 0;
+    if (!j || !data || size > 16777216) return 0;
+    char *uuid = g_uuid_string_random(); char *temporary = g_strconcat(j->name, ".tmp-", uuid, NULL); g_free(uuid);
+#ifdef _WIN32
+    HANDLE file = journal_win_open(j->profile, temporary, GENERIC_WRITE, 0, CREATE_NEW);
+    if (file != INVALID_HANDLE_VALUE) {
+        while (used < size) { DWORD count = 0;
+            if (!WriteFile(file, (const char *)data + used, (DWORD)(size - used), &count, NULL) || !count) break;
+            used += count;
+        }
+        good = used == size && FlushFileBuffers(file); CloseHandle(file);
+        char *src = g_strconcat(j->profile->path, "/", temporary, NULL);
+        char *dst = g_strconcat(j->profile->path, "/", j->name, NULL);
+        WCHAR *ws = journal_wide(src), *wd = journal_wide(dst);
+        if (good) good = ws && wd && MoveFileExW(ws, wd, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
+        if (!good && ws) DeleteFileW(ws);
+        g_free(ws); g_free(wd); g_free(src); g_free(dst);
+    }
+#else
+    int file = openat(j->profile->directory, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0600);
+    if (file >= 0) {
+        while (used < size) { ssize_t count = write(file, (const char *)data + used, size - used);
+            if (count < 0 && errno == EINTR) continue;
+            if (count <= 0) break;
+            used += count;
+        }
+        good = used == size && fsync(file) == 0;
+        if (close(file) != 0) good = 0;
+        if (good) good = renameat(j->profile->directory, temporary, j->profile->directory, j->name) == 0 && fsync(j->profile->directory) == 0;
+        if (!good) unlinkat(j->profile->directory, temporary, 0);
+    }
+#endif
+    g_free(temporary); return good;
+}
+
+void sumi_explorer_platform_journal_close(void *journal)
+{
+    JournalHandle *j = journal; if (!j) return;
+#ifdef _WIN32
+    CloseHandle(j->lock);
+#else
+    close(j->lock);
+#endif
+    g_free(j->name); g_free(j);
+}
+
+#ifndef _WIN32
+static int recovery_parent_sync(const char *path)
+{
+    char *parent = g_path_get_dirname(path);
+    int fd = open(parent, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    g_free(parent);
+    if (fd < 0) return 0;
+    int good = fsync(fd) == 0;
+    if (close(fd) != 0) good = 0;
+    return good;
+}
+#endif
+
+int sumi_explorer_platform_recovery_sync(const char *path, char **error)
+{
+    if (error) *error = NULL;
+    if (!metadata_validate(path, error)) return 0;
+    int good = 0;
+#ifdef _WIN32
+    WCHAR *wide = journal_wide(path);
+    DWORD attributes = wide ? GetFileAttributesW(wide) : INVALID_FILE_ATTRIBUTES;
+    DWORD access = attributes != INVALID_FILE_ATTRIBUTES && (attributes & FILE_ATTRIBUTE_DIRECTORY) ?
+        GENERIC_READ : (GENERIC_READ | GENERIC_WRITE);
+    HANDLE fd = wide ? CreateFileW(wide, access,
+        FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT |
+        FILE_FLAG_BACKUP_SEMANTICS, NULL) : INVALID_HANDLE_VALUE;
+    g_free(wide);
+    if (fd != INVALID_HANDLE_VALUE) {
+        FILE_ATTRIBUTE_TAG_INFO tag;
+        if (GetFileInformationByHandleEx(fd, FileAttributeTagInfo, &tag, sizeof(tag)) &&
+            !(tag.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+            good = (tag.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? 1 : FlushFileBuffers(fd);
+        CloseHandle(fd);
+    }
+#else
+    int fd = open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK);
+    struct stat st;
+    if (fd >= 0) {
+        good = fstat(fd, &st) == 0 && (S_ISREG(st.st_mode) || S_ISDIR(st.st_mode)) && fsync(fd) == 0;
+        if (close(fd) != 0) good = 0;
+        if (good) good = recovery_parent_sync(path);
+    }
+#endif
+    if (!good) fail(error, "Cannot durably synchronize recovery object");
+    return good;
+}
+
+int sumi_explorer_platform_recovery_chmod(const char *path, unsigned mode, char **error)
+{
+    if (error) *error = NULL;
+    if (mode > 07777 || !metadata_validate(path, error)) return 0;
+#ifdef _WIN32
+    fail(error, "Portable mode changes are unsupported on Windows"); return 0;
+#else
+    int object = -1, parent = -1, result = 0, cause = 0;
+    struct stat guard, st, current;
+    char *directory = g_path_get_dirname(path);
+    char *name = g_path_get_basename(path);
+    parent = open(directory, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    g_free(directory);
+    if (parent < 0) goto done;
+    if (fstatat(parent, name, &guard, AT_SYMLINK_NOFOLLOW) != 0 ||
+        !(S_ISREG(guard.st_mode) || S_ISDIR(guard.st_mode))) goto done;
+    object = openat(parent, name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK);
+    if (object < 0 && errno == EACCES && guard.st_uid == geteuid()) {
+        /* Owner chmod is permitted even when current mode denies opening.
+         * Grant only the read bit needed to acquire a durable descriptor. From
+         * this first mutation attempt onward every failure is ambiguous. */
+        result = 2;
+        if (fchmodat(parent, name, (guard.st_mode & 07777) | S_IRUSR, AT_SYMLINK_NOFOLLOW) != 0) goto done;
+        object = openat(parent, name, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK);
+    }
+    if (object < 0 || fstat(object, &st) != 0 ||
+        !(S_ISREG(st.st_mode) || S_ISDIR(st.st_mode)) ||
+        st.st_dev != guard.st_dev || st.st_ino != guard.st_ino ||
+        fstatat(parent, name, &current, AT_SYMLINK_NOFOLLOW) != 0 ||
+        current.st_dev != st.st_dev || current.st_ino != st.st_ino) goto done;
+    /* The descriptor stays authorized even when the new mode is 0000. */
+    result = 2;
+    if (fchmod(object, (mode_t)mode) != 0 || fstat(object, &current) != 0) goto done;
+    if ((current.st_mode & 07777) != mode || current.st_dev != guard.st_dev || current.st_ino != guard.st_ino) {
+        errno = EIO; goto done;
+    }
+    if (fsync(object) != 0 || fsync(parent) != 0) goto done;
+    result = 1;
+done:
+    cause = errno;
+    g_free(name);
+    if (object >= 0 && close(object) != 0 && result == 1) { cause = errno; result = 2; }
+    if (parent >= 0 && close(parent) != 0 && result == 1) { cause = errno; result = 2; }
+    if (result != 1 && error) *error = g_strdup_printf("%s: %s", result == 2 ?
+        "Mode inverse may have completed; durable recovery is unresolved" :
+        "Cannot acquire mode inverse object and parent before mutation", g_strerror(cause));
+    return result;
+#endif
+}
+
+int sumi_explorer_platform_recovery_rename(const char *source, const char *destination, char **error)
+{
+    if (error) *error = NULL;
+    if (!metadata_validate(source, error) || !metadata_validate(destination, error)) return 0;
+    int good = 0;
+#ifdef _WIN32
+    WCHAR *src = journal_wide(source), *dst = journal_wide(destination);
+    if (src && dst) good = MoveFileExW(src, dst, MOVEFILE_WRITE_THROUGH);
+    g_free(src); g_free(dst);
+#elif defined(__linux__)
+    good = renameat2(AT_FDCWD, source, AT_FDCWD, destination, RENAME_NOREPLACE) == 0;
+    if (good) good = recovery_parent_sync(source) && recovery_parent_sync(destination);
+#elif defined(__APPLE__)
+    good = renamex_np(source, destination, RENAME_EXCL) == 0;
+    if (good) good = recovery_parent_sync(source) && recovery_parent_sync(destination);
+#endif
+    if (!good) fail(error, "Durable no-overwrite recovery rename failed; inspect both paths");
+    return good;
+}
+
+int sumi_explorer_platform_recovery_filesystem(const char *path, char **error)
+{
+    if (error) *error = NULL;
+    if (!metadata_validate(path, error)) return 0;
+    int good = 0;
+#ifdef __linux__
+    int fd = open(path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK);
+    if (fd >= 0) { good = syncfs(fd) == 0; if (close(fd) != 0) good = 0; }
+#endif
+    if (!good) fail(error, "Filesystem recovery barrier is unavailable or failed");
+    return good;
+}

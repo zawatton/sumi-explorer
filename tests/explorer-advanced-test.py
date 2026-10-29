@@ -393,10 +393,14 @@ def run(args):
                 result = command("zip-extract", damaged, output)
                 assert result["status"] == "error" and not output.exists(), (index, result)
             print("PASS raw NUL/name mismatches, encryption, oversized metadata and truncated ZIP reject before output", flush=True)
-            zip64 = base / "unsupported ZIP64.zip"
+            zip64 = base / "malformed ZIP64.zip"
             with zipfile.ZipFile(zip64, "w") as saved:
                 with saved.open("entry", "w", force_zip64=True) as entry:
                     entry.write(b"ZIP64 local header")
+            damaged64 = bytearray(zip64.read_bytes())
+            extra64 = 30 + struct.unpack_from("<H", damaged64, 26)[0]
+            struct.pack_into("<H", damaged64, extra64 + 2, 7)
+            zip64.write_bytes(damaged64)
             output = base / "ZIP64 output"
             result = command("zip-extract", zip64, output)
             assert result["status"] == "error" and "Unsupported ZIP variant" in result["message"] and not output.exists(), result
@@ -407,7 +411,7 @@ def run(args):
             result = command("zip-extract", empty, empty_output)
             assert result["status"] == "ok" and empty_output.is_dir() and not list(empty_output.iterdir()), result
             print("PASS unsupported ZIP64 variant is explicit and never creates output", flush=True)
-            for label, names in (("depth", ["/".join(["a"] * 65)]), ("names", [f"{i:04d}-" + "a" * 195 for i in range(4000)])):
+            for label, names in (("depth", ["/".join(["a"] * 65)]), ("names", [f"{i:04d}-" + "a" * 195 for i in range(80000)])):
                 bounded = base / f"limit-{label}.zip"
                 with zipfile.ZipFile(bounded, "w") as saved:
                     for name in names:
@@ -450,29 +454,40 @@ def run(args):
 
 
 def undo_fault_unit(args):
-    """Actual Undo worker with deterministic native move/delete failure injection."""
+    """Actual Undo worker with pre-detach refusal and empty-quarantine cleanup failure."""
     artifacts = (args.artifacts or args.binary.resolve().parent / "advanced-evidence").resolve(); artifacts.mkdir(parents=True, exist_ok=True)
     source = Path(__file__).resolve().parents[1] / "explorer/sumi-explorer-native.el"
     text = source.read_text(); start = text.index(" (defun main ")
     prefix = text[:start].replace("(extern-call g_file_move ", "(sumi_explorer_unit_move ").replace("(extern-call g_file_delete ", "(sumi_explorer_unit_delete ")
+    # A failed durable rename may already have mutated the filesystem, so the
+    # runtime deliberately blocks history and retains its intent. This fixture
+    # instead refuses the concrete quarantine intent before any rename, keeping
+    # persistence healthy so the failed empty-quarantine cleanup is exercised.
+    prefix = prefix.replace("(defun sumi_explorer_journal_intent (store text)", "(defun sumi_explorer_unit_journal_intent_real (store text)", 1)
     main = r'''
+ (defun sumi_explorer_journal_intent (store text)
+   (if (sumi_explorer_same text (data-addr journal_inverse))
+     (sumi_explorer_unit_journal_intent_real store text) 0))
  (defun sumi_explorer_unit_move (source target flags cancellable progress data error)
    (seq (if error (ptr-write-u64 error 0 (extern-call g_error_new_literal (extern-call g_io_error_quark) 0 (data-addr undo_failure)))) 0))
  (defun sumi_explorer_unit_delete (file cancellable error) 0)
  (data-blob sumi_explorer_unit_badmode "00000\0" rodata)
  (defun main (argc argv)
-   (let ((job (extern-call g_malloc0 320)) (store (extern-call g_malloc0 24))
+   (let ((job (extern-call g_malloc0 320)) (store (extern-call g_malloc0 136)) (ctx (extern-call g_malloc0 736))
          (group (extern-call g_malloc0 32)) (item (extern-call g_malloc0 104)) (file 0)
          (probe (sumi_explorer_undo_probe)) (good 0) (text 0))
      (seq
       (setq file (extern-call g_file_new_for_path (ptr-read-u64 argv 8)))
       (ptr-write-u64 store 0 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_group_free)))
-      (ptr-write-u64 group 0 1) (ptr-write-u64 group 8 1)
+      (ptr-write-u64 ctx 512 store) (sumi_explorer_journal_restore ctx)
+      (sumi_explorer_journal_next_id store)
+      (ptr-write-u64 group 0 (ptr-read-u64 store 8)) (ptr-write-u64 group 8 1)
       (ptr-write-u64 group 16 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_item_free)))
       (ptr-write-u64 item 0 (extern-call g_strdup (ptr-read-u64 argv 8))) (ptr-write-u64 item 8 (extern-call g_strdup (ptr-read-u64 argv 8)))
       (ptr-write-u64 item 24 (sumi_explorer_undo_parent file probe))
       (ptr-write-u64 item 32 (extern-call g_strdup (ptr-read-u64 item 24)))
       (ptr-write-u64 item 16 (sumi_explorer_undo_fingerprint probe file))
+      (ptr-write-u64 item 64 1) (ptr-write-u64 item 72 1)
       (extern-call g_ptr_array_add (ptr-read-u64 group 16) item) (extern-call g_ptr_array_add (ptr-read-u64 store 0) group)
       (ptr-write-u64 job 0 11) (ptr-write-u64 job 272 store) (ptr-write-u64 job 296 group)
       (ptr-write-u64 job 24 (extern-call g_cancellable_new))
@@ -484,6 +499,7 @@ def undo_fault_unit(args):
       (if text (extern-call puts text))
       (extern-call g_object_unref (ptr-read-u64 job 24)) (extern-call g_object_unref file)
       (sumi_explorer_undo_probe_free probe) (extern-call g_ptr_array_unref (ptr-read-u64 store 0))
+      (sumi_explorer_journal_close store) (extern-call g_free ctx)
       (extern-call g_free store) (sumi_explorer_job_free job) (if good 0 1))))
 )
 '''
@@ -494,10 +510,24 @@ def undo_fault_unit(args):
     parent = Path(tempfile.mkdtemp(prefix="retained-quarantine-", dir=artifacts))
     file = parent / "unchanged.txt"; file.write_bytes(b"unchanged object")
     with (artifacts / "undo-fault-unit.log").open("wb") as log:
-        subprocess.run([str(exe), str(file), str(parent)], check=True, timeout=20, stdout=log, stderr=subprocess.STDOUT, env=dict(os.environ, G_DEBUG="fatal-warnings"))
+        subprocess.run([str(exe), str(file), str(parent)], check=True, timeout=20, stdout=log, stderr=subprocess.STDOUT, env=dict(os.environ, G_DEBUG="fatal-warnings", SUMI_EXPLORER_UNDO_DIR=str(parent / "undo-profile")))
     assert file.read_bytes() == b"unchanged object"
     residuals = list(parent.glob(".sumi-undo-*")); assert len(residuals) == 1 and not list(residuals[0].iterdir())
     assert str(residuals[0]) in (artifacts / "undo-fault-unit.log").read_text()
+    # Bypassing the pre-detach refusal must reach the real durable rename.
+    # Exit before reading the consumed group's borrowed pointer in this mutant.
+    negative_main = main.replace("(if (sumi_explorer_same text (data-addr journal_inverse))", "(if 1", 1)
+    negative_main = negative_main.replace("(setq text (ptr-read-u64 job 288))", "(if (= (extern-call g_file_query_exists file 0) 0) (extern-call _exit 77))\n      (setq text (ptr-read-u64 job 288))", 1)
+    negative_fixture = artifacts / "undo-fault-intent-bypass.el"; negative_fixture.write_text(prefix + negative_main)
+    negative_exe = build_aot_fixture(negative_fixture, artifacts, Path(os.environ["NELISP_REPO_ROOT"]).resolve())
+    negative_parent = Path(tempfile.mkdtemp(prefix="bypassed-refusal-", dir=artifacts))
+    negative_file = negative_parent / "unchanged.txt"; negative_file.write_bytes(b"unchanged object")
+    with (artifacts / "undo-fault-intent-bypass.log").open("wb") as log:
+        negative = subprocess.run([str(negative_exe), str(negative_file), str(negative_parent)], timeout=20, stdout=log, stderr=subprocess.STDOUT, env=dict(os.environ, G_DEBUG="fatal-warnings", SUMI_EXPLORER_UNDO_DIR=str(negative_parent / "undo-profile")))
+    moved = list(negative_parent.glob(".sumi-undo-*/item"))
+    if negative.returncode != 77 or negative_file.exists() or len(moved) != 1 or moved[0].read_bytes() != b"unchanged object":
+        raise AssertionError("Bypassed pre-detach refusal did not fail through the real native rename")
+    (artifacts / "undo-fault-negative-control.json").write_text(json.dumps({"exit_code": negative.returncode, "original_absent": True, "retained_bytes": str(moved[0]), "real_native_rename": True}, indent=2) + "\n")
     print("PASS actual failed-detach/failed-empty-quarantine cleanup reports exact residual and retains history", flush=True)
 
 
@@ -809,10 +839,11 @@ def metadata_glue_units(args):
      (seq (extern-call g_log 0 4 (data-addr test_error_reused)) 0)
      (extern-call g_file_read file cancel error)))
  (defun main (argc argv)
-   (let ((job (extern-call g_malloc0 320)) (store (extern-call g_malloc0 24)) (file 0)
+   (let ((job (extern-call g_malloc0 320)) (store (extern-call g_malloc0 136)) (ctx (extern-call g_malloc0 736)) (file 0)
          (probe (sumi_explorer_undo_probe)) (stamp 0) (cancel (extern-call g_cancellable_new)) (good 0))
      (seq
       (ptr-write-u64 store 0 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_group_free)))
+      (ptr-write-u64 ctx 512 store) (sumi_explorer_journal_restore ctx)
       (ptr-write-u64 job 0 1) (ptr-write-u64 job 8 (extern-call g_strdup (ptr-read-u64 argv 8)))
       (ptr-write-u64 job 16 (extern-call g_strdup (ptr-read-u64 argv 16)))
       (ptr-write-u64 job 24 cancel) (ptr-write-u64 job 272 store)
@@ -823,7 +854,8 @@ def metadata_glue_units(args):
       (setq good (and good (= stamp 0) (ptr-read-u64 probe 32)))
       (extern-call g_free stamp) (extern-call g_object_unref file) (sumi_explorer_undo_probe_free probe)
       (sumi_explorer_job_free job) (extern-call g_object_unref cancel)
-      (extern-call g_ptr_array_unref (ptr-read-u64 store 0)) (extern-call g_free store)
+      (extern-call g_ptr_array_unref (ptr-read-u64 store 0)) (sumi_explorer_journal_close store)
+      (extern-call g_free ctx) (extern-call g_free store)
       (if good 0 1))))
 )
 '''
@@ -834,7 +866,7 @@ def metadata_glue_units(args):
         with (artifacts / "missing-identity.log").open("wb") as log:
             for attr in ("id::file", "id::filesystem"):
                 target = base / attr.replace(":", "-")
-                subprocess.run([str(binary), str(original), str(target)], env=dict(os.environ, G_DEBUG="fatal-warnings", SUMI_TEST_MISSING_ATTRIBUTE=attr), check=True, timeout=30, stdout=log, stderr=subprocess.STDOUT)
+                subprocess.run([str(binary), str(original), str(target)], env=dict(os.environ, G_DEBUG="fatal-warnings", SUMI_TEST_MISSING_ATTRIBUTE=attr, SUMI_EXPLORER_UNDO_DIR=str(base / ("profile-" + attr.replace(":", "-")))), check=True, timeout=30, stdout=log, stderr=subprocess.STDOUT)
                 assert target.read_bytes() == original.read_bytes()
     print("PASS missing file-ID and filesystem-ID preserve actual copy success, refuse Undo and survive fatal GIO warnings", flush=True)
     if args.identity_only:

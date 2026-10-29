@@ -11,8 +11,9 @@ Protocol version 1 keeps its six-field state/response schema. Existing requests
 are unchanged. New commands are `copy`, `move`, `rename`, `trash`, and `mkdir`.
 `path` is an absolute local source path (the new directory for `mkdir`).
 `destination` is an additional GLib-escaped string containing the exact new
-absolute path for `copy`, `move`, and `rename`. No operation overwrites or merges
-an existing destination. Rename stays in the same parent directory. Trash uses
+absolute path for `copy`, `move`, and `rename`. These commands do not overwrite or
+merge an existing destination. Explicit `transfer` policies are described in
+[the productivity expansion](productivity-expansion.md). Rename stays in the same parent directory. Trash uses
 GIO trash and never falls back to permanent deletion.
 
 A mutation consumes one positive monotonic request ID, but publishes its durable

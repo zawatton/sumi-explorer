@@ -5,34 +5,46 @@
     "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
     "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
     "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
-    "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
-    "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
-    "explorer/sumi-explorer-native.el": "0584904ed166d0e7e23dca33ae88c2f02478277ce92ae84edc49205dd2fc69f5",
-    "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
-    "tests/explorer-advanced-test.py": "c606a21981c5fe20c772d4e1f4b053972d6ca5b9c8ac5666627353ec9a3ee6e8",
+    "explorer/platform.c": "c39396a2a2279973295957cf71cb76f4888d49fcd33cd23f8658847b50732931",
+    "explorer/platform.h": "b9dd68e79926bb737742ff6bed16ec3984cd064092ddd43c8682a30669a32e5b",
+    "explorer/sumi-explorer-native.el": "d6ee68984584998dc993daac09217d621a87375c0a34018608be7aedabdeb563",
+    "explorer/sumi-explorer.el": "0a25dbd2a36869830afc63d60bd673e2924595f9180320242f8a309d9f394101",
+    "tests/explorer-advanced-test.py": "f543092bb76a7b897cc46d935cce106efc948fd735000bad7e2307fa9dfc9743",
     "tests/explorer-batches-test.py": "ff09c2e50eb81648f18f876a038e540f4b1219b0cde4e4321d2d2b658b8d390f",
     "tests/explorer-design-test.py": "eca38c2f35278e262c180926e8abdca2081746b8f67d77283195fcb3ebfddb6d",
     "tests/explorer-dnd-test.py": "9a2ada101618b74d834887ce0c18163a4b75d96e05bc039f789eb5e78085b393",
-    "tests/explorer-everyday-test.py": "6401a66361fca2750119f2bb378323ff80d38c321a522ab8896fa7a66dc79a05",
-    "tests/explorer-gui-test.py": "492629080073bef845e8e0aa16d1a15a58bac1528513ce630d2f3ed47adcf58b",
+    "tests/explorer-durable-undo-test.py": "df3dd0672ae5ff15da4274a14e8c852e1e7bfbee61b67058cbd057e43ce2bcf2",
+    "tests/explorer-everyday-test.py": "9a1b7313c0828b2b164df27ace767887a909002f4113521afcea92e9c85c2a2d",
+    "tests/explorer-gui-test.py": "3a7e9a03a317f46adbc9390501a3d936c9302694de131f4c6b66cef156a582ed",
     "tests/explorer-navigation-test.py": "15e922795aa4563784d34d8333e0f73a51c241f14f64a44ee4d039e16b3498f4",
-    "tests/explorer-operations-test.py": "386840888cc758f8f49c16244fb9b6bfaa2fae463b94f13834f9d9b7561abfe7",
-    "tests/explorer-workspace-test.py": "89215f451e9409ee6dc1af8b7a545868d05b63886908de3eded24fc7b10521cd"
+    "tests/explorer-operations-test.py": "0f0050ef08989b48122a187314bf6bc51e09a95458663e51a90c55c78d0073a8",
+    "tests/explorer-productivity-test.py": "318d541fc16cfff39edcf2992ae11d2e4c956bd97de30c6d3e700de968fe1765",
+    "tests/explorer-search-test.py": "5b1e3e982be727903b03ede5409a9b92a82f495dbfc4069e7673acc90f737361",
+    "tests/explorer-transfer-test.py": "3efbe6eaeb01c2c52a8bc5b1a91f3169d63221c93459076f9c7eec6ba0c8b057",
+    "tests/explorer-workspace-test.py": "89215f451e9409ee6dc1af8b7a545868d05b63886908de3eded24fc7b10521cd",
+    "tests/explorer-zero-mode-test.py": "119d0c686ecea18b72a829435447b00472ca2a429900218cadf16e7ccba71db1",
+    "tests/explorer-zip64-test.py": "cff396e6f0ae7f4662acc4e273288d1a9bf08a194bcf593ac8c9848a6ad844d5"
   },
   "assertions": {
     "tests/explorer-advanced-test.py": 214,
     "tests/explorer-batches-test.py": 41,
     "tests/explorer-design-test.py": 0,
     "tests/explorer-dnd-test.py": 19,
+    "tests/explorer-durable-undo-test.py": 99,
     "tests/explorer-everyday-test.py": 57,
     "tests/explorer-gui-test.py": 16,
     "tests/explorer-navigation-test.py": 0,
     "tests/explorer-operations-test.py": 29,
-    "tests/explorer-workspace-test.py": 44
+    "tests/explorer-productivity-test.py": 0,
+    "tests/explorer-search-test.py": 0,
+    "tests/explorer-transfer-test.py": 0,
+    "tests/explorer-workspace-test.py": 44,
+    "tests/explorer-zero-mode-test.py": 6,
+    "tests/explorer-zip64-test.py": 0
   },
   "binary": {
     "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/sumi-explorer",
-    "sha256": "c1c3c65c4f344ce08c1b3519e991d87494414fa86896b5427877929019d47793"
+    "sha256": "9e9c06a625198a73d116b5e719d68a7c98e574659a0199731e179f59e6019eae"
   },
   "groups": {
     "layout": {
@@ -102,187 +114,187 @@
   },
   "artifacts": [
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/actions-final.png",
-      "sha256": "2ad79302e8b4408894782783c8bec266602e4ad7f2e3153ee6e728c7476a65b7",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/actions-final.png",
+      "sha256": "579005497482a5583f9204e6152ca526f352874a5f1581f4d3d03ca87a851b64",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/actions-host.log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/actions-host.log",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "kind": "log"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/actions-menu-more.png",
-      "sha256": "21cb68cf545cf076de20d3582e3e5080afbd73b30c697c939e63fefc475775ca",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/actions-menu-more.png",
+      "sha256": "901bb5e5bd77e5394442868c5fee2995cc07bda7162c527a2b2268b5ec48cb94",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/actions-menu-sort.png",
-      "sha256": "93abbe1caac264c517d8f4095abcf49126ed6768145ed8ff96fd05af04f0a62d",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/actions-menu-sort.png",
+      "sha256": "5d75a76f4a54ee7a37434496ec7148ad5c23531824fae7ea8fafd1c437032958",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/actions-menu-view.png",
-      "sha256": "3d769b2be3595fb32e0240df5018c769ea69d33ff58a39132ba0630c31f30212",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/actions-menu-view.png",
+      "sha256": "423bf3d5ea8500970ad1bf07eccd55d168054fae7c5bf589a55a62e5d7548f7a",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/actions.png",
-      "sha256": "2ad79302e8b4408894782783c8bec266602e4ad7f2e3153ee6e728c7476a65b7",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/actions.png",
+      "sha256": "579005497482a5583f9204e6152ca526f352874a5f1581f4d3d03ca87a851b64",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/layout-final.png",
-      "sha256": "794c9b2bb13e3bfdd771a08bf048577db83a9cf35e513ca3cb97cb2f28ca2319",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/layout-final.png",
+      "sha256": "5d412e112439ce4f6a7d473fc5c49151986622ec67a2f08e8ea6d406702b7502",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/layout-host.log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/layout-host.log",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "kind": "log"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/layout.png",
-      "sha256": "794c9b2bb13e3bfdd771a08bf048577db83a9cf35e513ca3cb97cb2f28ca2319",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/layout.png",
+      "sha256": "5d412e112439ce4f6a7d473fc5c49151986622ec67a2f08e8ea6d406702b7502",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/navigation-final.png",
-      "sha256": "fe10ca4fd3986e1991d33ddbb73d0c239481b0c46d00f6c801747510cba1d559",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/navigation-final.png",
+      "sha256": "8302fbccb07e9be68c21444c0b5202c4c5db30ee68daada33c608039e019db9e",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/navigation-host.log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/navigation-host.log",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "kind": "log"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/navigation-menu-more.png",
-      "sha256": "d7de8727b5c3c21d7c0fba5491714d3b37f72eb7e3c69ebafaef3911a43d78d5",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/navigation-menu-more.png",
+      "sha256": "643a709b14d6eb1067be225984a67f7598c6bef6437df18a8a16ea85a99cc59b",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/navigation.png",
-      "sha256": "03f41d9a20d831a3e111e4525f60d436ef3f00cb66d25f382d41c7bfe39bb184",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/navigation.png",
+      "sha256": "2f39600324e94de12ebeb93fe5c245ba369efe494db7db7cc37e8a5caa400038",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-dialog-confirm-trash.png",
-      "sha256": "2aeb8431d9f84c9973d2cc6c9f0bc017dad88e83cd784409ba5fe2be6d97dfd4",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-dialog-confirm-trash.png",
+      "sha256": "1acad326db3e6378ed5507c9b52b41beb0f5c5acd7667bfa6c6d4ca05dd0415f",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-dialog-copy-to.png",
-      "sha256": "0226dac08fc1c0ac983d0c4720cfcc4f5e9015fdfe103bcaff7a8d4add1a0bc8",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-dialog-copy-to.png",
+      "sha256": "9106a2b7afa9ffd7d9580eb4145257b17a7fc6a8188117707bffaf0f23f76589",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-dialog-move-to.png",
-      "sha256": "c5baf6479429f2d602519e02f18d174bc555606ce8f801c0ef1c3ad3005533a4",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-dialog-move-to.png",
+      "sha256": "c4b1ce5067a18070bed3dbef039b8334c2a3f9a75bb61919d7113831f0c10d09",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-dialog-sumi-create-zip.png",
-      "sha256": "f43d6c137828d53d9181c46541936411ec6ea6dad9057b81e354d6e6cf14687e",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-dialog-sumi-create-zip.png",
+      "sha256": "20d111d78d58a2b146a00422e506acc922930d4104939b7ec7e606a0eb4af9d6",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-dialog-sumi-new-folder.png",
-      "sha256": "68623cb5f8e9035b2d7b47e748c5da771ad100c55ddb0608f22d2d6ee2e79381",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-dialog-sumi-new-folder.png",
+      "sha256": "4ba3f2928ba32dac639fe30f91abfad423450fe4b7cfbb7a3adf402e55c3a228",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-dialog-sumi-permissions.png",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-dialog-sumi-permissions.png",
       "sha256": "ac7a016bdb26c5b2c12aaa4a8fd6589f0a2609aee154730f063d13ffdb0a6c60",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-dialog-sumi-rename.png",
-      "sha256": "b12d2c9253f7b4b61df84590a4756ae66f4bd5587bba7d0e6523f19a1a3fc407",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-dialog-sumi-rename.png",
+      "sha256": "87285e44a50830f13f15ccc1f8b928e7b8195b40b20b4bda9b0eb2fdc413b3f7",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-final.png",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-final.png",
       "sha256": "d7ac4f69715aedca6b95013efe89493ad5fe3ee1d8bb51b701c24cf14cfeabf4",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-host.log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-host.log",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "kind": "log"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations-menu-more.png",
-      "sha256": "bec1a57e19152eac78d49a435009d31d0ccaa73e786c023dbf632cc6884c10e4",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations-menu-more.png",
+      "sha256": "65e89681da20818d83dd614852e68aa455332ac5c9e28c3840b9be88b6697129",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/operations.png",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/operations.png",
       "sha256": "d7ac4f69715aedca6b95013efe89493ad5fe3ee1d8bb51b701c24cf14cfeabf4",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/viewport-1000x700.png",
-      "sha256": "454e7e3aedc618d0375642884230755eeed060463812731a51d0bb6f2ea4c00c",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/viewport-1000x700.png",
+      "sha256": "ec22e98fe6933d6091fa3fb142d58edcef1b8d224f96731ffe9ea7717dad6446",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/viewport-1280x800.png",
-      "sha256": "bdff177f40a31e7ea9a75d49c55dd8f34f2d6218e7a6a5034a1051623ff349ff",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/viewport-1280x800.png",
+      "sha256": "fdb354671cab1153cf28b228d6429c790079b2c3628f921272fa6fde474f4de7",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/viewport-1600x900.png",
-      "sha256": "f3357b64a390e7f0b273ab2483af051bb1567052b7664f70e1a412cf22ee86d0",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/viewport-1600x900.png",
+      "sha256": "502c0edaabdf9e6f1d86b1d76cf6729461a207f7d6f54d9cdb7a7ec87eee31e4",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/viewports-dialog-sumi-new-folder.png",
-      "sha256": "6267e7bb6397f4e010d2c5da48f90aaf433d0789cdf548d0f2941182f42821e6",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/viewports-dialog-sumi-new-folder.png",
+      "sha256": "15b0900d327c1b79d98ff764cfdfebaee47d08bb267801545b2a2f1577dbd49e",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/viewports-final.png",
-      "sha256": "57d6cfc6f3aa32b46dc5884d3dabf5a1885f876ef4c523ecb190a28b53636d68",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/viewports-final.png",
+      "sha256": "99e80868330afa7aa0019574149c7238b780396c47317c5a5238e68156a808e3",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/viewports-host.log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/viewports-host.log",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "kind": "log"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/viewports-menu-more.png",
-      "sha256": "a437b10f99bb0907307758746d890e5a479159b18f43b78da5819774c5a725d4",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/viewports-menu-more.png",
+      "sha256": "82ea7968a29d367f022430b0c87239eab9c24171fd9dc6382108caa9a7e6125e",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/viewports.png",
-      "sha256": "640d43916a93c62a2cb57a15b8fc9c6bcfeacfb15e13c91ea84606ac896bf3fb",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/viewports.png",
+      "sha256": "5edc18e12ddadfee31c33bcf3e000ad608f6125a249d91a7067df7ba8a16b9ab",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/workflow-dialog-sumi-new-folder.png",
-      "sha256": "5ba6aba928cf779465b832916ff7ac7a905a2b24bf0090d9b04061777972ad0e",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/workflow-dialog-sumi-new-folder.png",
+      "sha256": "e235ab27a0ac28b4c1c6fffb6f42d9801f45610f1d3be7373f0d91b68d3b918c",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/workflow-dialog-sumi-rename.png",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/workflow-dialog-sumi-rename.png",
       "sha256": "660f59b69ceed93aab0e008dd0a68a6ba0e6b0162a09924e323a397965240b9d",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/workflow-final.png",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/workflow-final.png",
       "sha256": "652b6e022fe3e725585f4eac77a5906ccfc50fa69b0fc6652a478580ab0ec640",
       "kind": "screenshot"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/workflow-host.log",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/workflow-host.log",
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "kind": "log"
     },
     {
-      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/navigation/design-gui/workflow.png",
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/design-final/workflow.png",
       "sha256": "652b6e022fe3e725585f4eac77a5906ccfc50fa69b0fc6652a478580ab0ec640",
       "kind": "screenshot"
     }

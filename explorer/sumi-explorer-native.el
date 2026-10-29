@@ -71,6 +71,49 @@
  (data-blob copy_to_title "Copy to\0" rodata)
  (data-blob move_to_title "Move to\0" rodata)
  (data-blob transfer_hint "Unused path, or existing folder for multiple items\0" rodata)
+ (data-blob transfer_command "transfer\0" rodata)
+ (data-blob transfer_policy "policy\0" rodata)
+ (data-blob transfer_mode "mode\0" rodata)
+ (data-blob transfer_replace "replace\0" rodata)
+ (data-blob transfer_merge "merge\0" rodata)
+ (data-blob transfer_merge_replace "merge-replace\0" rodata)
+ (data-blob transfer_skip "skip\0" rodata)
+ (data-blob transfer_replace_label "Replace\0" rodata)
+ (data-blob transfer_merge_label "Merge\0" rodata)
+ (data-blob transfer_merge_replace_label "Merge and replace\0" rodata)
+ (data-blob transfer_skip_label "Skip\0" rodata)
+ (data-blob transfer_meta "sumi-transfer-v1\0" rodata)
+ (data-blob transfer_header "Transfer\0" rodata)
+ (data-blob transfer_action "Action%lld\0" rodata)
+ (data-blob transfer_source "original\0" rodata)
+ (data-blob transfer_current "current\0" rodata)
+ (data-blob transfer_source_fingerprint "source-fingerprint\0" rodata)
+ (data-blob transfer_source_parent "original-parent\0" rodata)
+ (data-blob transfer_current_parent "current-parent\0" rodata)
+ (data-blob transfer_prestate "prestate\0" rodata)
+ (data-blob transfer_kind "kind\0" rodata)
+ (data-blob transfer_slot "slot\0" rodata)
+ (data-blob transfer_slot_identity "slot-identity\0" rodata)
+ (data-blob transfer_slot_parent "slot-parent\0" rodata)
+ (data-blob transfer_backup "backup\0" rodata)
+ (data-blob transfer_backup_fingerprint "backup-fingerprint\0" rodata)
+ (data-blob transfer_completed "completed\0" rodata)
+ (data-blob transfer_fingerprint "fingerprint\0" rodata)
+ (data-blob transfer_new "new\0" rodata)
+ (data-blob transfer_old "old\0" rodata)
+ (data-blob transfer_slot_pattern "/.sumi-transfer-XXXXXX\0" rodata)
+ (data-blob transfer_failure "Transfer refused or incomplete; completed changes and owned recovery paths are retained in Undo/recovery journal\0" rodata)
+ (data-blob transfer_restore_completed "Source restored at: %s; Undo stopped and destination/recovery bytes are retained\0" rodata)
+ (data-blob transfer_restore_partial "Source restoration may be partial at: %s; Undo stopped and destination/recovery bytes are retained\0" rodata)
+ (data-blob transfer_clock_attrs "time::modified,time::modified-usec,time::modified-nsec\0" rodata)
+ (data-blob transfer_modified "time::modified\0" rodata)
+ (data-blob transfer_modified_usec "time::modified-usec\0" rodata)
+ (data-blob transfer_modified_nsec "time::modified-nsec\0" rodata)
+ (data-blob transfer_summary "%lld completed, %lld skipped; recovery slots: %s\0" rodata)
+ (data-blob transfer_copy_partial "%s; possible partial new destination: %s; recovery data (if retained): %s\0" rodata)
+ (data-blob transfer_drop_key "sumi-pending-drop\0" rodata)
+ (data-blob transfer_drag_enter "drag-enter\0" rodata)
+ (data-blob transfer_drag_motion "drag-motion\0" rodata)
  (data-blob single_target_hint "Single item: unused destination path\0" rodata)
  (data-blob bookmarks_label "Bookmarks\0" rodata)
  (data-blob ready_label "Ready\0" rodata)
@@ -112,8 +155,8 @@
  (data-blob zip_com "com\0" rodata)
  (data-blob zip_lpt "lpt\0" rodata)
  (data-blob zip_slash "/\0" rodata)
- (data-blob zip_classic "Unsupported ZIP variant or ambiguous raw ZIP metadata; only bounded single-disk classic ZIP store/deflate is supported\0" rodata)
- (data-blob zip_options "zip:compression=deflate,zip:!zip64,zip:hdrcharset=UTF-8\0" rodata)
+ (data-blob zip_classic "Unsupported ZIP variant or ambiguous ZIP/ZIP64 metadata; bounded single-disk store/deflate is required\0" rodata)
+ (data-blob zip_options "zip:compression=deflate,zip:hdrcharset=UTF-8\0" rodata)
  (data-blob zip_cleanup_warning "Temporary ZIP snapshot cleanup failed; may remain: %s\0" rodata)
  (data-blob zip_handle_cleanup_warning "Temporary ZIP snapshot handle cleanup failed\0" rodata)
  (data-blob zip_warning_format "%s\n%s\0" rodata)
@@ -126,6 +169,17 @@
  (data-blob undo_unavailable "Undo unavailable for one or more completed items\0" rodata)
  (data-blob undo_failure "Undo rejected: stale history, changed object or parent, occupied original path, or unsupported backend\0" rodata)
  (data-blob undo_snapshot_failure "Undo history changed but its session snapshot could not be published\0" rodata)
+ (data-blob journal_magic "SUMIUD02" rodata)
+ (data-blob journal_suffix ".journal\0" rodata)
+ (data-blob journal_sequence "sequence\0" rodata)
+ (data-blob journal_established "established\0" rodata)
+ (data-blob journal_hex16 "\\A[0-9a-f]{16}\\z\0" rodata)
+ (data-blob journal_pending_location "Journal %s; intent preview: %s\n\0" rodata)
+ (data-blob journal_recovery_list "Interrupted operations: recovery data retained in %s; Undo blocked.\n\0" rodata)
+ (data-blob journal_inverse_paths "Undo inverse group=%lld original=%s current=%s quarantine=%s\n\0" rodata)
+ (data-blob journal_failure "Undo unavailable: private durable history could not be read or saved; existing recovery data retained\0" rodata)
+ (data-blob journal_recovery "Interrupted operation: recovery data retained in %s; Undo blocked. Intent: %s\0" rodata)
+ (data-blob journal_inverse "Undo inverse in progress; interrupted objects require manual recovery\0" rodata)
  (data-blob undo_rebase_warning "Inverse completed; older Undo could not be revalidated\0" rodata)
  (data-blob undo_ntfs_pattern "\\Antfs-v1\\|volume=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\|serial=[0-9a-f]{16}\\|id=[0-9a-f]{32}\\|created=[0-9a-f]{16}\\|changed=[0-9a-f]{16}\\|written=[0-9a-f]{16}\\|attributes=[0-9a-f]{8}\\|size=[0-9a-f]{16}\\|links=[0-9a-f]{8}\\|directory=[01]\\|tag=[0-9a-f]{8}\\z\0" rodata)
  (data-blob undo_ntfs_changed "|changed=\0" rodata)
@@ -773,6 +827,8 @@
                          (extern-call gtk_widget_is_ancestor focus (ptr-read-u64 ctx 496))
                          (extern-call gtk_widget_is_ancestor focus (ptr-read-u64 ctx 200)))))
       (cond
+       ((and (= (= (logand state 4) 0) 0) (or (= keyval 102) (= keyval 70)))
+        (seq (search_dialog 0 ctx) 1))
        ((and (= (= (logand state 4) 0) 0) (or (= keyval 108) (= keyval 76)))
         (seq (sumi_explorer_location_edit 0 ctx) 1))
        ((and (= keyval 65307)
@@ -951,6 +1007,7 @@
       (setq many (sumi_explorer_same command (data-addr select_many)))
       (setq batch (or (sumi_explorer_same command (data-addr copy_many)) (sumi_explorer_same command (data-addr move_many)) (sumi_explorer_same command (data-addr trash_many)) (sumi_explorer_same command (data-addr zip_create)) (sumi_explorer_same command (data-addr shell_command))))
       (setq dest (or (sumi_explorer_same command (data-addr copy_command)) (sumi_explorer_same command (data-addr move_command)) (sumi_explorer_same command (data-addr rename_command)) (sumi_explorer_same command (data-addr copy_many)) (sumi_explorer_same command (data-addr move_many)) (sumi_explorer_same command (data-addr zip_create)) (sumi_explorer_same command (data-addr zip_extract)) (sumi_explorer_same command (data-addr chmod_command))))
+      (if (sumi_explorer_same command (data-addr transfer_command)) (seq (setq dest 1) (setq expected (+ expected 2))))
       (if (= path 0) (setq good 0))
       (if (or (= (= (extern-call g_strv_length groups) 1) 0) (= (sumi_explorer_same (ptr-read-u64 groups 0) (data-addr group)) 0)) (setq good 0))
       (extern-call g_strfreev groups)
@@ -977,6 +1034,13 @@
         (seq
          (setq value (extern-call g_key_file_get_string key (data-addr group) (data-addr destination) (+ ctx 88)))
          (if (= value 0) (setq good 0)) (extern-call g_free value)))
+      (if (sumi_explorer_same command (data-addr transfer_command))
+        (seq
+         (setq value (extern-call g_key_file_get_string key (data-addr group) (data-addr transfer_policy) (+ ctx 88)))
+         (if (= (sumi_explorer_transfer_policy_code value) 0) (setq good 0)) (extern-call g_free value)
+         (setq value (extern-call g_key_file_get_string key (data-addr group) (data-addr transfer_mode) (+ ctx 88)))
+         (if (= (or (sumi_explorer_same value (data-addr copy_command)) (sumi_explorer_same value (data-addr move_command))) 0) (setq good 0))
+         (extern-call g_free value)))
       (while (and good (< i count))
         (seq
          (setq name (extern-call g_strdup_printf (data-addr indexed_path) i))
@@ -1239,14 +1303,14 @@
       (extern-call g_object_unref (ptr-read-u64 ctx 184))
       (ptr-write-u64 ctx 184 0) (ptr-write-u64 ctx 176 0)
       (extern-call g_object_unref task)
-      (if (ptr-read-u64 ctx 152) (extern-call g_main_loop_quit (ptr-read-u64 ctx 0))) 0)))
+      (sumi_explorer_maybe_quit ctx) 0)))
 
  (defun sumi_explorer_start_operation (ctx op source destination request)
    (let ((job 0) (task 0) (valid 0))
      (seq
       (setq valid (and (= (= source 0) 0) (extern-call g_path_is_absolute source)))
       (if (<= op 3) (setq valid (and valid (= (= destination 0) 0) (extern-call g_path_is_absolute destination))))
-      (if (or (= valid 0) (ptr-read-u64 ctx 144))
+      (if (or (= valid 0) (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152))
         (seq
          (if (> request 0) (ptr-write-u64 ctx 72 request))
          (sumi_explorer_publish ctx 0 (if valid (data-addr copy_busy) (data-addr bad_paths))) 0)
@@ -1408,6 +1472,784 @@
  ;; Outer tasks reserve272 for the session Undo store,280 for pending group,
  ;; 288 for a post-mutation warning,296 for a pinned Undo group. ctx512 owns
  ;; the store; GUI snapshots read it only after the serial worker has returned.
+ ;; Explicit transfers have a separate 416-byte allocation. The first 320
+ ;; bytes retain the ordinary job ABI; policy320 mode328 actions336 drop344
+ ;; drop-action352 frozen-paths360 count368 destination-is-folder376,
+ ;; completed384 skipped392 unresolved400. Each owned action is 128 bytes.
+ ;; Policies: 0 reject, 1 replace, 2 merge/skip files, 3 merge/replace, 4 skip.
+ ;; Modes: 1 copy, 2 move with retained source, 3 external sender-owned MOVE.
+ (defun sumi_explorer_transfer_field (offset)
+   (cond ((= offset 0) (data-addr transfer_source)) ((= offset 8) (data-addr transfer_current))
+         ((= offset 16) (data-addr transfer_source_fingerprint)) ((= offset 24) (data-addr transfer_source_parent))
+         ((= offset 32) (data-addr transfer_current_parent)) ((= offset 40) (data-addr transfer_prestate))
+         ((= offset 56) (data-addr transfer_slot)) ((= offset 64) (data-addr transfer_slot_identity))
+         ((= offset 72) (data-addr transfer_slot_parent)) ((= offset 80) (data-addr transfer_backup))
+         ((= offset 88) (data-addr transfer_backup_fingerprint)) (t (data-addr transfer_fingerprint))))
+ (defun sumi_explorer_transfer_action_free (action)
+   (let ((offset 0))
+     (seq (while (<= offset 120)
+       (seq (if (and (= (= offset 48) 0) (= (= offset 96) 0) (= (= offset 104) 0) (= (= offset 112) 0))
+               (extern-call g_free (ptr-read-u64 action offset))) (setq offset (+ offset 8))))
+       (extern-call g_free action) 0)))
+ (defun sumi_explorer_transfer_policy_code (text)
+   (cond ((sumi_explorer_same text (data-addr transfer_replace)) 1)
+         ((sumi_explorer_same text (data-addr transfer_merge)) 2)
+         ((sumi_explorer_same text (data-addr transfer_merge_replace)) 3)
+         ((sumi_explorer_same text (data-addr transfer_skip)) 4) (t 0)))
+ (defun sumi_explorer_transfer_serialise (actions mode)
+   (let ((key (extern-call g_key_file_new)) (i 0) (offset 0) (action 0) (section 0) (text 0))
+     (seq
+      (extern-call g_key_file_set_integer key (data-addr transfer_header) (data-addr version) 1)
+      (extern-call g_key_file_set_integer key (data-addr transfer_header) (data-addr transfer_mode) mode)
+      (extern-call g_key_file_set_integer key (data-addr transfer_header) (data-addr count_key) (ptr-read-u32 actions 8))
+      (while (< i (ptr-read-u32 actions 8))
+        (seq
+         (setq action (ptr-read-u64 (ptr-read-u64 actions 0) (* i 8)))
+         (setq section (extern-call g_strdup_printf (data-addr transfer_action) i))
+         (setq offset 0)
+         (while (<= offset 120)
+           (seq
+            (if (and (= (= offset 48) 0) (= (= offset 96) 0) (= (= offset 104) 0) (= (= offset 112) 0))
+              (extern-call g_key_file_set_string key section (sumi_explorer_transfer_field offset)
+                (if (ptr-read-u64 action offset) (ptr-read-u64 action offset) (data-addr empty))))
+            (setq offset (+ offset 8))))
+         (extern-call g_key_file_set_integer key section (data-addr transfer_kind) (ptr-read-u64 action 48))
+         (extern-call g_key_file_set_integer key section (data-addr type_value) (ptr-read-u64 action 96))
+         (extern-call g_key_file_set_integer key section (data-addr transfer_completed) (ptr-read-u64 action 104))
+         (extern-call g_free section) (setq i (+ i 1))))
+      (setq text (extern-call g_key_file_to_data key 0 0)) (extern-call g_key_file_unref key)
+      (if (and text (> (extern-call strlen text) 1048576)) (seq (extern-call g_free text) (setq text 0))) text)))
+ (defun sumi_explorer_transfer_safe_path (job file)
+   (let ((cursor (extern-call g_object_ref file)) (next 0) (info 0) (good 1))
+     (seq
+      (while (and good cursor)
+        (seq
+         (setq info (extern-call g_file_query_info cursor (data-addr id_attrs) 1 (ptr-read-u64 job 24) 0))
+         (if info
+           (seq (if (or (= (extern-call g_file_info_get_file_type info) 3)
+                        (and (= (= cursor file) 0) (= (= (extern-call g_file_info_get_file_type info) 2) 0))) (setq good 0))
+                (extern-call g_object_unref info))
+           (if (= (= cursor file) 0) (setq good 0)))
+         (setq next (extern-call g_file_get_parent cursor)) (extern-call g_object_unref cursor) (setq cursor next)))
+      (if cursor (extern-call g_object_unref cursor))
+      (if (= good 0) (sumi_explorer_job_fail job (data-addr transfer_failure))) good)))
+ (defun sumi_explorer_transfer_safe_tree (job file depth)
+   (let ((info 0) (en 0) (childinfo 0) (child 0) (kind 0) (good (sumi_explorer_job_check job depth)))
+     (seq
+      (if good
+        (seq
+         (setq info (extern-call g_file_query_info file (data-addr id_attrs) 1 (ptr-read-u64 job 24) (+ job 32)))
+         (if (= info 0) (setq good 0)
+           (seq
+            (setq kind (extern-call g_file_info_get_file_type info))
+            (if (and (= (= kind 1) 0) (= (= kind 2) 0)) (setq good 0))
+            (if (and good (= kind 2))
+              (seq
+               (setq en (extern-call g_file_enumerate_children file (data-addr id_attrs) 1 (ptr-read-u64 job 24) (+ job 32)))
+               (if (= en 0) (setq good 0)
+                 (seq
+                  (setq childinfo (extern-call g_file_enumerator_next_file en (ptr-read-u64 job 24) (+ job 32)))
+                  (while (and good childinfo)
+                    (seq
+                     (setq child (extern-call g_file_get_child file (extern-call g_file_info_get_name childinfo)))
+                     (setq good (sumi_explorer_transfer_safe_tree job child (+ depth 1)))
+                     (extern-call g_object_unref child) (extern-call g_object_unref childinfo)
+                     (setq childinfo (if good (extern-call g_file_enumerator_next_file en (ptr-read-u64 job 24) (+ job 32)) 0))))
+                  (extern-call g_file_enumerator_close en 0 0) (extern-call g_object_unref en)))))
+            (extern-call g_object_unref info)))))
+      (if (ptr-read-u64 job 32) (setq good 0))
+      (if (= good 0) (sumi_explorer_job_fail job (data-addr transfer_failure))) good)))
+ (defun sumi_explorer_transfer_durable (job path)
+   (let ((error (extern-call g_malloc0 8)) (good 0))
+     (seq
+      (setq good (extern-call sumi_explorer_platform_recovery_sync path error))
+      (if (ptr-read-u64 error 0) (seq (sumi_explorer_job_fail job (ptr-read-u64 error 0)) (extern-call g_free (ptr-read-u64 error 0))))
+      (extern-call g_free error) good)))
+ (defun sumi_explorer_transfer_sync (job file depth)
+   (let ((info 0) (en 0) (ci 0) (child 0) (path 0) (good (sumi_explorer_job_check job depth)))
+     (seq
+      (if good (setq info (extern-call g_file_query_info file (data-addr id_attrs) 1 (ptr-read-u64 job 24) (+ job 32))))
+      (if (= info 0) (setq good 0)
+        (seq
+         (if (= (extern-call g_file_info_get_file_type info) 2)
+           (seq
+            (setq en (extern-call g_file_enumerate_children file (data-addr id_attrs) 1 (ptr-read-u64 job 24) (+ job 32)))
+            (if (= en 0) (setq good 0)
+              (seq
+               (setq ci (extern-call g_file_enumerator_next_file en (ptr-read-u64 job 24) (+ job 32)))
+               (while (and good ci)
+                 (seq (setq child (extern-call g_file_get_child file (extern-call g_file_info_get_name ci)))
+                   (setq good (sumi_explorer_transfer_sync job child (+ depth 1)))
+                   (extern-call g_object_unref child) (extern-call g_object_unref ci)
+                   (setq ci (if good (extern-call g_file_enumerator_next_file en (ptr-read-u64 job 24) (+ job 32)) 0))))
+               (extern-call g_file_enumerator_close en 0 0) (extern-call g_object_unref en))))
+           (if (= (= (extern-call g_file_info_get_file_type info) 1) 0) (setq good 0)))
+         (extern-call g_object_unref info)))
+      (if (ptr-read-u64 job 32) (setq good 0))
+      (if good (seq (setq path (extern-call g_file_get_path file))
+         (setq good (and path (sumi_explorer_transfer_durable job path))) (extern-call g_free path))) good)))
+ (defun sumi_explorer_transfer_rename (job source destination)
+   (let ((a (extern-call g_file_get_path source)) (b (extern-call g_file_get_path destination)) (good 0) (error (extern-call g_malloc0 8)))
+     (seq
+      (if (and a b (= (extern-call g_cancellable_set_error_if_cancelled (ptr-read-u64 job 24) (+ job 32)) 0))
+        (setq good (extern-call sumi_explorer_platform_recovery_rename a b error)))
+      (if (ptr-read-u64 error 0) (seq (sumi_explorer_job_fail job (ptr-read-u64 error 0)) (extern-call g_free (ptr-read-u64 error 0))))
+      (extern-call g_free error) (extern-call g_free a) (extern-call g_free b) good)))
+ (defun sumi_explorer_transfer_plan (job source destination depth)
+   (let ((si 0) (di 0) (sk 0) (dk 0) (sid 0) (did 0) (action 0) (probe (sumi_explorer_undo_probe))
+         (en 0) (ci 0) (child 0) (target 0) (good (sumi_explorer_job_check job depth)) (policy (ptr-read-u64 job 320)))
+     (seq
+      (if good (setq good (and (sumi_explorer_transfer_safe_path job source) (sumi_explorer_transfer_safe_path job destination))))
+      (if good
+        (seq
+         (setq si (extern-call g_file_query_info source (data-addr id_attrs) 1 (ptr-read-u64 job 24) (+ job 32)))
+         (setq di (extern-call g_file_query_info destination (data-addr id_attrs) 1 (ptr-read-u64 job 24) 0))
+         (if (= si 0) (setq good 0)
+           (seq
+            (setq sk (extern-call g_file_info_get_file_type si))
+            (if di (setq dk (extern-call g_file_info_get_file_type di)))
+            (if di
+              (seq
+               (setq sid (sumi_explorer_undo_object_identity si source probe)) (setq did (sumi_explorer_undo_object_identity di destination probe))
+               (if (or (= sid 0) (= did 0) (sumi_explorer_same sid did)) (setq good 0))
+               (extern-call g_free sid) (extern-call g_free did)))
+            (if (or (and (= (= sk 1) 0) (= (= sk 2) 0)) (and di (= (= sk dk) 0))) (setq good 0))
+            (if (and good di (= policy 0))
+              (let ((path (extern-call g_file_get_path source)) (message 0))
+                (seq (setq message (extern-call g_strconcat (data-addr existing_target) (data-addr newline) path 0))
+                     (setq good (sumi_explorer_job_fail job message)) (extern-call g_free message) (extern-call g_free path))))
+            (if (and good di (or (= policy 4) (and (= policy 2) (= sk 1))))
+              (ptr-write-u64 job 392 (+ (ptr-read-u64 job 392) 1))
+              (if (and good di (= sk 2) (or (= policy 2) (= policy 3)))
+                (seq
+                 (setq en (extern-call g_file_enumerate_children source (data-addr id_attrs) 1 (ptr-read-u64 job 24) (+ job 32)))
+                 (if (= en 0) (setq good 0)
+                   (seq
+                    (setq ci (extern-call g_file_enumerator_next_file en (ptr-read-u64 job 24) (+ job 32)))
+                    (while (and good ci)
+                      (seq
+                       (setq child (extern-call g_file_get_child source (extern-call g_file_info_get_name ci)))
+                       (setq target (extern-call g_file_get_child destination (extern-call g_file_info_get_name ci)))
+                       (setq good (sumi_explorer_transfer_plan job child target (+ depth 1)))
+                       (extern-call g_object_unref child) (extern-call g_object_unref target) (extern-call g_object_unref ci)
+                       (setq ci (if good (extern-call g_file_enumerator_next_file en (ptr-read-u64 job 24) (+ job 32)) 0))))
+                    (extern-call g_file_enumerator_close en 0 0) (extern-call g_object_unref en))))
+                (if good
+                  (seq
+                   (if (>= (ptr-read-u32 (ptr-read-u64 job 336) 8) 256) (setq good 0))
+                   (if good
+                     (seq
+                      (setq action (extern-call g_malloc0 128))
+                      (ptr-write-u64 action 0 (extern-call g_file_get_path source)) (ptr-write-u64 action 8 (extern-call g_file_get_path destination))
+                      (ptr-write-u64 action 16 (sumi_explorer_undo_fingerprint probe source))
+                      (ptr-write-u64 action 24 (sumi_explorer_undo_parent source probe)) (ptr-write-u64 action 32 (sumi_explorer_undo_parent destination probe))
+                      (if di (ptr-write-u64 action 40 (sumi_explorer_undo_fingerprint probe destination)))
+                      (ptr-write-u64 action 48 (if (= (ptr-read-u64 job 328) 3) 4 (if di 2 1))) (ptr-write-u64 action 96 sk)
+                      (if (and (ptr-read-u64 action 16) (ptr-read-u64 action 24) (ptr-read-u64 action 32) (or (= di 0) (ptr-read-u64 action 40)))
+                        (extern-call g_ptr_array_add (ptr-read-u64 job 336) action)
+                        (seq (sumi_explorer_transfer_action_free action) (setq good 0)))))))))))))
+      (if si (extern-call g_object_unref si)) (if di (extern-call g_object_unref di))
+      (sumi_explorer_undo_probe_free probe)
+      (if (= good 0) (sumi_explorer_job_fail job (data-addr transfer_failure))) good)))
+ (defun sumi_explorer_transfer_intent (job)
+   (let ((text (sumi_explorer_transfer_serialise (ptr-read-u64 job 336) (ptr-read-u64 job 328))) (good 0) (store (ptr-read-u64 job 272)))
+     (seq
+      ;; Updating an existing intent stages its replacement only in memory. A
+      ;; failed durable write leaves the previous on-disk intent authoritative.
+      (if (and text (ptr-read-u64 store 120))
+        (seq (sumi_explorer_journal_clear_intent store) (setq good (sumi_explorer_journal_intent store text))
+             (if good (ptr-write-u64 job 408 1))))
+      (extern-call g_free text)
+      (if (= good 0) (sumi_explorer_job_fail job (data-addr transfer_failure))) good)))
+ (defun sumi_explorer_transfer_slot (job action destination)
+   (let ((parent (extern-call g_file_get_parent destination)) (path 0) (slot 0) (backup 0)
+         (info 0) (probe (sumi_explorer_undo_probe)) (good 0))
+     (seq
+      (if parent (setq path (extern-call g_file_get_path parent)))
+      (if path
+        (seq
+         (ptr-write-u64 action 56 (extern-call g_strconcat path (data-addr transfer_slot_pattern) 0))
+         (if (extern-call g_mkdtemp_full (ptr-read-u64 action 56) 448)
+           (seq
+            (setq slot (extern-call g_file_new_for_path (ptr-read-u64 action 56)))
+            (setq info (extern-call g_file_query_info slot (data-addr id_attrs) 1 0 (+ job 32)))
+            (if info
+              (seq (ptr-write-u64 action 64 (sumi_explorer_undo_object_identity info slot probe)) (extern-call g_object_unref info)))
+            (ptr-write-u64 action 72 (sumi_explorer_undo_parent slot probe))
+            (setq backup (extern-call g_file_get_child slot (data-addr transfer_old)))
+            (ptr-write-u64 action 80 (extern-call g_file_get_path backup))
+            (setq good (and (ptr-read-u64 action 64) (ptr-read-u64 action 72)
+              (sumi_explorer_transfer_durable job (ptr-read-u64 action 56))))
+            (extern-call g_object_unref backup) (extern-call g_object_unref slot)))))
+      (extern-call g_free path) (if parent (extern-call g_object_unref parent))
+      (sumi_explorer_undo_probe_free probe) good)))
+ (defun sumi_explorer_transfer_matches (file fingerprint parent)
+   (let ((probe (sumi_explorer_undo_probe)) (actual 0) (witness 0) (good 0))
+     (seq
+      (setq actual (sumi_explorer_undo_fingerprint probe file)) (setq witness (sumi_explorer_undo_parent file probe))
+      (setq good (and actual witness fingerprint parent (sumi_explorer_same actual fingerprint) (sumi_explorer_same witness parent)))
+      (extern-call g_free actual) (extern-call g_free witness) (sumi_explorer_undo_probe_free probe) good)))
+ (defun sumi_explorer_transfer_parent_matches (job file expected)
+   (let ((probe (sumi_explorer_undo_probe)) (actual 0) (good 0))
+     (seq
+      (setq actual (sumi_explorer_undo_parent file probe))
+      (setq good (and actual expected (sumi_explorer_same actual expected) (sumi_explorer_transfer_safe_path job file)))
+      (extern-call g_free actual) (sumi_explorer_undo_probe_free probe) good)))
+ (defun sumi_explorer_transfer_add_item (job action index)
+   (let ((group (ptr-read-u64 job 280)) (item (extern-call g_malloc0 104)))
+     (seq
+      (ptr-write-u64 item 0 (extern-call g_strdup (ptr-read-u64 action 0)))
+      (ptr-write-u64 item 8 (extern-call g_strdup (if (= (ptr-read-u64 action 48) 3) (ptr-read-u64 action 80) (ptr-read-u64 action 8))))
+      (ptr-write-u64 item 16 (extern-call g_strdup (if (= (ptr-read-u64 action 48) 3) (ptr-read-u64 action 88) (ptr-read-u64 action 120))))
+      (ptr-write-u64 item 24 (extern-call g_strdup (ptr-read-u64 action 24)))
+      (ptr-write-u64 item 32 (extern-call g_strdup (if (= (ptr-read-u64 action 48) 3) (ptr-read-u64 action 64) (ptr-read-u64 action 32))))
+      (ptr-write-u64 item 64 (+ index 1)) (ptr-write-u64 item 72 1)
+      (extern-call g_ptr_array_add (ptr-read-u64 group 16) item) 0)))
+ (defun sumi_explorer_transfer_partial (job action stage)
+   (let ((probe (sumi_explorer_undo_probe)) (info 0) (error (extern-call g_malloc0 8)) (known 0))
+     (seq
+      ;; The synchronous copy has stopped. Independently fingerprint its actual
+      ;; private partial output without inheriting the cancelled copy probe.
+      (setq info (extern-call g_file_query_info stage (data-addr id_attrs) 1 0 error))
+      (if info
+        (seq (ptr-write-u64 action 120 (sumi_explorer_undo_fingerprint probe stage))
+             (setq known (ptr-read-u64 action 120)) (extern-call g_object_unref info))
+        (setq known (and (ptr-read-u64 error 0) (extern-call g_error_matches (ptr-read-u64 error 0) (extern-call g_io_error_quark) 1))))
+      (if (= known 0)
+        (seq (ptr-write-u64 job 400 1) (sumi_explorer_transfer_intent job)))
+      (if (ptr-read-u64 error 0) (extern-call g_error_free (ptr-read-u64 error 0)))
+      (extern-call g_free error) (sumi_explorer_undo_probe_free probe) 0)))
+ (defun sumi_explorer_transfer_execute (job action index)
+   (let ((source (extern-call g_file_new_for_path (ptr-read-u64 action 0)))
+         (destination (extern-call g_file_new_for_path (ptr-read-u64 action 8)))
+         (slot 0) (stage 0) (backup 0) (info 0) (path 0) (probe (sumi_explorer_undo_probe)) (good 1))
+     (seq
+      (setq good (and (sumi_explorer_transfer_safe_path job source) (sumi_explorer_transfer_safe_path job destination)
+        (sumi_explorer_transfer_matches source (ptr-read-u64 action 16) (ptr-read-u64 action 24))
+        (sumi_explorer_transfer_parent_matches job destination (ptr-read-u64 action 32))))
+      (if (and good (= (= (ptr-read-u64 action 48) 3) 0))
+        (if (ptr-read-u64 action 40)
+          (setq good (sumi_explorer_transfer_matches destination (ptr-read-u64 action 40) (ptr-read-u64 action 32)))
+          (seq (setq info (extern-call g_file_query_info destination (data-addr id_attrs) 1 0 0))
+               (if info (seq (extern-call g_object_unref info) (setq good 0))))))
+      (if good (setq good (sumi_explorer_transfer_slot job action (if (= (ptr-read-u64 action 48) 3) source destination))))
+      (if good
+        (seq
+         (setq slot (extern-call g_file_new_for_path (ptr-read-u64 action 56)))
+         (setq stage (extern-call g_file_get_child slot (data-addr transfer_new)))
+         (setq backup (extern-call g_file_new_for_path (ptr-read-u64 action 80)))
+         (if (= (= (ptr-read-u64 action 48) 3) 0)
+           (seq
+            (ptr-write-u64 job 56 0) (setq good (sumi_explorer_copy_tree job source stage 0))
+            (if good (seq (ptr-write-u64 job 56 0) (setq good (sumi_explorer_transfer_sync job stage 0))))
+            (if good (setq good (sumi_explorer_transfer_matches source (ptr-read-u64 action 16) (ptr-read-u64 action 24))))))
+         (if good (setq good (sumi_explorer_transfer_intent job)))
+         (if good
+           (seq
+            (ptr-write-u64 job 400 1)
+            (if (= (ptr-read-u64 action 48) 3)
+              (setq good (sumi_explorer_transfer_rename job source backup))
+              (if (= (ptr-read-u64 action 48) 2)
+                (seq
+                 ;; The prestate and reserved owned backup path are already
+                 ;; durable before moving the old destination out of the way.
+                 (setq good (and (sumi_explorer_transfer_matches destination (ptr-read-u64 action 40) (ptr-read-u64 action 32))
+                    (sumi_explorer_transfer_rename job destination backup))))))
+            (if (and good (or (= (ptr-read-u64 action 48) 2) (= (ptr-read-u64 action 48) 3)))
+              (seq
+               (ptr-write-u64 job 56 0) (setq good (sumi_explorer_transfer_sync job backup 0))
+               (if good (ptr-write-u64 action 88 (sumi_explorer_undo_fingerprint probe backup)))
+               (setq good (and good (ptr-read-u64 action 88)))
+               (if good (setq good (sumi_explorer_transfer_intent job)))))
+            (if (and good (= (= (ptr-read-u64 action 48) 3) 0))
+              (seq
+               (setq good (and (sumi_explorer_transfer_parent_matches job destination (ptr-read-u64 action 32))
+                 (sumi_explorer_transfer_owned job action) (sumi_explorer_transfer_rename job stage destination)))
+               (if good (setq good (sumi_explorer_transfer_durable job (ptr-read-u64 action 8))))
+               (if good (ptr-write-u64 action 120 (sumi_explorer_undo_fingerprint probe destination)))
+               (setq good (and good (ptr-read-u64 action 120)))))
+            (if good
+              (seq (ptr-write-u64 action 104 1) (sumi_explorer_transfer_add_item job action index)
+                   (ptr-write-u64 job 384 (+ (ptr-read-u64 job 384) 1)) (ptr-write-u64 job 400 0)))))))
+      (if (and (= good 0) stage (= (ptr-read-u64 job 400) 0)) (sumi_explorer_transfer_partial job action stage))
+      (if slot (extern-call g_object_unref slot)) (if stage (extern-call g_object_unref stage)) (if backup (extern-call g_object_unref backup))
+      (extern-call g_object_unref source) (extern-call g_object_unref destination) (sumi_explorer_undo_probe_free probe)
+      (if (= good 0)
+        (seq
+         (sumi_explorer_job_fail job (data-addr transfer_failure))
+         (if (and (ptr-read-u64 job 344) (= (ptr-read-u64 job 352) 1))
+           (let ((error (ptr-read-u64 job 32)) (message 0))
+             (seq
+              ;; A post-rename durability failure can leave the target visible
+              ;; before the action is marked complete. Keep publication uncertain.
+              (setq message (extern-call g_strdup_printf (data-addr transfer_copy_partial)
+                (ptr-read-u64 error 8) (ptr-read-u64 action 8)
+                (if (ptr-read-u64 action 56) (ptr-read-u64 action 56) (data-addr empty))))
+              (extern-call g_error_free error)
+              (ptr-write-u64 job 32 (extern-call g_error_new_literal (extern-call g_io_error_quark) 0 message))
+              (extern-call g_free message)))))) good)))
+ (defun sumi_explorer_transfer_worker (task object job cancellable)
+   (let ((store (ptr-read-u64 job 272)) (source 0) (destination 0) (parent 0) (name 0) (target 0)
+         (i 0) (j 0) (other 0) (action 0) (group (extern-call g_malloc0 32)) (text 0) (good 1) (roots 0) (probe (sumi_explorer_undo_probe))
+         (names (extern-call g_hash_table_new_full (addr-of sumi_explorer_string_hash) (addr-of sumi_explorer_string_equal) (addr-of sumi_explorer_free_path) 0)) (folded 0) (obsolete 0))
+     (seq
+      (ptr-write-u64 job 280 group) (ptr-write-u64 group 8 13)
+      (ptr-write-u64 group 16 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_item_free)))
+      (ptr-write-u64 group 24 (extern-call g_hash_table_new_full (addr-of sumi_explorer_string_hash) (addr-of sumi_explorer_string_equal) (addr-of sumi_explorer_free_path) (addr-of sumi_explorer_free_path)))
+      (setq good (and store (ptr-read-u64 store 120) (= (ptr-read-u64 store 112) 0) (< (ptr-read-u64 store 8) 9223372036854775807)))
+      (if good (setq good (sumi_explorer_journal_next_id store)))
+      (if good
+        (seq
+         (ptr-write-u64 job 64 (extern-call g_hash_table_new_full (addr-of sumi_explorer_string_hash) (addr-of sumi_explorer_string_equal) (addr-of sumi_explorer_free_path) 0))
+         (setq destination (extern-call g_file_new_for_path (ptr-read-u64 job 16)))
+         (while (and good (< i (ptr-read-u64 job 368)))
+           (seq
+            (setq source (extern-call g_file_new_for_path (ptr-read-u64 (ptr-read-u64 job 360) (* i 8))))
+            (setq j 0)
+            (while (and good (< j i))
+              (seq
+               (setq other (extern-call g_file_new_for_path (ptr-read-u64 (ptr-read-u64 job 360) (* j 8))))
+               (if (or (extern-call g_file_equal source other) (extern-call g_file_has_prefix source other) (extern-call g_file_has_prefix other source)) (setq good 0))
+               (extern-call g_object_unref other) (setq j (+ j 1))))
+            (if (ptr-read-u64 job 376)
+              (seq (setq name (extern-call g_file_get_basename source)) (setq target (extern-call g_file_get_child destination name))
+                (setq folded (extern-call g_utf8_casefold name -1))
+                (if (extern-call g_hash_table_contains names folded) (seq (extern-call g_free folded) (setq good 0)) (extern-call g_hash_table_add names folded))
+                (extern-call g_free name))
+              (setq target (extern-call g_object_ref destination)))
+            (setq good (and good (= (extern-call g_file_equal source target) 0) (= (extern-call g_file_has_prefix target source) 0) (= (extern-call g_file_has_prefix source target) 0)
+              (sumi_explorer_ancestors job target) (sumi_explorer_transfer_safe_tree job source 0) (sumi_explorer_preflight job source 0)))
+            (if good (setq good (sumi_explorer_transfer_plan job source target 0)))
+            (extern-call g_object_unref source) (extern-call g_object_unref target) (setq i (+ i 1))))
+         (extern-call g_object_unref destination)))
+      ;; Validate every selected source and conflict before touching any target.
+      ;; Skip/merge skips never authorize deleting a source tree.
+      (if (and good (= (ptr-read-u64 job 328) 2) (= (ptr-read-u64 job 392) 0))
+        (seq
+         (setq roots (ptr-read-u32 (ptr-read-u64 job 336) 8)) (setq i 0)
+         (while (and good (< i (ptr-read-u64 job 368)))
+           (seq
+            (setq source (extern-call g_file_new_for_path (ptr-read-u64 (ptr-read-u64 job 360) (* i 8))))
+            (setq action (extern-call g_malloc0 128))
+            (ptr-write-u64 action 0 (extern-call g_file_get_path source)) (ptr-write-u64 action 8 (extern-call g_file_get_path source))
+            (ptr-write-u64 action 16 (sumi_explorer_undo_fingerprint probe source))
+            (ptr-write-u64 action 24 (sumi_explorer_undo_parent source probe)) (ptr-write-u64 action 32 (extern-call g_strdup (ptr-read-u64 action 24)))
+            (ptr-write-u64 action 48 3)
+            (setq good (and (ptr-read-u64 action 16) (ptr-read-u64 action 24)))
+            (extern-call g_ptr_array_add (ptr-read-u64 job 336) action) (extern-call g_object_unref source) (setq i (+ i 1))))))
+      ;; The legacy journal/item ABI bounds one committed group to 256 roots.
+      ;; Refuse an oversized merge plan before any destination is changed.
+      (if (> (ptr-read-u32 (ptr-read-u64 job 336) 8) 256) (setq good 0))
+      (setq i 0)
+      (while (and good (< i (ptr-read-u32 (ptr-read-u64 job 336) 8)))
+        (seq
+         (setq action (ptr-read-u64 (ptr-read-u64 (ptr-read-u64 job 336) 0) (* i 8)))
+         (setq good (and (= (extern-call g_cancellable_is_cancelled cancellable) 0) (sumi_explorer_transfer_execute job action i)))
+         (setq i (+ i 1))))
+      (if (> (ptr-read-u32 (ptr-read-u64 group 16) 8) 0)
+        (seq
+         (setq text (sumi_explorer_transfer_serialise (ptr-read-u64 job 336) (ptr-read-u64 job 328)))
+         (if text
+           (seq
+            (extern-call g_hash_table_insert (ptr-read-u64 group 24) (extern-call g_strdup (data-addr transfer_meta)) text)
+            (ptr-write-u64 group 0 (ptr-read-u64 store 8))
+            (extern-call g_ptr_array_add (ptr-read-u64 store 0) group) (ptr-write-u64 job 280 0)
+            (if (> (ptr-read-u32 (ptr-read-u64 store 0) 8) 32) (setq obsolete (extern-call g_ptr_array_steal_index (ptr-read-u64 store 0) 0))))
+           (seq (setq good 0) (ptr-write-u64 job 400 1)))))
+      (if (and (ptr-read-u64 job 408) (= (ptr-read-u64 job 400) 0))
+        (sumi_explorer_journal_clear_intent store))
+      ;; Exactly one commit publishes the group and clears the prior intent.
+      ;; On failure disk still owns the previous intent and its recovery slots.
+      (if (and store (ptr-read-u64 store 120))
+        (if (= (sumi_explorer_journal_flush store) 0) (setq good 0)))
+      (if obsolete
+        (seq (if (and (ptr-read-u64 store 120) (= (ptr-read-u64 store 112) 0)) (sumi_explorer_transfer_obsolete job obsolete))
+             (sumi_explorer_undo_group_free obsolete)))
+      (if (and (ptr-read-u64 job 280) (= (ptr-read-u32 (ptr-read-u64 group 16) 8) 0)
+               (ptr-read-u64 store 120) (= (ptr-read-u64 store 112) 0))
+        (seq
+         ;; No history owns a failed first copy. Its exclusion is now durable.
+         (setq i 0)
+         (while (< i (ptr-read-u32 (ptr-read-u64 job 336) 8))
+           (seq
+            (setq action (ptr-read-u64 (ptr-read-u64 (ptr-read-u64 job 336) 0) (* i 8)))
+            (if (= (ptr-read-u64 store 112) 0) (sumi_explorer_transfer_reap probe action))
+            (if (and (ptr-read-u64 action 56) (= (sumi_explorer_transfer_slot_gone action) 0) (= (ptr-read-u64 store 112) 0))
+              (seq (ptr-write-u64 job 400 1) (sumi_explorer_transfer_intent job)))
+            (setq i (+ i 1))))))
+      (if (= good 0) (sumi_explorer_job_fail job (data-addr transfer_failure)))
+      (ptr-write-u64 job 48 good)
+      ;; copy_tree's may-have-created bit describes the private staging path.
+      ;; The explicit completed/slot summary reports actual visible outcomes.
+      (ptr-write-u64 job 72 0)
+      (ptr-write-u64 job 288 (extern-call g_strdup_printf (data-addr transfer_summary) (ptr-read-u64 job 384) (ptr-read-u64 job 392)
+        (if (> (ptr-read-u32 (ptr-read-u64 job 336) 8) 0)
+          (let ((first (ptr-read-u64 (ptr-read-u64 (ptr-read-u64 job 336) 0) 0))) (if (ptr-read-u64 first 56) (ptr-read-u64 first 56) (data-addr empty))) (data-addr empty))))
+      (extern-call g_hash_table_unref names) (sumi_explorer_undo_probe_free probe) (extern-call g_task_return_boolean task 1) 0)))
+ (defun sumi_explorer_transfer_job_free (job)
+   (seq
+    (sumi_explorer_paths_free (ptr-read-u64 job 360) (ptr-read-u64 job 368))
+    (if (ptr-read-u64 job 344) (extern-call g_object_unref (ptr-read-u64 job 344)))
+    (extern-call g_ptr_array_unref (ptr-read-u64 job 336))
+    (sumi_explorer_job_free job) 0))
+ (defun sumi_explorer_transfer_done (object task ctx)
+   (let ((job (extern-call g_task_get_task_data task)) (error 0) (message 0))
+     (seq
+      (if (ptr-read-u64 job 344)
+        (seq
+         ;; Default incoming COPY retains the legacy batch failure summary:
+         ;; counts first, followed by the actual collision/error source path.
+         (if (and (= (ptr-read-u64 job 352) 1) (= (ptr-read-u64 job 48) 0) (ptr-read-u64 job 288))
+           (seq
+            (setq error (ptr-read-u64 job 32))
+            (setq message (extern-call g_strconcat (ptr-read-u64 job 288) (data-addr newline)
+              (if error (ptr-read-u64 error 8) (data-addr transfer_failure)) 0))
+            (if error (extern-call g_error_free error))
+            (ptr-write-u64 job 32 (extern-call g_error_new_literal (extern-call g_io_error_quark) 0 message))
+            (extern-call g_free message) (extern-call g_free (ptr-read-u64 job 288)) (ptr-write-u64 job 288 0)))
+         (sumi_explorer_drop_finish (ptr-read-u64 job 344)
+           (if (and (ptr-read-u64 job 48) (= (ptr-read-u64 ctx 152) 0) (= (extern-call g_cancellable_is_cancelled (ptr-read-u64 job 24)) 0)) (ptr-read-u64 job 352) 0))
+         (extern-call g_object_unref (ptr-read-u64 job 344)) (ptr-write-u64 job 344 0)))
+      (sumi_explorer_single_done object task ctx) 0)))
+ (defun sumi_explorer_transfer_start (ctx paths count destination policy mode folder request drop action)
+   (let ((job 0) (task 0) (i 0) (good (and paths (> count 0) (<= count 256) destination (extern-call g_path_is_absolute destination) (= (ptr-read-u64 ctx 144) 0) (= (ptr-read-u64 ctx 152) 0))))
+     (seq
+      (while (and good (< i count))
+        (seq (setq good (and (ptr-read-u64 paths (* i 8)) (extern-call g_path_is_absolute (ptr-read-u64 paths (* i 8)))
+          (extern-call g_utf8_validate (ptr-read-u64 paths (* i 8)) -1 0))) (setq i (+ i 1))))
+      (if (= good 0)
+        (seq (if request (ptr-write-u64 ctx 72 request)) (sumi_explorer_publish ctx 0 (data-addr transfer_failure)) 0)
+        (seq
+         (setq job (extern-call g_malloc0 416))
+         (ptr-write-u64 job 0 13) (ptr-write-u64 job 8 (extern-call g_strdup (ptr-read-u64 paths 0)))
+         (ptr-write-u64 job 16 (extern-call g_strdup destination)) (ptr-write-u64 job 40 request) (ptr-write-u64 job 272 (ptr-read-u64 ctx 512))
+         (ptr-write-u64 job 320 policy) (ptr-write-u64 job 328 mode) (ptr-write-u64 job 376 folder)
+         (ptr-write-u64 job 336 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_transfer_action_free)))
+         (ptr-write-u64 job 360 (extern-call g_malloc0 (* count 8))) (ptr-write-u64 job 368 count) (setq i 0)
+         (while (< i count) (seq (ptr-write-u64 (ptr-read-u64 job 360) (* i 8) (extern-call g_strdup (ptr-read-u64 paths (* i 8)))) (setq i (+ i 1))))
+         (if drop (ptr-write-u64 job 344 (extern-call g_object_ref drop))) (ptr-write-u64 job 352 action)
+         (ptr-write-u64 ctx 184 (extern-call g_cancellable_new)) (ptr-write-u64 job 24 (ptr-read-u64 ctx 184))
+         (ptr-write-u64 ctx 144 1) (ptr-write-u64 ctx 224 request)
+         (setq task (extern-call g_task_new 0 (ptr-read-u64 ctx 184) (addr-of sumi_explorer_transfer_done) ctx))
+         (extern-call g_task_set_check_cancellable task 0) (extern-call g_task_set_return_on_cancel task 0)
+         (extern-call g_task_set_task_data task job (addr-of sumi_explorer_transfer_job_free)) (ptr-write-u64 ctx 176 task)
+         (sumi_explorer_publish ctx 1 (data-addr operation_pending)) (sumi_explorer_poll_cancel ctx)
+         (extern-call g_task_run_in_thread task (addr-of sumi_explorer_transfer_worker)) 1)))))
+
+ (defun sumi_explorer_transfer_decode (text)
+   (let ((key (extern-call g_key_file_new)) (actions (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_transfer_action_free)))
+         (count 0) (mode 0) (i 0) (offset 0) (section 0) (action 0) (value 0) (canonical 0) (good 0))
+     (seq
+      (if (and text (<= (extern-call strlen text) 1048576) (extern-call g_utf8_validate text -1 0))
+        (setq good (extern-call g_key_file_load_from_data key text -1 0 0)))
+      (if good
+        (seq
+         (setq count (extern-call g_key_file_get_integer key (data-addr transfer_header) (data-addr count_key) 0))
+         (setq mode (extern-call g_key_file_get_integer key (data-addr transfer_header) (data-addr transfer_mode) 0))
+         (setq good (and (= (extern-call g_key_file_get_integer key (data-addr transfer_header) (data-addr version) 0) 1)
+           (> count 0) (<= count 4096) (>= mode 1) (<= mode 3)))))
+      (while (and good (< i count))
+        (seq
+         (setq action (extern-call g_malloc0 128)) (setq section (extern-call g_strdup_printf (data-addr transfer_action) i)) (setq offset 0)
+         (while (<= offset 120)
+           (seq
+            (if (and (= (= offset 48) 0) (= (= offset 96) 0) (= (= offset 104) 0) (= (= offset 112) 0))
+              (seq
+               (setq value (extern-call g_key_file_get_string key section (sumi_explorer_transfer_field offset) 0))
+               (if (= value 0) (setq good 0)
+                 (if (sumi_explorer_same value (data-addr empty)) (extern-call g_free value) (ptr-write-u64 action offset value)))))
+            (setq offset (+ offset 8))))
+         (ptr-write-u64 action 48 (extern-call g_key_file_get_integer key section (data-addr transfer_kind) 0))
+         (ptr-write-u64 action 96 (extern-call g_key_file_get_integer key section (data-addr type_value) 0))
+         (ptr-write-u64 action 104 (extern-call g_key_file_get_integer key section (data-addr transfer_completed) 0))
+         (setq good (and good (>= (ptr-read-u64 action 48) 1) (<= (ptr-read-u64 action 48) 4) (>= (ptr-read-u64 action 104) 0) (<= (ptr-read-u64 action 104) 2)
+           (if (= (ptr-read-u64 action 48) 3) (= (ptr-read-u64 action 96) 0) (or (= (ptr-read-u64 action 96) 1) (= (ptr-read-u64 action 96) 2)))
+           (ptr-read-u64 action 0) (ptr-read-u64 action 8) (ptr-read-u64 action 16) (ptr-read-u64 action 24) (ptr-read-u64 action 32)
+           (extern-call g_path_is_absolute (ptr-read-u64 action 0)) (extern-call g_path_is_absolute (ptr-read-u64 action 8))))
+         (if (= (ptr-read-u64 action 104) 1)
+           (setq good (and good (ptr-read-u64 action 56) (ptr-read-u64 action 64) (ptr-read-u64 action 72) (ptr-read-u64 action 80)
+             (extern-call g_path_is_absolute (ptr-read-u64 action 56)) (extern-call g_path_is_absolute (ptr-read-u64 action 80))
+             (if (= (ptr-read-u64 action 48) 3) (ptr-read-u64 action 88) (ptr-read-u64 action 120)))))
+         (extern-call g_ptr_array_add actions action) (extern-call g_free section) (setq i (+ i 1))))
+      ;; Only the exact canonical versioned data emitted by this implementation
+      ;; is accepted. Unknown/duplicate keys, groups, malformed numbers and
+      ;; missing fields cannot be hidden by GKeyFile's permissive reader.
+      (if good (seq (setq canonical (sumi_explorer_transfer_serialise actions mode)) (setq good (and canonical (sumi_explorer_same text canonical)))))
+      (extern-call g_free canonical) (extern-call g_key_file_unref key)
+      (if (= good 0) (seq (extern-call g_ptr_array_unref actions) (setq actions 0))) actions)))
+ (defun sumi_explorer_transfer_owned (job action)
+   (let ((slot 0) (backup 0) (parent 0) (info 0) (identity 0) (witness 0) (base 0) (good 0) (probe (sumi_explorer_undo_probe)))
+     (seq
+      (if (and (ptr-read-u64 action 56) (ptr-read-u64 action 64) (ptr-read-u64 action 72) (ptr-read-u64 action 80))
+        (seq
+         (setq slot (extern-call g_file_new_for_path (ptr-read-u64 action 56)))
+         (setq backup (extern-call g_file_new_for_path (ptr-read-u64 action 80)))
+         (setq parent (extern-call g_file_get_parent backup))
+         (setq base (extern-call g_file_get_basename backup))
+         (setq info (extern-call g_file_query_info slot (data-addr id_attrs) 1 0 0))
+         (if (and info (= (extern-call g_file_info_get_file_type info) 2) parent (extern-call g_file_equal parent slot) (sumi_explorer_same base (data-addr transfer_old)))
+           (seq
+            (setq identity (sumi_explorer_undo_object_identity info slot probe)) (setq witness (sumi_explorer_undo_parent slot probe))
+            (setq good (and identity witness (sumi_explorer_same identity (ptr-read-u64 action 64))
+              (sumi_explorer_same witness (ptr-read-u64 action 72)) (sumi_explorer_transfer_safe_path job slot)))))
+         (if info (extern-call g_object_unref info)) (if parent (extern-call g_object_unref parent))
+         (extern-call g_free base) (extern-call g_object_unref slot) (extern-call g_object_unref backup)))
+      (extern-call g_free identity) (extern-call g_free witness) (sumi_explorer_undo_probe_free probe) good)))
+ ;; External MOVE may finish NONE after a partial copy or a late Cancel. Its
+ ;; sender then owns an unchanged original. Return 1 for that validated
+ ;; original, 2 for a positively missing original, and 0 for ambiguity/change.
+ ;; This classification is recomputed from typed pre-forward metadata after
+ ;; restart; no transient GTK acknowledgement grants filesystem authority.
+ (defun sumi_explorer_transfer_external_original (job action)
+   (let ((source (extern-call g_file_new_for_path (ptr-read-u64 action 0)))
+         (error (extern-call g_malloc0 8)) (info 0) (state 0))
+     (seq
+      (if (sumi_explorer_transfer_parent_matches job source (ptr-read-u64 action 24))
+        (seq
+         (setq info (extern-call g_file_query_info source (data-addr id_attrs) 1 0 error))
+         (if info
+           (if (sumi_explorer_transfer_matches source (ptr-read-u64 action 16) (ptr-read-u64 action 24)) (setq state 1))
+           (if (and (ptr-read-u64 error 0) (extern-call g_error_matches (ptr-read-u64 error 0) (extern-call g_io_error_quark) 1)) (setq state 2)))))
+      (if info (extern-call g_object_unref info))
+      (if (ptr-read-u64 error 0) (extern-call g_error_free (ptr-read-u64 error 0)))
+      (extern-call g_free error) (extern-call g_object_unref source) state)))
+ (defun sumi_explorer_transfer_inverse_valid (job action item)
+   (let ((kind (ptr-read-u64 action 48)) (file 0) (source 0) (backup 0) (info 0) (parent 0) (probe (sumi_explorer_undo_probe)) (good 0))
+     (seq
+      (setq good (and (= (ptr-read-u64 action 104) 1) (sumi_explorer_transfer_owned job action)
+        (sumi_explorer_same (ptr-read-u64 item 0) (ptr-read-u64 action 0))
+        (sumi_explorer_same (ptr-read-u64 item 8) (if (= kind 3) (ptr-read-u64 action 80) (ptr-read-u64 action 8)))
+        (sumi_explorer_same (ptr-read-u64 item 16) (if (= kind 3) (ptr-read-u64 action 88) (ptr-read-u64 action 120)))
+        (sumi_explorer_same (ptr-read-u64 item 24) (ptr-read-u64 action 24))
+        (sumi_explorer_same (ptr-read-u64 item 32) (if (= kind 3) (ptr-read-u64 action 64) (ptr-read-u64 action 32)))))
+      (if good
+        (seq
+         (setq file (extern-call g_file_new_for_path (ptr-read-u64 item 8)))
+         (setq good (and (sumi_explorer_transfer_safe_path job file) (sumi_explorer_transfer_matches file (ptr-read-u64 item 16) (ptr-read-u64 item 32))))
+         (extern-call g_object_unref file)))
+      (if (and good (= kind 2))
+        (seq
+         (setq backup (extern-call g_file_new_for_path (ptr-read-u64 action 80)))
+         (setq good (and (ptr-read-u64 action 88) (sumi_explorer_transfer_matches backup (ptr-read-u64 action 88) (ptr-read-u64 action 64))))
+         (extern-call g_object_unref backup)))
+      (if (and good (= kind 4))
+        (seq
+         (ptr-write-u64 action 112 (sumi_explorer_transfer_external_original job action))
+         (setq good (> (ptr-read-u64 action 112) 0))))
+      (if (and good (= kind 3))
+        (seq
+         (setq source (extern-call g_file_new_for_path (ptr-read-u64 action 0)))
+         (setq parent (sumi_explorer_undo_parent source probe))
+         (setq good (and parent (sumi_explorer_same parent (ptr-read-u64 action 24)) (sumi_explorer_transfer_safe_path job source)))
+         (setq info (extern-call g_file_query_info source (data-addr id_attrs) 1 0 0))
+         (if info (seq (setq good 0) (extern-call g_object_unref info)))
+         (extern-call g_free parent) (extern-call g_object_unref source)))
+      (sumi_explorer_undo_probe_free probe) good)))
+ (defun sumi_explorer_transfer_reap (job action)
+   (let ((slot 0) (child 0) (probe (sumi_explorer_undo_probe)) (good 1))
+     (seq
+      ;; This function is called only after a durable history excludes action.
+      ;; The identity and parent witness grant authority, never a name prefix.
+      (if (sumi_explorer_transfer_owned probe action)
+        (seq
+         (setq slot (extern-call g_file_new_for_path (ptr-read-u64 action 56)))
+         (setq child (extern-call g_file_get_child slot (data-addr transfer_new)))
+         (if (ptr-read-u64 action 120)
+           (if (sumi_explorer_transfer_matches child (ptr-read-u64 action 120) (ptr-read-u64 action 64))
+             (setq good (sumi_explorer_undo_cleanup probe child 0))
+             (if (extern-call g_file_query_exists child 0) (setq good 0))))
+         (if good (extern-call g_file_delete slot 0 0))
+         (extern-call g_object_unref child) (extern-call g_object_unref slot)))
+      (sumi_explorer_undo_probe_free probe) 0)))
+ ;; Guards bind one verified preimage to its post-rename projection. Only root
+ ;; ctime may change; object identity, contents, metadata and children may not.
+ ;; These are conservative path-based checks, not descriptor-pinned atomic
+ ;; protection against adversarial concurrent parent/path replacement.
+ (defun sumi_explorer_transfer_guard_free (guard)
+   (let ((i 0)) (seq (if guard (seq (while (< i 48) (seq (if (or (= i 0) (= i 8) (= i 32) (= i 40)) (extern-call g_free (ptr-read-u64 guard i))) (setq i (+ i 8)))) (extern-call g_free guard))) 0)))
+ (defun sumi_explorer_transfer_guard_clock (file guard capture)
+   (let ((info (extern-call g_file_query_info file (data-addr transfer_clock_attrs) 1 0 0)) (seconds 0) (nanos 0) (good 0))
+     (seq
+      (if info
+        (seq
+         (if (and (extern-call g_file_info_has_attribute info (data-addr transfer_modified))
+           (or (extern-call g_file_info_has_attribute info (data-addr transfer_modified_nsec)) (extern-call g_file_info_has_attribute info (data-addr transfer_modified_usec))))
+           (seq
+            (setq seconds (extern-call g_file_info_get_attribute_uint64 info (data-addr transfer_modified)))
+            (setq nanos (if (extern-call g_file_info_has_attribute info (data-addr transfer_modified_nsec))
+              (extern-call g_file_info_get_attribute_uint32 info (data-addr transfer_modified_nsec))
+              (* 1000 (extern-call g_file_info_get_attribute_uint32 info (data-addr transfer_modified_usec)))))
+            (if capture (seq (ptr-write-u64 guard 48 seconds) (ptr-write-u64 guard 56 nanos) (setq good 1))
+              (setq good (and (= seconds (ptr-read-u64 guard 48)) (= nanos (ptr-read-u64 guard 56)))))))
+         (extern-call g_object_unref info))) good)))
+ (defun sumi_explorer_transfer_guard (job file expected parent)
+   (let ((probe (sumi_explorer_undo_probe)) (actual 0) (guard 0))
+     (seq
+      (ptr-write-u64 probe 24 (ptr-read-u64 job 24))
+      (setq actual (sumi_explorer_undo_fingerprint probe file))
+      (if (and actual expected (sumi_explorer_same actual expected) (ptr-read-u64 probe 160)
+               (sumi_explorer_transfer_parent_matches job file parent))
+        (seq
+         (setq guard (extern-call g_malloc0 64)) (ptr-write-u64 guard 0 actual) (setq actual 0)
+         (ptr-write-u64 guard 8 (extern-call g_strdup (ptr-read-u64 probe 160)))
+         (ptr-write-u64 guard 16 (ptr-read-u64 probe 128)) (ptr-write-u64 guard 24 (ptr-read-u64 probe 136))
+         (if (ptr-read-u64 probe 168) (ptr-write-u64 guard 32 (extern-call g_strdup (ptr-read-u64 probe 168))))
+         (ptr-write-u64 guard 40 (extern-call g_strdup parent))
+         (if (= (sumi_explorer_transfer_guard_clock file guard 1) 0) (seq (sumi_explorer_transfer_guard_free guard) (setq guard 0)))))
+      (extern-call g_free actual) (sumi_explorer_undo_probe_free probe) guard)))
+ (defun sumi_explorer_transfer_guard_after (job file guard parent)
+   (let ((probe (sumi_explorer_undo_probe)) (actual 0) (good 0))
+     (seq
+      (if guard
+        (seq
+         (ptr-write-u64 probe 24 (ptr-read-u64 job 24)) (ptr-write-u64 probe 152 1)
+         (ptr-write-u64 probe 112 (ptr-read-u64 guard 16)) (ptr-write-u64 probe 120 (ptr-read-u64 guard 24))
+         (ptr-write-u64 probe 176 (ptr-read-u64 guard 32))
+         (setq actual (sumi_explorer_undo_fingerprint probe file))
+         (setq good (and actual (ptr-read-u64 probe 144) (ptr-read-u64 probe 160)
+           (sumi_explorer_same (ptr-read-u64 probe 144) (ptr-read-u64 guard 0))
+           (sumi_explorer_same (ptr-read-u64 probe 160) (ptr-read-u64 guard 8))
+           (sumi_explorer_transfer_parent_matches job file parent) (sumi_explorer_transfer_guard_clock file guard 0)))))
+      (if (= good 0) (seq (extern-call g_free actual) (setq actual 0)))
+      (sumi_explorer_undo_probe_free probe) actual)))
+ (defun sumi_explorer_transfer_inverse (task object job cancellable)
+   (let ((store (ptr-read-u64 job 272)) (group (ptr-read-u64 job 296)) (items 0) (actions 0) (action 0) (item 0)
+         (i 0) (index 0) (kind 0) (text 0) (file 0) (source 0) (slot 0) (stage 0) (backup 0)
+         (probe (sumi_explorer_undo_probe)) (good 1) (mode 1) (original_fingerprint 0) (obsolete 0)
+         (guard 0) (restored 0) (source_touched 0) (source_restored 0) (source_path 0))
+     (seq
+      (setq actions (sumi_explorer_transfer_decode (extern-call g_hash_table_lookup (ptr-read-u64 group 24) (data-addr transfer_meta))))
+      (setq items (ptr-read-u64 group 16))
+      (setq good (and actions (ptr-read-u64 store 120) (= (ptr-read-u64 store 112) 0)))
+      ;; Validate the entire unresolved inverse before the first mutation.
+      (while (and good (< i (ptr-read-u32 items 8)))
+        (seq
+         (setq item (ptr-read-u64 (ptr-read-u64 items 0) (* i 8))) (setq index (- (ptr-read-u64 item 64) 1))
+         (if (or (< index 0) (>= index (ptr-read-u32 actions 8))) (setq good 0)
+           (setq good (sumi_explorer_transfer_inverse_valid job (ptr-read-u64 (ptr-read-u64 actions 0) (* index 8)) item)))
+         (setq i (+ i 1))))
+      (setq i (- (ptr-read-u32 items 8) 1))
+      (while (and good (>= i 0))
+        (seq
+         (setq item (ptr-read-u64 (ptr-read-u64 items 0) (* i 8))) (setq index (- (ptr-read-u64 item 64) 1))
+         (setq action (ptr-read-u64 (ptr-read-u64 actions 0) (* index 8))) (setq kind (ptr-read-u64 action 48))
+         (setq good (sumi_explorer_transfer_inverse_valid job action item))
+         (if good
+           (seq
+            (setq text (sumi_explorer_transfer_serialise actions mode))
+            (setq good (and text (sumi_explorer_journal_intent store text))) (extern-call g_free text)
+            (setq file (extern-call g_file_new_for_path (ptr-read-u64 item 8)))
+            (setq source (extern-call g_file_new_for_path (ptr-read-u64 action 0)))
+            (setq slot (extern-call g_file_new_for_path (ptr-read-u64 action 56)))
+            (setq stage (extern-call g_file_get_child slot (data-addr transfer_new)))
+            (setq backup (extern-call g_file_new_for_path (ptr-read-u64 action 80)))
+            (if good
+              (if (= kind 3)
+                (seq
+                 (setq guard (sumi_explorer_transfer_guard job file (ptr-read-u64 item 16) (ptr-read-u64 item 32)))
+                 (setq good (and guard (sumi_explorer_transfer_parent_matches job source (ptr-read-u64 action 24)) (sumi_explorer_transfer_rename job file source)))
+                 (if good (seq (setq restored (sumi_explorer_transfer_guard_after job source guard (ptr-read-u64 action 24))) (setq good (= (= restored 0) 0)))))
+                (seq
+                 (if (= kind 4)
+                   (if (= (ptr-read-u64 action 112) 1)
+                     (seq
+                      ;; Sender retained its original after finish NONE. Only
+                      ;; the separately validated copied destination is undone.
+                      (setq good (= (sumi_explorer_transfer_external_original job action) 1))
+                      (if good (setq original_fingerprint (extern-call g_strdup (ptr-read-u64 action 16)))))
+                     (seq
+                      ;; Sender deleted its original after a successful MOVE.
+                      ;; Restore data before detaching the surviving copy.
+                      (setq good (= (sumi_explorer_transfer_external_original job action) 2))
+                      (if good (seq (setq source_touched 1) (setq source_restored 0) (setq source_path (ptr-read-u64 action 0))
+                        (ptr-write-u64 job 56 0) (setq good (sumi_explorer_copy_tree job file source 0))))
+                      (if good (seq (ptr-write-u64 job 56 0) (setq good (sumi_explorer_transfer_sync job source 0))))
+                      (if good (seq (setq original_fingerprint (sumi_explorer_undo_fingerprint probe source)) (setq source_restored (= (= original_fingerprint 0) 0)))))))
+                 (if (and good (= kind 4))
+                   (setq good (and original_fingerprint (sumi_explorer_transfer_matches source original_fingerprint (ptr-read-u64 action 24)))))
+                 ;; Source verification may hash a large tree. Recheck the
+                 ;; recorded destination only after that work, at the rename.
+                 (if good (seq (setq guard (sumi_explorer_transfer_guard job file (ptr-read-u64 item 16) (ptr-read-u64 item 32)))
+                   (setq good (and guard (sumi_explorer_transfer_rename job file stage)))))
+                 (if good
+                   (seq
+                    (extern-call g_free (ptr-read-u64 action 120)) (ptr-write-u64 action 120 (sumi_explorer_transfer_guard_after job stage guard (ptr-read-u64 action 64)))
+                    (setq good (and (ptr-read-u64 action 120) (sumi_explorer_transfer_durable job (ptr-read-u64 action 56))))))
+                 (if (and good (= kind 4))
+                   (setq good (sumi_explorer_transfer_matches source original_fingerprint (ptr-read-u64 action 24))))
+                 (if (and good (= kind 2))
+                   (seq
+                    ;; Persist the quarantine location before restoring backup.
+                    (setq text (sumi_explorer_transfer_serialise actions mode))
+                    (sumi_explorer_journal_clear_intent store) (setq good (and text (sumi_explorer_journal_intent store text))) (extern-call g_free text)
+                    (sumi_explorer_transfer_guard_free guard) (setq guard 0)
+                    (if good (setq guard (sumi_explorer_transfer_guard job backup (ptr-read-u64 action 88) (ptr-read-u64 action 64))))
+                    (setq good (and good guard (sumi_explorer_transfer_parent_matches job file (ptr-read-u64 action 32)) (sumi_explorer_transfer_rename job backup file)))
+                    (if good (seq (setq restored (sumi_explorer_transfer_guard_after job file guard (ptr-read-u64 action 32))) (setq good (= (= restored 0) 0))))))
+                 (if good (setq good (sumi_explorer_transfer_matches stage (ptr-read-u64 action 120) (ptr-read-u64 action 64)))))))
+            (extern-call g_object_unref file) (extern-call g_object_unref source) (extern-call g_object_unref slot)
+            (extern-call g_object_unref stage) (extern-call g_object_unref backup)
+            (extern-call g_free original_fingerprint) (setq original_fingerprint 0)
+            (sumi_explorer_transfer_guard_free guard) (setq guard 0) (extern-call g_free restored) (setq restored 0)
+            (if good
+              (seq
+               (ptr-write-u64 action 104 2)
+               (extern-call g_ptr_array_remove_index items i)
+               (setq text (sumi_explorer_transfer_serialise actions mode))
+               (if text (extern-call g_hash_table_replace (ptr-read-u64 group 24) (extern-call g_strdup (data-addr transfer_meta)) text) (setq good 0))
+               ;; Remaining history and intent-clear are one durable snapshot.
+               (if (= (ptr-read-u32 items 8) 0)
+                 (setq obsolete (extern-call g_ptr_array_steal_index (ptr-read-u64 store 0) (- (ptr-read-u32 (ptr-read-u64 store 0) 8) 1))))
+               (if good (seq (sumi_explorer_journal_clear_intent store) (setq good (sumi_explorer_journal_flush store))))
+               (if obsolete
+                 (seq (if good (sumi_explorer_transfer_obsolete job obsolete)) (sumi_explorer_undo_group_free obsolete) (setq obsolete 0)))
+               (if good (sumi_explorer_transfer_reap job action))))))
+         (setq i (- i 1))))
+      (if (= good 0)
+        (seq (sumi_explorer_job_fail job (data-addr transfer_failure))
+          (if source_touched (seq (extern-call g_free (ptr-read-u64 job 288))
+            (ptr-write-u64 job 288 (extern-call g_strdup_printf (if source_restored (data-addr transfer_restore_completed) (data-addr transfer_restore_partial)) source_path))))))
+      (ptr-write-u64 job 72 0)
+      (ptr-write-u64 job 48 good)
+      (if actions (extern-call g_ptr_array_unref actions)) (sumi_explorer_undo_probe_free probe) 0)))
+
+ (defun sumi_explorer_transfer_slot_gone (action)
+   (let ((slot (extern-call g_file_new_for_path (ptr-read-u64 action 56))) (error (extern-call g_malloc0 8)) (info 0) (gone 0))
+     (seq
+      (setq info (extern-call g_file_query_info slot (data-addr id_attrs) 1 0 error))
+      (if (and (= info 0) (ptr-read-u64 error 0) (extern-call g_error_matches (ptr-read-u64 error 0) (extern-call g_io_error_quark) 1)) (setq gone 1))
+      (if info (extern-call g_object_unref info)) (if (ptr-read-u64 error 0) (extern-call g_error_free (ptr-read-u64 error 0)))
+      (extern-call g_free error) (extern-call g_object_unref slot) gone)))
+ (defun sumi_explorer_transfer_obsolete (job group)
+   (let ((actions 0) (action 0) (backup 0) (probe (sumi_explorer_undo_probe)) (i 0) (good 1) (store (ptr-read-u64 job 272)) (text 0))
+     (seq
+      ;; The caller has durably excluded this detached group. A pending intent
+      ;; or failed commit forbids cleanup, even when it appears redundant.
+      (if (and (= (ptr-read-u64 group 8) 13) (ptr-read-u64 (ptr-read-u64 job 272) 120) (= (ptr-read-u64 (ptr-read-u64 job 272) 112) 0))
+        (setq actions (sumi_explorer_transfer_decode (extern-call g_hash_table_lookup (ptr-read-u64 group 24) (data-addr transfer_meta)))))
+      (if actions
+        (seq
+         (while (and (< i (ptr-read-u32 actions 8)) (= (ptr-read-u64 store 112) 0) (ptr-read-u64 store 120))
+           (seq
+            (setq action (ptr-read-u64 (ptr-read-u64 actions 0) (* i 8))) (setq good (sumi_explorer_transfer_owned probe action))
+            (if (and good (ptr-read-u64 action 88) (= (= (ptr-read-u64 action 104) 2) 0))
+              (seq
+               (setq backup (extern-call g_file_new_for_path (ptr-read-u64 action 80)))
+               (setq good (sumi_explorer_transfer_matches backup (ptr-read-u64 action 88) (ptr-read-u64 action 64)))
+               (if good (seq (ptr-write-u64 probe 56 0) (setq good (sumi_explorer_undo_cleanup probe backup 0))))
+               (extern-call g_object_unref backup)))
+            (if good (sumi_explorer_transfer_reap job action))
+            (if (and (ptr-read-u64 action 56) (= (sumi_explorer_transfer_slot_gone action) 0))
+              (seq
+               ;; A changed/unreadable stage cannot be deleted. Keep its full
+               ;; identity-bearing ownership record after dropping Undo history.
+               (setq text (extern-call g_hash_table_lookup (ptr-read-u64 group 24) (data-addr transfer_meta)))
+               (sumi_explorer_journal_intent store text)
+               (if (= (ptr-read-u64 job 288) 0) (ptr-write-u64 job 288 (extern-call g_strdup_printf (data-addr undo_retained) (ptr-read-u64 action 56))))))
+            (setq i (+ i 1))))
+         (extern-call g_ptr_array_unref actions)))
+      (sumi_explorer_undo_probe_free probe) 0)))
+
  (defun sumi_explorer_zip_int (value) (if (> value 2147483647) (- value 4294967296) value))
  (defun sumi_explorer_zip_cancel (job)
    (if (ptr-read-u64 job 32) 0 (= (extern-call g_cancellable_set_error_if_cancelled (ptr-read-u64 job 24) (+ job 32)) 0)))
@@ -1556,9 +2398,11 @@
  (defun sumi_explorer_zip_add (job raw kind size source info)
    (let ((name (sumi_explorer_zip_name job raw kind 1)) (entry 0))
      (seq
-      (if (and name (< (ptr-read-u64 job 56) 100000) (>= size 0) (<= size 1073741824)
-               (<= (+ (ptr-read-u64 job 104) size) 4294967296)
-               (<= (+ (ptr-read-u64 job 112) (* (extern-call strlen name) 2) 32) 1048576))
+      ;; Streamed limits: 16 GiB/member, 32 GiB expanded, 100000 entries,
+      ;; 32 MiB of retained name metadata. No member-sized allocation is made.
+      (if (and name (< (ptr-read-u64 job 56) 100000) (>= size 0) (<= size 17179869184)
+               (<= (+ (ptr-read-u64 job 104) size) 34359738368)
+               (<= (+ (ptr-read-u64 job 112) (* (extern-call strlen name) 2) 32) 33554432))
         (seq
          (setq entry (extern-call g_malloc0 40)) (ptr-write-u64 entry 0 name)
          (if source (ptr-write-u64 entry 8 (extern-call g_strdup source)))
@@ -1629,7 +2473,7 @@
       (while (and good (> count 0))
         (seq
          (setq used (+ used count)) (ptr-write-u64 job 184 (+ (ptr-read-u64 job 184) count))
-         (if (or (> used size) (> used 1073741824) (> (ptr-read-u64 job 184) 4294967296) (= (sumi_explorer_zip_cancel job) 0))
+         (if (or (> used size) (> used 17179869184) (> (ptr-read-u64 job 184) 34359738368) (= (sumi_explorer_zip_cancel job) 0))
            (setq good (sumi_explorer_job_fail job (data-addr zip_failure)))
            (if writer (if (= (extern-call g_output_stream_write_all writer (ptr-read-u64 job 200) count (+ job 152) (ptr-read-u64 job 24) (+ job 32)) 0) (setq good 0))))
          (if good (setq count (extern-call archive_read_data archive (ptr-read-u64 job 200) 65536)))))
@@ -1645,16 +2489,61 @@
  (defun sumi_explorer_zip_range_compare (left right)
    (if (< (ptr-read-u64 left 0) (ptr-read-u64 right 0)) -1 (if (> (ptr-read-u64 left 0) (ptr-read-u64 right 0)) 1 0)))
 
+ ;; Resolve ordered sentinel fields in-place: expanded0 compressed8 offset16
+ ;; disk24. Local mode2 permits libarchive's empty ZIP64 streaming marker;
+ ;; offset16 then reports descriptor width. Duplicate/unused payload is rejected.
+ ;; Reads of unsigned 64-bit values are checked before any offset arithmetic.
+ (defun sumi_explorer_zip_extra (job offset size values local)
+   (let ((buffer (extern-call g_malloc0 (+ size 1))) (i 0) (length 0) (tag 0)
+         (field 0) (cursor 0) (width 0) (seen 0) (needed 0) (good 1))
+     (seq
+      (setq field 0)
+      (while (< field (if local 2 4))
+        (seq (if (= (ptr-read-u64 values (* field 8)) (if (= field 3) 65535 4294967295)) (setq needed 1))
+             (setq field (+ field 1))))
+      (if (> size 0) (setq good (sumi_explorer_zip_raw_read job offset buffer size)))
+      (while (and good (< i size))
+        (seq
+         (if (> (+ i 4) size) (setq good 0)
+           (seq
+            (setq tag (sumi_explorer_zip_u16 buffer i)) (setq length (sumi_explorer_zip_u16 buffer (+ i 2)))
+            (if (> (+ i 4 length) size) (setq good 0)
+              (if (= tag 1)
+                (seq
+                 (if (or seen (and (= needed 0)
+                      (= (and (= local 2) (= length 0) (= (ptr-read-u64 values 0) 0) (= (ptr-read-u64 values 8) 0)) 0))) (setq good 0))
+                 (setq seen 1) (if local (ptr-write-u64 values 16 1))
+                 (setq cursor (+ i 4)) (setq field 0)
+                 (while (and good (< field (if local 2 4)))
+                   (seq
+                    (if (= (ptr-read-u64 values (* field 8)) (if (= field 3) 65535 4294967295))
+                      (seq
+                       (setq width (if (= field 3) 4 8))
+                       (if (> (+ cursor width) (+ i 4 length)) (setq good 0)
+                         (seq
+                          (ptr-write-u64 values (* field 8) (if (= width 4) (ptr-read-u32 buffer cursor) (ptr-read-u64 buffer cursor)))
+                          (if (< (ptr-read-u64 values (* field 8)) 0) (setq good 0))
+                          (setq cursor (+ cursor width))))))
+                    (setq field (+ field 1))))
+                 (if (= (= cursor (+ i 4 length)) 0) (setq good 0)))))
+            (setq i (+ i 4 length))))))
+      (if (and needed (= seen 0)) (setq good 0))
+      (extern-call g_free buffer) good)))
+
  (defun sumi_explorer_zip_raw (job)
    (let ((tail (extern-call g_malloc0 65558)) (header (ptr-read-u64 job 200))
          (local (ptr-read-u64 job 136)) (ranges (extern-call g_array_new 0 0 16))
-         (range (extern-call g_malloc0 16)) (length 0) (start 0) (size 0) (index 0) (found -1)
+         (range (extern-call g_malloc0 16)) (values (extern-call g_malloc0 32)) (localvalues (extern-call g_malloc0 32))
+         (length 0) (start 0) (size 0) (index 0) (found -1) (eocd 0) (eocd64 0)
+         (classiccount 0) (classicsize 0) (classicoffset 0) (centralsize 0) (localextra 0) (wide 0) (central64 0) (descriptor 0)
          (offset 0) (central 0) (end 0) (count 0) (i 0) (namesize 0) (extra 0) (comment 0) (flags 0)
          (method 0) (compressed 0) (expanded 0) (crc 0) (position 0) (dataend 0) (kind 0)
          (raw 0) (name 0) (good 1))
      (seq
       (setq length (sumi_explorer_zip_input_seek job (ptr-read-u64 job 128) 0 2))
-      (setq good (>= length 0))
+      ;; 34 GiB stored archive cap bounds every subsequent addition well below
+      ;; signed 64-bit overflow, independently of attacker-controlled u64 data.
+      (setq good (and (>= length 0) (<= length 36507222016)))
       (setq start (if (> length 65557) (- length 65557) 0)) (setq size (- length start))
       (if (or (< size 22) (= (sumi_explorer_zip_raw_read job start tail size) 0)) (setq good 0))
       (setq index (- size 22))
@@ -1669,13 +2558,34 @@
          (if (or (= (= (sumi_explorer_zip_u16 tail (+ found 4)) 0) 0)
                  (= (= (sumi_explorer_zip_u16 tail (+ found 6)) 0) 0)
                  (= (= (sumi_explorer_zip_u16 tail (+ found 8)) (sumi_explorer_zip_u16 tail (+ found 10))) 0)) (setq good 0))
-         (setq count (sumi_explorer_zip_u16 tail (+ found 10)))
-         (setq offset (ptr-read-u32 tail (+ found 16))) (setq end (+ offset (ptr-read-u32 tail (+ found 12))))
-         (setq central offset)
-         (if (or (= offset 4294967295) (= (ptr-read-u32 tail (+ found 12)) 4294967295)
-                 (= (= end (+ start found)) 0)) (setq good 0))
-         (if (and (>= (+ start found) 20) (sumi_explorer_zip_raw_read job (- (+ start found) 20) header 4)
-                  (= (ptr-read-u32 header 0) 117853008)) (setq good 0))))
+         (setq classiccount (sumi_explorer_zip_u16 tail (+ found 10)))
+         (setq classicoffset (ptr-read-u32 tail (+ found 16))) (setq classicsize (ptr-read-u32 tail (+ found 12)))
+         (setq count classiccount) (setq offset classicoffset) (setq centralsize classicsize)
+         (setq eocd (+ start found)) (setq end eocd)
+         (if (and (>= eocd 20) (sumi_explorer_zip_raw_read job (- eocd 20) header 20)
+                  (= (ptr-read-u32 header 0) 117853008))
+           (seq
+            (setq eocd64 (ptr-read-u64 header 8))
+            (if (or (= (= (ptr-read-u32 header 4) 0) 0) (= (= (ptr-read-u32 header 16) 1) 0)
+                    (< eocd64 0) (> eocd64 (- eocd 76))) (setq good 0))
+            (if good (setq good (sumi_explorer_zip_raw_read job eocd64 header 56)))
+            (if good
+              (seq
+               (setq size (ptr-read-u64 header 4))
+               (setq count (ptr-read-u64 header 32)) (setq offset (ptr-read-u64 header 48)) (setq centralsize (ptr-read-u64 header 40))
+               (if (or (= (= (ptr-read-u32 header 0) 101075792) 0) (< size 44) (> size 1048576)
+                       (= (= (+ eocd64 12 size) (- eocd 20)) 0) (< (sumi_explorer_zip_u16 header 14) 45)
+                       (= (= (ptr-read-u32 header 16) 0) 0) (= (= (ptr-read-u32 header 20) 0) 0)
+                       (= (= (ptr-read-u64 header 24) count) 0)
+                       (and (< classiccount 65535) (= (= classiccount count) 0))
+                       (and (< classicoffset 4294967295) (= (= classicoffset offset) 0))
+                       (and (< classicsize 4294967295) (= (= classicsize centralsize) 0))) (setq good 0))
+               (setq end eocd64))))
+           (if (or (= classiccount 65535) (= classicoffset 4294967295) (= classicsize 4294967295)) (setq good 0)))
+         (if (or (< count 0) (> count 100000) (< offset 0) (> offset length)
+                 (< centralsize 0) (> centralsize 33554432)) (setq good 0))
+         (if good (if (or (= (= (+ offset centralsize) end) 0) (> count (/ centralsize 46))) (setq good 0)))
+         (setq central offset)))
       (while (and good (< i count))
         (seq
          (if (or (> (+ offset 46) end) (= (sumi_explorer_zip_raw_read job offset header 46) 0)) (setq good 0))
@@ -1685,13 +2595,25 @@
             (setq crc (ptr-read-u32 header 16)) (setq compressed (ptr-read-u32 header 20)) (setq expanded (ptr-read-u32 header 24))
             (setq namesize (sumi_explorer_zip_u16 header 28)) (setq extra (sumi_explorer_zip_u16 header 30))
             (setq comment (sumi_explorer_zip_u16 header 32)) (setq position (ptr-read-u32 header 42))
+            (setq wide (or (= compressed 4294967295) (= expanded 4294967295)))
+            ;; Offset/disk extensions require version45 without widening the
+            ;; size descriptor. Preserve that distinction before resolving TLVs.
+            (setq central64 (or wide (= position 4294967295) (= (sumi_explorer_zip_u16 header 34) 65535)))
+            (ptr-write-u64 values 0 expanded) (ptr-write-u64 values 8 compressed)
+            (ptr-write-u64 values 16 position) (ptr-write-u64 values 24 (sumi_explorer_zip_u16 header 34))
             (setq kind (logand (shr (ptr-read-u32 header 38) 16) 61440))
             (if (or (= (= (ptr-read-u32 header 0) 33639248) 0) (= namesize 0)
                     (= (= (logand flags 8257) 0) 0) (and (= (= method 0) 0) (= (= method 8) 0))
-                    (> expanded 1073741824) (= compressed 4294967295) (= position 4294967295)
-                    (= (= (sumi_explorer_zip_u16 header 34) 0) 0)
                     (and (= (= kind 0) 0) (= (= kind 32768) 0) (= (= kind 16384) 0))
                     (> (+ offset 46 namesize extra comment) end)) (setq good 0))
+            (if good (setq good (sumi_explorer_zip_extra job (+ offset 46 namesize) extra values 0)))
+            (setq expanded (ptr-read-u64 values 0)) (setq compressed (ptr-read-u64 values 8)) (setq position (ptr-read-u64 values 16))
+            (if (or (< expanded 0) (> expanded 17179869184) (< compressed 0) (> compressed length)
+                    ;; Validate the u64-derived offset before any addition:
+                    ;; position+30 can otherwise wrap near signed INT64_MAX.
+                    (< position 0) (> position central) (> 30 (- central position))
+                    (= (= (ptr-read-u64 values 24) 0) 0)
+                    (and central64 (< (sumi_explorer_zip_u16 header 6) 45))) (setq good 0))
             (if good
               (seq
                (setq raw (extern-call g_malloc0 (+ namesize 1)))
@@ -1703,7 +2625,7 @@
                (if good
                  (seq
                   (ptr-write-u64 job 112 (+ (ptr-read-u64 job 112) (* namesize 2) 32))
-                  (if (> (ptr-read-u64 job 112) 1048576) (setq good 0)
+                  (if (> (ptr-read-u64 job 112) 33554432) (setq good 0)
                     (extern-call g_hash_table_insert (ptr-read-u64 job 232) (extern-call g_strdup name) kind))))
                (extern-call g_free name) (setq name 0)
                (if (and good (sumi_explorer_zip_raw_read job position local 30))
@@ -1711,17 +2633,35 @@
                   (if (or (= (= (ptr-read-u32 local 0) 67324752) 0)
                           (= (= (sumi_explorer_zip_u16 local 6) flags) 0) (= (= (sumi_explorer_zip_u16 local 8) method) 0)
                           (= (= (sumi_explorer_zip_u16 local 26) namesize) 0)) (setq good 0))
-                  (setq dataend (+ position 30 namesize (sumi_explorer_zip_u16 local 28) compressed))
+                  (setq localextra (sumi_explorer_zip_u16 local 28))
+                  (setq wide (or wide (= (ptr-read-u32 local 18) 4294967295) (= (ptr-read-u32 local 22) 4294967295)))
+                  (ptr-write-u64 localvalues 0 (ptr-read-u32 local 22)) (ptr-write-u64 localvalues 8 (ptr-read-u32 local 18))
+                  (ptr-write-u64 localvalues 16 0)
+                  (if (and wide (< (sumi_explorer_zip_u16 local 4) 45)) (setq good 0))
+                  (setq descriptor (ptr-read-u32 local 14))
+                  (setq dataend (+ position 30 namesize localextra compressed))
                   (if (> dataend central) (setq good 0))
+                  (if good (setq good (sumi_explorer_zip_extra job (+ position 30 namesize) localextra localvalues
+                    (if (and (logand flags 8) (>= (sumi_explorer_zip_u16 local 4) 45)) 2 1))))
+                  (setq wide (or wide (ptr-read-u64 localvalues 16)))
                   (if (= (logand flags 8) 0)
-                    (if (or (= (= (ptr-read-u32 local 14) crc) 0) (= (= (ptr-read-u32 local 18) compressed) 0)
-                            (= (= (ptr-read-u32 local 22) expanded) 0)) (setq good 0))
-                    (if (sumi_explorer_zip_raw_read job dataend local 16)
+                    (if (or (= (= descriptor crc) 0) (= (= (ptr-read-u64 localvalues 8) compressed) 0)
+                            (= (= (ptr-read-u64 localvalues 0) expanded) 0)) (setq good 0))
+                    (seq
+                     (if (or (and descriptor (= (= descriptor crc) 0))
+                             (and (ptr-read-u64 localvalues 0) (= (= (ptr-read-u64 localvalues 0) expanded) 0))
+                             (and (ptr-read-u64 localvalues 8) (= (= (ptr-read-u64 localvalues 8) compressed) 0))) (setq good 0))
+                     (if (and good (<= (+ dataend (if wide 20 12)) central)
+                              (sumi_explorer_zip_raw_read job dataend local (if wide 20 12)))
                       (seq
                        (setq index (if (= (ptr-read-u32 local 0) 134695760) 4 0))
-                       (if (or (= (= (ptr-read-u32 local index) crc) 0) (= (= (ptr-read-u32 local (+ index 4)) compressed) 0)
-                               (= (= (ptr-read-u32 local (+ index 8)) expanded) 0)) (setq good 0))
-                       (setq dataend (+ dataend index 12))) (setq good 0)))
+                       (if index
+                         (if (or (> (+ dataend index (if wide 20 12)) central)
+                                 (= (sumi_explorer_zip_raw_read job dataend local (+ index (if wide 20 12))) 0)) (setq good 0)))
+                       (if (or (= (= (ptr-read-u32 local index) crc) 0)
+                               (= (= (if wide (ptr-read-u64 local (+ index 4)) (ptr-read-u32 local (+ index 4))) compressed) 0)
+                               (= (= (if wide (ptr-read-u64 local (+ index 12)) (ptr-read-u32 local (+ index 8))) expanded) 0)) (setq good 0))
+                       (setq dataend (+ dataend index (if wide 20 12)))) (setq good 0))))
                   (if (or (> dataend central) (= (sumi_explorer_zip_raw_read job (+ position 30) local namesize) 0)
                           (= (= (extern-call memcmp raw local namesize) 0) 0)) (setq good 0))
                   (if good (seq (ptr-write-u64 range 0 position) (ptr-write-u64 range 8 dataend) (extern-call g_array_append_vals ranges range 1))))
@@ -1743,6 +2683,7 @@
       (extern-call g_hash_table_remove_all (ptr-read-u64 job 160)) (extern-call g_hash_table_remove_all (ptr-read-u64 job 176))
       (ptr-write-u64 job 112 0)
       (extern-call g_array_free ranges 1) (extern-call g_free range) (extern-call g_free tail)
+      (extern-call g_free values) (extern-call g_free localvalues)
       (if (= good 0) (sumi_explorer_job_fail job (data-addr zip_classic))) good)))
 
  (defun sumi_explorer_zip_snapshot (job source)
@@ -1781,7 +2722,7 @@
                (while (and good (> count 0))
                  (seq
                   (setq total (+ total count))
-                  (if (> total 4311744512) (setq good (sumi_explorer_job_fail job (data-addr zip_failure)))
+                  (if (> total 36507222016) (setq good (sumi_explorer_job_fail job (data-addr zip_failure)))
                     (setq good (sumi_explorer_zip_snapshot_write job output (ptr-read-u64 job 136) count)))
                   (if good (setq count (sumi_explorer_zip_input_read job input (ptr-read-u64 job 136) 65536)))))
                (if (< count 0) (setq good 0))
@@ -1850,7 +2791,7 @@
          (setq kind (extern-call archive_entry_filetype entry))
          (setq kind (if (= kind 32768) 1 (if (= kind 16384) 2 0)))
          (setq size (extern-call archive_entry_size entry))
-         (if (or (= kind 0) (< size 0) (> size 1073741824) (and (= kind 2) (= (= size 0) 0))
+         (if (or (= kind 0) (< size 0) (> size 17179869184) (and (= kind 2) (= (= size 0) 0))
                  (extern-call archive_entry_symlink entry) (extern-call archive_entry_hardlink entry)
                  (= (= (extern-call archive_entry_is_encrypted entry) 0) 0) (= (sumi_explorer_zip_cancel job) 0)) (setq good 0))
          (if good
@@ -1947,7 +2888,7 @@
             (while (and good (> count 0))
               (seq
                (setq used (+ used count)) (ptr-write-u64 job 184 (+ (ptr-read-u64 job 184) count))
-               (if (or (> used (ptr-read-u64 item 24)) (> (ptr-read-u64 job 184) 4294967296)) (setq good 0)
+               (if (or (> used (ptr-read-u64 item 24)) (> (ptr-read-u64 job 184) 34359738368)) (setq good 0)
                  (if (= (= (extern-call archive_write_data writer (ptr-read-u64 job 200) count) count) 0) (setq good (sumi_explorer_zip_error job writer))))
                (if good (setq count (sumi_explorer_zip_input_read job input (ptr-read-u64 job 200) 65536)))))
             (if (or (< count 0) (= (= used (ptr-read-u64 item 24)) 0)) (setq good 0))
@@ -1988,9 +2929,6 @@
                (setq good (sumi_explorer_zip_collect job file name 1))
                (extern-call g_free name) (extern-call g_object_unref parent)))
             (extern-call g_object_unref file) (setq i (+ i 1))))
-         (if (and good (or (> (ptr-read-u64 job 56) 65535)
-                 (>= (+ (ptr-read-u64 job 104) (/ (ptr-read-u64 job 104) 1000) (* (ptr-read-u64 job 56) 512) (* (ptr-read-u64 job 112) 2) 65536) 4294967295)))
-           (setq good (sumi_explorer_job_fail job (data-addr zip_classic))))
          (if good (setq good (sumi_explorer_zip_create_pass job))))
         (if good
           (seq
@@ -2034,7 +2972,7 @@
       0)))
 
  (defun sumi_explorer_zip_start (ctx op paths count source destination request)
-   (let ((job 0) (i 0) (task 0) (good (and (= (ptr-read-u64 ctx 144) 0) destination)))
+   (let ((job 0) (i 0) (task 0) (good (and (= (ptr-read-u64 ctx 144) 0) (= (ptr-read-u64 ctx 152) 0) destination)))
      (seq
       (if good (setq good (and (extern-call g_path_is_absolute destination) (extern-call g_utf8_validate destination -1 0))))
       (if (= op 9) (setq good (and good (> count 0) (<= count 256)))
@@ -2087,13 +3025,355 @@
     (extern-call g_hash_table_unref (ptr-read-u64 job 232))
     (sumi_explorer_single_job_free job) 0)))
 
- ;; Undo store is session-owned; workers exclusively access it while busy.
+ ;; UndoStore136: existing0..95 unchanged; private profile96, locked journal104,
+ ;; pending intent112, durable health120, owned recovery diagnostic128.
+ ;; Workers exclusively access the history and journal while busy.
  ;; Group: id0 operation8 GPtrArray(items)16 before-Trash URI set24.
  ;; Item: original0 current8 fingerprint16 original-parent24 current-parent32
  ;; original id::file40; old-mode-valid48 old-mode56 stable-item-ID64
  ;; expectation-revision72 immutable-preimage-link80 parent-preimage-link88
  ;; rejected-parent-preimage96 (warning only; grants no authority).
  ;; Current is an opaque URI for verified Trash entries.
+ ;; Binary data only: fixed little-endian u64s, counted UTF-8 strings, SHA256
+ ;; envelope. Both supported native architectures are little-endian. No reader,
+ ;; evaluator, pointer values, or unbounded recursive object decoder is used.
+ (defun sumi_explorer_journal_put (writer value)
+   (seq
+    (ptr-write-u64 writer 8 value)
+    (if (< (ptr-read-u32 (ptr-read-u64 writer 0) 8) 16777000)
+      (extern-call g_byte_array_append (ptr-read-u64 writer 0) (+ writer 8) 8)
+      (ptr-write-u64 writer 16 0)) 0))
+ (defun sumi_explorer_journal_put_string (writer text)
+   (let ((length (if text (extern-call strlen text) 0)))
+    (seq
+     (if (and (<= length 1048576) (or (= text 0) (extern-call g_utf8_validate text length 0)))
+       (seq (sumi_explorer_journal_put writer (if text (+ length 1) 0))
+            (if text (extern-call g_byte_array_append (ptr-read-u64 writer 0) text length)))
+       (ptr-write-u64 writer 16 0))
+     (if (> (ptr-read-u32 (ptr-read-u64 writer 0) 8) 16777000) (ptr-write-u64 writer 16 0)) 0)))
+ (defun sumi_explorer_journal_get (reader)
+   (let ((value 0) (offset (ptr-read-u64 reader 16)))
+    (seq
+     (if (and (ptr-read-u64 reader 24) (<= (+ offset 8) (ptr-read-u64 reader 8)))
+       (seq (setq value (ptr-read-u64 (ptr-read-u64 reader 0) offset)) (ptr-write-u64 reader 16 (+ offset 8))
+            (if (< value 0) (ptr-write-u64 reader 24 0)))
+       (ptr-write-u64 reader 24 0)) value)))
+ (defun sumi_explorer_journal_get_string (reader)
+   (let ((length (sumi_explorer_journal_get reader)) (text 0) (offset (ptr-read-u64 reader 16)))
+    (seq
+     (if (and (ptr-read-u64 reader 24) (> length 0))
+       (if (and (<= length 1048577) (<= (+ offset (- length 1)) (ptr-read-u64 reader 8))
+                (= (extern-call memchr (+ (ptr-read-u64 reader 0) offset) 0 (- length 1)) 0)
+                (extern-call g_utf8_validate (+ (ptr-read-u64 reader 0) offset) (- length 1) 0))
+         (seq (setq text (extern-call g_strndup (+ (ptr-read-u64 reader 0) offset) (- length 1)))
+              (ptr-write-u64 reader 16 (+ offset (- length 1))))
+         (ptr-write-u64 reader 24 0))) text)))
+ (defun sumi_explorer_journal_link_write (writer link parent)
+   (let ((offset 0))
+    (seq (sumi_explorer_journal_put writer (if link 1 0))
+     (if link
+       (while (<= offset 88)
+         (seq
+          (if (or (and (>= offset 24) (<= offset 48)) (= offset 88) (and parent (= offset 72)))
+            (sumi_explorer_journal_put_string writer (ptr-read-u64 link offset))
+            (sumi_explorer_journal_put writer (ptr-read-u64 link offset)))
+          (setq offset (+ offset 8))))) 0)))
+ (defun sumi_explorer_journal_link_read (reader parent)
+   (let ((present (sumi_explorer_journal_get reader)) (link 0) (offset 0))
+    (seq
+     (if (> present 1) (ptr-write-u64 reader 24 0))
+     (if (and (ptr-read-u64 reader 24) (= present 1))
+       (seq (setq link (extern-call g_malloc0 96))
+        (while (and (ptr-read-u64 reader 24) (<= offset 88))
+          (seq
+           (ptr-write-u64 link offset
+             (if (or (and (>= offset 24) (<= offset 48)) (= offset 88) (and parent (= offset 72)))
+               (sumi_explorer_journal_get_string reader) (sumi_explorer_journal_get reader)))
+           (setq offset (+ offset 8))))
+        (if (or (= (ptr-read-u64 link 0) 0) (= (ptr-read-u64 link 8) 0) (= (ptr-read-u64 link 16) 0)
+                (= (ptr-read-u64 link 24) 0) (= (ptr-read-u64 link 32) 0) (= (ptr-read-u64 link 40) 0)
+                (= (ptr-read-u64 link 48) 0) (> (ptr-read-u64 link 80) 1)
+                (> (ptr-read-u64 link 64) 999999999) (and (= parent 0) (ptr-read-u64 link 72))
+                (and parent (ptr-read-u64 link 80) (= (ptr-read-u64 link 72) 0))
+                (if (extern-call sumi_explorer_platform_is_windows)
+                  (or (= (ptr-read-u64 link 88) 0)
+                      (if (ptr-read-u64 link 88)
+                        (= (extern-call g_regex_match_simple (data-addr journal_hex16) (ptr-read-u64 link 88) 0 0) 0) 1))
+                  (ptr-read-u64 link 88)))
+          (ptr-write-u64 reader 24 0)))) link)))
+ (defun sumi_explorer_journal_encode (store writer)
+   (let ((groups (ptr-read-u64 store 0)) (group 0) (items 0) (item 0) (i 0) (j 0) (offset 0)
+         (keys 0) (key 0) (count 0) (k 0))
+    (seq
+     (ptr-write-u64 writer 0 (extern-call g_byte_array_new)) (ptr-write-u64 writer 16 1)
+     (extern-call g_byte_array_append (ptr-read-u64 writer 0) (data-addr journal_magic) 8)
+     (sumi_explorer_journal_put writer (ptr-read-u64 store 8))
+     (sumi_explorer_journal_put_string writer (ptr-read-u64 store 112))
+     (sumi_explorer_journal_put writer (ptr-read-u32 groups 8))
+     (if (> (ptr-read-u32 groups 8) 32) (ptr-write-u64 writer 16 0))
+     (while (and (ptr-read-u64 writer 16) (< i (ptr-read-u32 groups 8)))
+       (seq
+        (setq group (ptr-read-u64 (ptr-read-u64 groups 0) (* i 8)))
+        (sumi_explorer_journal_put writer (ptr-read-u64 group 0))
+        (sumi_explorer_journal_put writer (ptr-read-u64 group 8))
+        ;; op5's pre-Trash set is ephemeral; only record's Trash discovery uses
+        ;; it. Validation/inverse use the committed item's URI and identity.
+        (setq count 0) (setq keys 0)
+        (if (and (= (ptr-read-u64 group 8) 13) (ptr-read-u64 group 24))
+          (seq (ptr-write-u64 writer 8 0)
+               (setq keys (extern-call g_hash_table_get_keys_as_array (ptr-read-u64 group 24) (+ writer 8)))
+               (setq count (ptr-read-u32 writer 8))))
+        (sumi_explorer_journal_put writer count)
+        (if (> count 4096) (ptr-write-u64 writer 16 0)) (setq k 0)
+        (while (and (ptr-read-u64 writer 16) (< k count))
+          (seq (setq key (ptr-read-u64 keys (* k 8)))
+               (sumi_explorer_journal_put_string writer key)
+               (sumi_explorer_journal_put_string writer (extern-call g_hash_table_lookup (ptr-read-u64 group 24) key))
+               (setq k (+ k 1)))) (extern-call g_free keys)
+        (setq items (ptr-read-u64 group 16)) (sumi_explorer_journal_put writer (ptr-read-u32 items 8))
+        (if (> (ptr-read-u32 items 8) 256) (ptr-write-u64 writer 16 0)) (setq j 0)
+        (while (and (ptr-read-u64 writer 16) (< j (ptr-read-u32 items 8)))
+          (seq (setq item (ptr-read-u64 (ptr-read-u64 items 0) (* j 8))) (setq offset 0)
+           (while (<= offset 96)
+             (seq
+              (if (< offset 48) (sumi_explorer_journal_put_string writer (ptr-read-u64 item offset))
+                (if (or (= offset 80) (= offset 88))
+                  (sumi_explorer_journal_link_write writer (ptr-read-u64 item offset) (= offset 88))
+                  (sumi_explorer_journal_put writer (ptr-read-u64 item offset))))
+              (setq offset (+ offset 8)))) (setq j (+ j 1))))
+        (setq i (+ i 1)))) (ptr-read-u64 writer 16))))
+ (defun sumi_explorer_journal_decode (store data size)
+   (let ((reader (extern-call g_malloc0 32)) (digest 0) (groups 0) (group 0) (items 0) (item 0)
+         (count 0) (nitems 0) (nkeys 0) (i 0) (j 0) (k 0) (offset 0) (previous 0) (previousitem 0)
+         (key 0) (value 0) (op 0) (good 0))
+    (seq
+     (setq groups (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_group_free)))
+     (if (and data (>= size 96) (<= size 16777216) (= (extern-call memcmp data (data-addr journal_magic) 8) 0))
+       (seq (setq digest (extern-call g_compute_checksum_for_data 2 data (- size 64)))
+            (setq good (= (extern-call memcmp digest (+ data (- size 64)) 64) 0))))
+     (ptr-write-u64 reader 0 data) (ptr-write-u64 reader 8 (- size 64))
+     (ptr-write-u64 reader 16 8) (ptr-write-u64 reader 24 good)
+     (ptr-write-u64 store 8 (sumi_explorer_journal_get reader))
+     (ptr-write-u64 store 112 (sumi_explorer_journal_get_string reader))
+     (setq count (sumi_explorer_journal_get reader))
+     (if (> count 32) (ptr-write-u64 reader 24 0))
+     (while (and (ptr-read-u64 reader 24) (< i count))
+       (seq
+        (setq group (extern-call g_malloc0 32))
+        (setq items (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_item_free)))
+        (ptr-write-u64 group 16 items) (extern-call g_ptr_array_add groups group)
+        (ptr-write-u64 group 0 (sumi_explorer_journal_get reader))
+        (setq op (sumi_explorer_journal_get reader)) (ptr-write-u64 group 8 op)
+        (if (or (<= (ptr-read-u64 group 0) previous) (> (ptr-read-u64 group 0) (ptr-read-u64 store 8))
+                (= (or (= op 1) (= op 2) (= op 3) (= op 4) (= op 5) (= op 9) (= op 10) (= op 12) (= op 13)) 0))
+          (ptr-write-u64 reader 24 0))
+        (setq previous (ptr-read-u64 group 0))
+        (setq nkeys (sumi_explorer_journal_get reader)) (setq k 0)
+        (if (or (> nkeys 4096) (and (> nkeys 0) (= (= op 13) 0))) (ptr-write-u64 reader 24 0))
+        (if (= op 13)
+          (ptr-write-u64 group 24 (extern-call g_hash_table_new_full (addr-of sumi_explorer_string_hash) (addr-of sumi_explorer_string_equal) (addr-of sumi_explorer_free_path) (addr-of sumi_explorer_free_path))))
+        (while (and (ptr-read-u64 reader 24) (< k nkeys))
+          (seq (setq key (sumi_explorer_journal_get_string reader)) (setq value (sumi_explorer_journal_get_string reader))
+               (if (and key value (= (extern-call g_hash_table_contains (ptr-read-u64 group 24) key) 0))
+                 (extern-call g_hash_table_insert (ptr-read-u64 group 24) key value)
+                 (seq (extern-call g_free key) (extern-call g_free value) (ptr-write-u64 reader 24 0)))
+               (setq k (+ k 1))))
+        (setq nitems (sumi_explorer_journal_get reader)) (setq j 0) (setq previousitem 0)
+        (if (or (= nitems 0) (> nitems 256)) (ptr-write-u64 reader 24 0))
+        (while (and (ptr-read-u64 reader 24) (< j nitems))
+          (seq
+           (setq item (extern-call g_malloc0 104)) (extern-call g_ptr_array_add items item) (setq offset 0)
+           (while (and (ptr-read-u64 reader 24) (<= offset 96))
+             (seq
+              (ptr-write-u64 item offset
+                (if (< offset 48) (sumi_explorer_journal_get_string reader)
+                  (if (or (= offset 80) (= offset 88)) (sumi_explorer_journal_link_read reader (= offset 88))
+                    (sumi_explorer_journal_get reader))))
+              (setq offset (+ offset 8))))
+           (if (or (= (ptr-read-u64 item 0) 0) (= (ptr-read-u64 item 8) 0) (= (ptr-read-u64 item 16) 0)
+                   (= (ptr-read-u64 item 24) 0) (= (ptr-read-u64 item 32) 0)
+                   (<= (ptr-read-u64 item 64) previousitem) (= (ptr-read-u64 item 72) 0)
+                   (> (ptr-read-u64 item 48) 1) (> (ptr-read-u64 item 56) 4095) (> (ptr-read-u64 item 96) 1))
+             (ptr-write-u64 reader 24 0))
+           (if (ptr-read-u64 reader 24)
+             (if (or (= (extern-call g_path_is_absolute (ptr-read-u64 item 0)) 0)
+                     (if (= op 5) (= (extern-call g_str_has_prefix (ptr-read-u64 item 8) (data-addr undo_trash)) 0)
+                       (= (extern-call g_path_is_absolute (ptr-read-u64 item 8)) 0)))
+               (ptr-write-u64 reader 24 0)))
+           (setq previousitem (ptr-read-u64 item 64)) (setq j (+ j 1))))
+        (setq i (+ i 1))))
+     (setq good (and (ptr-read-u64 reader 24) (= (ptr-read-u64 reader 16) (- size 64))))
+     (if good (seq (extern-call g_ptr_array_unref (ptr-read-u64 store 0)) (ptr-write-u64 store 0 groups))
+       (seq (extern-call g_ptr_array_unref groups) (extern-call g_free (ptr-read-u64 store 112)) (ptr-write-u64 store 112 0)))
+     (extern-call g_free digest) (extern-call g_free reader) good)))
+ (defun sumi_explorer_journal_flush (store)
+   (let ((writer (extern-call g_malloc0 24)) (sum 0) (array 0) (good 0))
+    (seq
+     (if (and store (ptr-read-u64 store 120) (ptr-read-u64 store 104) (sumi_explorer_journal_encode store writer))
+       (seq (setq array (ptr-read-u64 writer 0))
+            (setq sum (extern-call g_compute_checksum_for_data 2 (ptr-read-u64 array 0) (ptr-read-u32 array 8)))
+            (extern-call g_byte_array_append array sum 64)
+            (setq good (extern-call sumi_explorer_platform_journal_write (ptr-read-u64 store 104) (ptr-read-u64 array 0) (ptr-read-u32 array 8)))))
+     (if (= good 0) (ptr-write-u64 store 120 0))
+     (if (ptr-read-u64 writer 0) (extern-call g_byte_array_unref (ptr-read-u64 writer 0)))
+     (extern-call g_free writer) (extern-call g_free sum) good)))
+ ;; Clear is deliberately only staged; commit must flush the new group/history
+ ;; and cleared intent together. On failure the old durable intent remains.
+ (defun sumi_explorer_journal_clear_intent (store)
+   (seq (extern-call g_free (ptr-read-u64 store 112)) (ptr-write-u64 store 112 0) 0))
+ (defun sumi_explorer_journal_intent (store text)
+   (if (and store (ptr-read-u64 store 120) (= (ptr-read-u64 store 112) 0) text
+            (> (extern-call strlen text) 0) (<= (extern-call strlen text) 1048576)
+            (extern-call g_utf8_validate text -1 0))
+     (seq (ptr-write-u64 store 112 (extern-call g_strdup text)) (sumi_explorer_journal_flush store)) 0))
+ (defun sumi_explorer_journal_sequence_read (lock)
+   (let ((size (extern-call g_malloc0 8)) (data 0) (sum 0) (value -1))
+    (seq
+     (if (= (extern-call sumi_explorer_platform_journal_status lock) 1)
+       (seq (setq data (extern-call sumi_explorer_platform_journal_read lock size))
+        (if (and data (= (ptr-read-u64 size 0) 80) (= (extern-call memcmp data (data-addr journal_magic) 8) 0))
+          (seq (setq sum (extern-call g_compute_checksum_for_data 2 data 16))
+           (if (and (>= (ptr-read-u64 data 8) 0) (= (extern-call memcmp sum (+ data 16) 64) 0))
+             (setq value (ptr-read-u64 data 8)))))))
+     (extern-call g_free data) (extern-call g_free sum) (extern-call g_free size) value)))
+ (defun sumi_explorer_journal_sequence_write (lock value)
+   (let ((record (extern-call g_malloc0 80)) (sum 0) (good 0))
+    (seq
+     (extern-call memcpy record (data-addr journal_magic) 8) (ptr-write-u64 record 8 value)
+     (setq sum (extern-call g_compute_checksum_for_data 2 record 16)) (extern-call memcpy (+ record 16) sum 64)
+     (setq good (extern-call sumi_explorer_platform_journal_write lock record 80))
+     (extern-call g_free record) (extern-call g_free sum) good)))
+ ;; Establishment is separate durable evidence. Missing/unreadable sequence in
+ ;; an established profile is corruption, regardless of file timestamps. Only
+ ;; an entirely empty profile may initialize; marker first makes a crash during
+ ;; initialization fail closed rather than silently reusing an earlier epoch.
+ ;; Wait only for proven kernel contention, never repeat an I/O reservation.
+ ;; The two-second monotonic deadline also bounds startup on an abandoned or
+ ;; long-running live writer; kernel locks themselves release on process death.
+ (defun sumi_explorer_journal_sequence_lock (store name)
+   (let ((status (extern-call g_malloc0 8)) (lock 0) (deadline (+ (extern-call g_get_monotonic_time) 2000000)) (busy 1))
+    (seq
+     (while (and (= lock 0) busy (< (extern-call g_get_monotonic_time) deadline))
+       (seq
+        (setq lock (extern-call sumi_explorer_platform_journal_open_status (ptr-read-u64 store 96) name status))
+        (setq busy (= (ptr-read-u32 status 0) 1))
+        (if (and (= lock 0) busy) (extern-call g_usleep 10000))))
+     (extern-call g_free status) lock)))
+ (defun sumi_explorer_journal_sequence_ready (store)
+   (let ((directory (extern-call g_dir_open (extern-call sumi_explorer_platform_profile_path (ptr-read-u64 store 96)) 0 0))
+         (empty 0) (lock 0) (marker 0) (value -1) (good 0))
+    (seq
+     (if directory (seq (setq empty (= (extern-call g_dir_read_name directory) 0)) (extern-call g_dir_close directory)))
+     (setq lock (sumi_explorer_journal_sequence_lock store (data-addr journal_sequence)))
+     (if lock
+       (seq (setq marker (sumi_explorer_journal_sequence_lock store (data-addr journal_established)))
+        (if marker
+          (seq
+           (if (and empty (= (extern-call sumi_explorer_platform_journal_status lock) 0)
+                    (= (extern-call sumi_explorer_platform_journal_status marker) 0))
+             (if (sumi_explorer_journal_sequence_write marker 1) (sumi_explorer_journal_sequence_write lock 0)))
+           (if (= (sumi_explorer_journal_sequence_read marker) 1)
+             (seq (setq value (sumi_explorer_journal_sequence_read lock))
+                  (if (>= value 0) (seq (ptr-write-u64 store 8 value) (setq good 1)))))
+           (extern-call sumi_explorer_platform_journal_close marker)))
+        (extern-call sumi_explorer_platform_journal_close lock))) good)))
+ ;; Durable profile-wide reservation may leave gaps, never reused IDs.
+ (defun sumi_explorer_journal_next_id (store)
+   (let ((lock 0) (marker 0) (value -1) (good 0))
+    (seq
+     (if (and store (ptr-read-u64 store 120))
+       (setq lock (sumi_explorer_journal_sequence_lock store (data-addr journal_sequence))))
+     (if lock
+       (seq
+        (setq marker (sumi_explorer_journal_sequence_lock store (data-addr journal_established)))
+        (if marker
+          (seq
+           (if (= (sumi_explorer_journal_sequence_read marker) 1) (setq value (sumi_explorer_journal_sequence_read lock)))
+           (if (and (>= value (ptr-read-u64 store 8)) (< value 9223372036854775806))
+             (seq (setq good (sumi_explorer_journal_sequence_write lock (+ value 1)))
+                  (if good (ptr-write-u64 store 8 (+ value 1)))))
+           (extern-call sumi_explorer_platform_journal_close marker)))
+        (extern-call sumi_explorer_platform_journal_close lock)))
+     (if (= good 0) (ptr-write-u64 store 120 0)) good)))
+ (defun sumi_explorer_journal_restore (ctx)
+   (let ((store (ptr-read-u64 ctx 512)) (profile 0) (directory 0) (name 0) (candidate 0) (chosen 0)
+         (stamp 0) (latest 0) (size (extern-call g_malloc0 8)) (data 0) (temporary 0)
+         (important 0) (bestimportant 0) (bad 0) (seen 0) (bytes 0) (recovery 0) (preview 0) (detail 0) (maximum 0))
+    (seq
+     (setq profile (extern-call sumi_explorer_platform_profile_open)) (ptr-write-u64 store 96 profile)
+     (if profile
+       (seq
+        (if (= (sumi_explorer_journal_sequence_ready store) 0) (setq bad 1))
+        (setq directory (extern-call g_dir_open (extern-call sumi_explorer_platform_profile_path profile) 0 0))
+        (if directory
+          (seq
+           (setq name (extern-call g_dir_read_name directory))
+           (while (and name (< seen 256) (< bytes 67108864))
+             (seq
+              (setq seen (+ seen 1))
+              (if (extern-call g_str_has_suffix name (data-addr journal_suffix))
+                (seq
+                 (setq candidate (extern-call sumi_explorer_platform_journal_open profile name))
+                 (if candidate
+                   (seq
+                    (setq stamp (extern-call sumi_explorer_platform_journal_stamp candidate))
+                    (setq data (extern-call sumi_explorer_platform_journal_read candidate size))
+                    (setq bytes (+ bytes (ptr-read-u64 size 0)))
+                    (setq temporary (extern-call g_malloc0 136))
+                    (ptr-write-u64 temporary 0 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_group_free)))
+                    (if (= (sumi_explorer_journal_decode temporary data (ptr-read-u64 size 0)) 0) (setq bad 1)
+                      (seq
+                       (if (> (ptr-read-u64 temporary 8) maximum) (setq maximum (ptr-read-u64 temporary 8)))
+                       (if (ptr-read-u64 temporary 112)
+                         (seq
+                          (if (= recovery 0)
+                            (seq (setq detail (extern-call g_strdup_printf (data-addr journal_recovery_list) (extern-call sumi_explorer_platform_profile_path profile)))
+                                 (setq recovery (extern-call g_string_new detail)) (extern-call g_free detail)))
+                          (setq preview (extern-call g_utf8_substring (ptr-read-u64 temporary 112) 0
+                            (if (> (extern-call g_utf8_strlen (ptr-read-u64 temporary 112) -1) 256) 256 (extern-call g_utf8_strlen (ptr-read-u64 temporary 112) -1))))
+                          (setq detail (extern-call g_strdup_printf (data-addr journal_pending_location) name preview))
+                          (extern-call g_string_append recovery (data-addr newline)) (extern-call g_string_append recovery detail)
+                          (extern-call g_free preview) (extern-call g_free detail) (setq bad 1)))
+                       (setq important (or (> (ptr-read-u32 (ptr-read-u64 temporary 0) 8) 0) (ptr-read-u64 temporary 112)))
+                       (if (or (= chosen 0) (and important (= bestimportant 0))
+                               (and (= important bestimportant) (> stamp latest)))
+                         (seq
+                          (if chosen (extern-call sumi_explorer_platform_journal_close chosen))
+                          (setq chosen candidate) (setq candidate 0) (setq latest stamp) (setq bestimportant important)
+                          (extern-call g_ptr_array_unref (ptr-read-u64 store 0))
+                          (ptr-write-u64 store 0 (ptr-read-u64 temporary 0))
+                          (ptr-write-u64 temporary 0 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_group_free)))
+                          (extern-call g_free (ptr-read-u64 store 112)) (ptr-write-u64 store 112 (ptr-read-u64 temporary 112))
+                          (ptr-write-u64 temporary 112 0)))))
+                    (extern-call g_free data) (extern-call g_free (ptr-read-u64 temporary 112))
+                    (extern-call g_ptr_array_unref (ptr-read-u64 temporary 0)) (extern-call g_free temporary)
+                    (if candidate (extern-call sumi_explorer_platform_journal_close candidate))))))
+              (setq name (extern-call g_dir_read_name directory))))
+           (if name (setq bad 1))
+           (extern-call g_dir_close directory)) (setq bad 1))
+        ;; An active sibling can reserve, commit and close while enumeration is
+        ;; in progress. Validate all decoded histories against a fresh counter
+        ;; under both stable locks, not the startup establishment snapshot.
+        (if (= (sumi_explorer_journal_sequence_ready store) 0) (setq bad 1)
+          (if (> maximum (ptr-read-u64 store 8)) (setq bad 1)))
+        (if (= chosen 0) (setq chosen (extern-call sumi_explorer_platform_journal_open profile 0)))
+        (ptr-write-u64 store 104 chosen)
+        (if (and chosen (= bad 0) (= (ptr-read-u64 store 112) 0))
+          (seq (ptr-write-u64 store 120 1) (sumi_explorer_journal_flush store)))))
+     (if (= (ptr-read-u64 store 120) 0)
+       (seq
+        (ptr-write-u64 store 128
+          (if recovery
+            (extern-call g_strdup (ptr-read-u64 recovery 0))
+            (extern-call g_strdup (data-addr journal_failure))))
+        (extern-call g_ptr_array_set_size (ptr-read-u64 store 0) 0)))
+     (if recovery (extern-call g_string_free recovery 1))
+     (extern-call g_free size) (ptr-read-u64 store 120))))
+ (defun sumi_explorer_journal_close (store)
+   (seq
+    (extern-call sumi_explorer_platform_journal_close (ptr-read-u64 store 104))
+    (extern-call sumi_explorer_platform_profile_close (ptr-read-u64 store 96))
+    (extern-call g_free (ptr-read-u64 store 112)) (extern-call g_free (ptr-read-u64 store 128)) 0))
  (defun sumi_explorer_undo_file (path)
    (if (extern-call g_str_has_prefix path (data-addr undo_trash)) (extern-call g_file_new_for_uri path) (extern-call g_file_new_for_path path)))
  (defun sumi_explorer_undo_item_free (item)
@@ -2223,7 +3503,7 @@
             (extern-call g_free projected)
             (if (and good (= kind 1))
               (seq
-               (if (or (< size 0) (> size 1073741824)) (setq good 0))
+               (if (or (< size 0) (> size 17179869184)) (setq good 0))
                (if good (setq input (extern-call g_file_read file (ptr-read-u64 probe 24) (+ probe 32))))
                (if (= input 0) (setq good 0)
                  (seq
@@ -2231,7 +3511,7 @@
                   (while (and good (> count 0))
                     (seq
                      (setq used (+ used count)) (ptr-write-u64 probe 80 (+ (ptr-read-u64 probe 80) count))
-                     (if (or (> used size) (> (ptr-read-u64 probe 80) 4294967296)) (setq good 0)
+                     (if (or (> used size) (> (ptr-read-u64 probe 80) 34359738368)) (setq good 0)
                        (sumi_explorer_undo_hash_update probe checksum (ptr-read-u64 probe 96) count 0))
                      (if good (setq count (extern-call g_input_stream_read input (ptr-read-u64 probe 96) 65536 (ptr-read-u64 probe 24) (+ probe 32))))))
                   (if (or (< count 0) (= (= used size) 0)) (setq good 0))
@@ -2367,7 +3647,7 @@
 
  (defun sumi_explorer_undo_record (job)
    (let ((store (ptr-read-u64 job 272)) (group (ptr-read-u64 job 280)) (items 0) (item 0) (part 0)
-         (probe (sumi_explorer_undo_probe)) (file 0) (uri 0) (good 0) (i 0) (offset 0) (op (ptr-read-u64 job 0)))
+         (probe (sumi_explorer_undo_probe)) (file 0) (uri 0) (good 0) (i 0) (offset 0) (op (ptr-read-u64 job 0)) (obsolete 0))
      (seq
       (setq items (ptr-read-u64 group 16))
       (while (< i (ptr-read-u32 items 8))
@@ -2395,18 +3675,24 @@
          (if good (setq i (+ i 1))
            (seq (extern-call g_ptr_array_remove_index items i) (setq offset (+ offset 1))))))
       (if (> (ptr-read-u32 items 8) 0)
-        (if (< (ptr-read-u64 store 8) 9223372036854775807)
+        (if (sumi_explorer_journal_next_id store)
           (seq
-           (ptr-write-u64 store 8 (+ (ptr-read-u64 store 8) 1)) (ptr-write-u64 group 0 (ptr-read-u64 store 8))
+           (ptr-write-u64 group 0 (ptr-read-u64 store 8))
            (extern-call g_ptr_array_add (ptr-read-u64 store 0) group) (ptr-write-u64 job 280 0)
-           (if (> (ptr-read-u32 (ptr-read-u64 store 0) 8) 32) (extern-call g_ptr_array_remove_index (ptr-read-u64 store 0) 0)))
+           (if (> (ptr-read-u32 (ptr-read-u64 store 0) 8) 32) (setq obsolete (extern-call g_ptr_array_steal_index (ptr-read-u64 store 0) 0))))
           (if (= (ptr-read-u64 job 288) 0) (ptr-write-u64 job 288 (extern-call g_strdup (data-addr undo_unavailable))))))
+      (if (or (= (ptr-read-u64 store 120) 0) (= (sumi_explorer_journal_flush store) 0))
+        (seq (extern-call g_ptr_array_set_size (ptr-read-u64 store 0) 0)
+             (if (= (ptr-read-u64 job 288) 0) (ptr-write-u64 job 288 (extern-call g_strdup (data-addr journal_failure))))))
+      (if obsolete
+        (seq (if (and (ptr-read-u64 store 120) (= (ptr-read-u64 store 112) 0)) (sumi_explorer_transfer_obsolete job obsolete))
+             (sumi_explorer_undo_group_free obsolete)))
       (sumi_explorer_undo_probe_free probe) 0)))
 
  (defun sumi_explorer_undo_label (op)
    (cond ((= op 1) (data-addr copy_command)) ((= op 2) (data-addr move_command))
          ((= op 3) (data-addr rename_command)) ((= op 4) (data-addr mkdir_command))
-         ((= op 5) (data-addr trash_command)) ((= op 9) (data-addr zip_create)) ((= op 12) (data-addr chmod_command)) (t (data-addr zip_extract))))
+         ((= op 5) (data-addr trash_command)) ((= op 9) (data-addr zip_create)) ((= op 12) (data-addr chmod_command)) ((= op 13) (data-addr transfer_command)) (t (data-addr zip_extract))))
  (defun sumi_explorer_undo_snapshot (ctx)
    (let ((store (ptr-read-u64 ctx 512)) (key (extern-call g_key_file_new)) (groups 0) (group 0) (name 0) (buf 0) (i 0) (count 0) (good 0))
      (seq
@@ -2603,9 +3889,10 @@
  (defun sumi_explorer_undo_worker (task object job cancellable)
    (let ((store (ptr-read-u64 job 272)) (group (ptr-read-u64 job 296)) (items 0) (item 0)
          (probe (sumi_explorer_undo_probe)) (file 0) (target 0) (parent 0) (quarantine 0)
-         (path 0) (pattern 0) (i 0) (op 0) (good 1) (detached 0))
+         (path 0) (pattern 0) (i 0) (op 0) (good 1) (detached 0) (native 0) (intent 0) (changed 0) (mode_result 0))
      (seq
       (setq items (ptr-read-u64 group 16)) (setq op (ptr-read-u64 group 8))
+      (setq good (sumi_explorer_journal_intent store (data-addr journal_inverse)))
       (ptr-write-u64 probe 24 cancellable)
       ;; All unresolved objects are checked before the first reversal.
       (while (and good (< i (ptr-read-u32 items 8)))
@@ -2620,13 +3907,33 @@
            (seq
             (if (ptr-read-u64 item 88) (sumi_explorer_undo_parent_link_check (ptr-read-u64 item 88)))
             (setq file (sumi_explorer_undo_file (ptr-read-u64 item 8)))
+            (setq native (extern-call g_file_get_path file))
             (setq detached 0)
             (if (= op 12)
-              (setq good (extern-call g_file_set_attribute_uint32 file (data-addr undo_mode) (ptr-read-u64 item 56) 1 cancellable (+ job 32)))
+              (seq
+               (setq mode_result (if (extern-call g_cancellable_is_cancelled cancellable) 0
+                 (extern-call sumi_explorer_platform_recovery_chmod native (ptr-read-u64 item 56) 0)))
+               (setq good (= mode_result 1)) (setq changed (> mode_result 0))
+               (if (= mode_result 2) (ptr-write-u64 store 120 0)))
              (if (or (= op 2) (= op 3) (= op 5))
-              (seq (setq target (extern-call g_file_new_for_path (ptr-read-u64 item 0)))
-                   (setq good (extern-call g_file_move file target 20 cancellable 0 0 (+ job 32)))
-                   (extern-call g_object_unref target))
+              (seq
+               (if (= op 5)
+                 (seq
+                  (setq path (extern-call g_path_get_dirname (ptr-read-u64 item 0)))
+                  (setq good (extern-call sumi_explorer_platform_recovery_filesystem path 0))
+                  (if good
+                    (seq (setq target (extern-call g_file_new_for_path (ptr-read-u64 item 0)))
+                         (setq good (extern-call g_file_move file target 20 cancellable 0 0 (+ job 32)))
+                         (setq changed good) (extern-call g_object_unref target)
+                         (if (and good (= (extern-call sumi_explorer_platform_recovery_filesystem path 0) 0))
+                           (seq (setq good 0) (ptr-write-u64 store 120 0)))))
+                  (extern-call g_free path) (setq path 0))
+                 (seq
+                  (setq good (and native (= (extern-call g_cancellable_is_cancelled cancellable) 0)))
+                  (if good
+                    (seq
+                     (setq good (extern-call sumi_explorer_platform_recovery_rename native (ptr-read-u64 item 0) 0))
+                     (if good (setq changed 1) (ptr-write-u64 store 120 0)))))))
               (seq
                (setq parent (extern-call g_file_get_parent file)) (setq path (extern-call g_file_get_path parent))
                (setq pattern (if path (extern-call g_strconcat path (data-addr undo_quarantine) 0) 0))
@@ -2634,10 +3941,21 @@
                  (seq
                   (setq quarantine (extern-call g_file_new_for_path pattern))
                   (setq target (extern-call g_file_get_child quarantine (data-addr undo_child)))
-                  (setq good (extern-call g_file_move file target 20 cancellable 0 0 (+ job 32)))
+                  ;; The concrete reserved quarantine is durable intent before
+                  ;; the first rename into it. Updating intent also checkpoints
+                  ;; already completed items of a partial multi-item inverse.
+                  (setq intent (extern-call g_strdup_printf (data-addr journal_inverse_paths)
+                    (ptr-read-u64 group 0) (ptr-read-u64 item 0) (ptr-read-u64 item 8) pattern))
+                  (sumi_explorer_journal_clear_intent store)
+                  (setq good (sumi_explorer_journal_intent store intent)) (extern-call g_free intent)
+                  (if good
+                    (seq (setq intent (extern-call g_file_get_path target))
+                         (setq good (extern-call sumi_explorer_platform_recovery_rename native intent 0))
+                         (extern-call g_free intent)
+                         (if good (setq changed 1) (ptr-write-u64 store 120 0))))
                   (setq detached good)) (setq good 0))
                (extern-call g_free path) (extern-call g_object_unref parent))))
-            (extern-call g_object_unref file)
+            (extern-call g_free native) (setq native 0) (extern-call g_object_unref file)
             (if good
               (seq
                (if (ptr-read-u64 item 80)
@@ -2646,10 +3964,19 @@
                (if detached
                  (seq
                   (ptr-write-u64 probe 56 0)
-                  (if (and (sumi_explorer_undo_cleanup probe target 0) (extern-call g_file_delete quarantine 0 0)) 0
+                  ;; Windows keeps the durably detached owned quarantine: a
+                  ;; directory FlushFileBuffers is not a deletion barrier.
+                  (if (extern-call sumi_explorer_platform_is_windows)
+                    (if (= (ptr-read-u64 job 288) 0) (ptr-write-u64 job 288 (extern-call g_strdup_printf (data-addr undo_retained) pattern)))
+                   (if (and (sumi_explorer_undo_cleanup probe target 0) (extern-call g_file_delete quarantine 0 0)) 0
                     (seq
                      (setq good 0)
-                     (ptr-write-u64 job 288 (extern-call g_strdup_printf (data-addr undo_residual) pattern))))))
+                     (ptr-write-u64 job 288 (extern-call g_strdup_printf (data-addr undo_residual) pattern)))))
+                  (if (= (extern-call sumi_explorer_platform_is_windows) 0)
+                    (seq (setq path (extern-call g_path_get_dirname pattern))
+                         (if (= (extern-call sumi_explorer_platform_recovery_sync path 0) 0)
+                           (seq (setq good 0) (ptr-write-u64 store 120 0)))
+                         (extern-call g_free path) (setq path 0)))))
                (if (and good (ptr-read-u64 item 88))
                  (if (= (sumi_explorer_undo_parent_link_apply store (ptr-read-u64 item 88)) 0)
                    (if (= (ptr-read-u64 job 288) 0) (ptr-write-u64 job 288 (extern-call g_strdup (data-addr undo_rebase_warning))))))
@@ -2659,7 +3986,7 @@
                (extern-call g_ptr_array_remove_index items i)))
             (if quarantine
               (seq
-               (if (= detached 0)
+               (if (and (= detached 0) (ptr-read-u64 store 120))
                  (if (= (extern-call g_file_delete quarantine 0 0) 0)
                    (ptr-write-u64 job 288 (extern-call g_strdup_printf (data-addr undo_retained) pattern))))
                (extern-call g_object_unref quarantine) (extern-call g_object_unref target)
@@ -2667,11 +3994,20 @@
          (extern-call g_free pattern) (setq pattern 0)
          (setq i (- i 1))))
       (if (= (ptr-read-u32 items 8) 0) (extern-call g_ptr_array_remove_index (ptr-read-u64 store 0) (- (ptr-read-u32 (ptr-read-u64 store 0) 8) 1)))
+      (if (ptr-read-u64 store 120)
+        (seq (sumi_explorer_journal_clear_intent store)
+             (if (= (sumi_explorer_journal_flush store) 0)
+               (seq (setq good 0) (if (= (ptr-read-u64 job 288) 0)
+                 (ptr-write-u64 job 288 (extern-call g_strdup (data-addr journal_failure))))))))
+      (if (= (ptr-read-u64 store 120) 0)
+        (seq
+         (if (= (ptr-read-u64 job 288) 0) (ptr-write-u64 job 288 (extern-call g_strdup (data-addr journal_failure))))
+         (extern-call g_ptr_array_set_size (ptr-read-u64 store 0) 0)))
       (if (= good 0) (sumi_explorer_job_fail job (data-addr undo_failure)))
       (ptr-write-u64 job 48 good) (sumi_explorer_undo_probe_free probe) 0)))
 
  (defun sumi_explorer_undo_start (ctx path request)
-   (if (ptr-read-u64 ctx 144)
+   (if (or (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152))
     (if request
       (seq (ptr-write-u64 ctx 408 request)
            (extern-call gtk_label_set_text (ptr-read-u64 ctx 32) (data-addr copy_busy)))
@@ -2752,7 +4088,7 @@
       (ptr-write-u64 job 48 good) (sumi_explorer_undo_probe_free probe) (extern-call g_object_unref file) 0)))
  (defun sumi_explorer_chmod_start (ctx path mode expected request)
    (if (extern-call sumi_explorer_platform_is_windows)
-    (if (ptr-read-u64 ctx 144)
+    (if (or (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152))
       (seq (if request (ptr-write-u64 ctx 408 request))
            (extern-call gtk_label_set_text (ptr-read-u64 ctx 32) (data-addr copy_busy)) 0)
       (seq (if (> request 0) (ptr-write-u64 ctx 72 request))
@@ -2763,7 +4099,7 @@
         (seq (setq file (extern-call g_file_new_for_path path))
              (setq stamp (if expected (extern-call g_strdup expected) (sumi_explorer_permissions_stamp file probe)))
              (extern-call g_object_unref file)))
-      (if (or (ptr-read-u64 ctx 144)
+      (if (or (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152)
               (= path 0) (= stamp 0) (= (extern-call g_path_is_absolute path) 0) (< value 0))
         (seq (if (> request 0) (ptr-write-u64 ctx 72 request)) (sumi_explorer_publish ctx 0 (data-addr advanced_error)))
         (seq
@@ -2783,7 +4119,9 @@
  (defun sumi_explorer_worker (task object job cancellable)
    (seq
     (if (and (ptr-read-u64 job 272) (= (= (ptr-read-u64 job 0) 11) 0)) (sumi_explorer_undo_prepare job))
-    (if (= (ptr-read-u64 job 0) 11) (sumi_explorer_undo_worker task object job cancellable)
+    (if (= (ptr-read-u64 job 0) 11)
+     (if (= (ptr-read-u64 (ptr-read-u64 job 296) 8) 13) (sumi_explorer_transfer_inverse task object job cancellable)
+       (sumi_explorer_undo_worker task object job cancellable))
      (if (= (ptr-read-u64 job 0) 12) (sumi_explorer_chmod_worker task object job cancellable)
     (if (>= (ptr-read-u64 job 0) 9) (sumi_explorer_zip_worker task object job cancellable)
      (if (> (ptr-read-u64 job 0) 5) (sumi_explorer_batch_worker task object job cancellable)
@@ -2842,21 +4180,28 @@
       (extern-call g_free summary)
       (extern-call g_free detail)
       (if (> (ptr-read-u64 job 40) 0) (sumi_explorer_response ctx))
+      ;; A default COPY drop uses the existing no-follow batch copier. GTask's
+      ;; source-object reference owns this external drop through real completion.
+      (if object
+        (sumi_explorer_drop_finish object
+          (if (and good (= (ptr-read-u64 ctx 152) 0) (= (extern-call g_cancellable_is_cancelled (ptr-read-u64 ctx 184)) 0)) 1 0)))
       (ptr-write-u64 ctx 416 0)
       (ptr-write-u64 ctx 144 0) (ptr-write-u64 ctx 224 0)
       (extern-call g_object_unref (ptr-read-u64 ctx 184))
       (ptr-write-u64 ctx 184 0) (ptr-write-u64 ctx 176 0)
       (extern-call g_object_unref task)
-      (if (ptr-read-u64 ctx 152) (extern-call g_main_loop_quit (ptr-read-u64 ctx 0))) 0)))
+      (sumi_explorer_maybe_quit ctx) 0)))
 
  (defun sumi_explorer_operation_done (object task ctx)
    (if (and (> (ptr-read-u64 (extern-call g_task_get_task_data task) 0) 5) (< (ptr-read-u64 (extern-call g_task_get_task_data task) 0) 9))
      (sumi_explorer_batch_done object task ctx) (sumi_explorer_single_done object task ctx)))
 
  (defun sumi_explorer_start_batch (ctx op paths count directory request)
+   (sumi_explorer_start_batch_drop ctx op paths count directory request 0))
+ (defun sumi_explorer_start_batch_drop (ctx op paths count directory request drop)
    (let ((job 0) (i 0) (j 0) (item 0) (file 0) (parent 0) (base 0) (target 0) (name 0)
          (folded 0) (names (extern-call g_hash_table_new_full (addr-of sumi_explorer_string_hash) (addr-of sumi_explorer_string_equal) (addr-of sumi_explorer_free_path) 0))
-         (good (and (> count 0) (<= count 256) (= (ptr-read-u64 ctx 144) 0))) (buf 0) (task 0) (budget 0))
+         (good (and (> count 0) (<= count 256) (= (ptr-read-u64 ctx 144) 0) (= (ptr-read-u64 ctx 152) 0))) (buf 0) (task 0) (budget 0))
      (seq
       (if (< op 8) (setq good (and good (= (= directory 0) 0) (extern-call g_path_is_absolute directory))))
       (if good
@@ -2904,7 +4249,7 @@
         (seq
          (ptr-write-u64 ctx 184 (extern-call g_cancellable_new))
          (ptr-write-u64 ctx 224 request)
-         (setq task (extern-call g_task_new 0 (ptr-read-u64 ctx 184) (addr-of sumi_explorer_operation_done) ctx))
+         (setq task (extern-call g_task_new drop (ptr-read-u64 ctx 184) (addr-of sumi_explorer_operation_done) ctx))
          (extern-call g_task_set_check_cancellable task 0) (extern-call g_task_set_return_on_cancel task 0)
          (extern-call g_task_set_task_data task job (addr-of sumi_explorer_job_free))
          (ptr-write-u64 ctx 176 task) (ptr-write-u64 ctx 144 1)
@@ -3411,6 +4756,7 @@
       (extern-call gtk_box_append menu (ptr-read-u64 ctx 520)) (extern-call gtk_box_append menu (ptr-read-u64 ctx 528))
       (sumi_explorer_ui_menu bar (data-addr view_label) (data-addr icon_view) menu)
       (setq menu (extern-call gtk_box_new 1 2))
+      (search_button menu ctx)
       (sumi_explorer_ui_action menu (data-addr copy_to_label) (data-addr icon_copy) 16 ctx 1)
       (sumi_explorer_ui_action menu (data-addr move_to_label) (data-addr icon_cut) 17 ctx 1)
       (sumi_explorer_context_button menu (data-addr prop_label) 2 ctx)
@@ -3827,6 +5173,7 @@
 
  (defun sumi_explorer_transfer_accept (widget ctx)
    (let ((ui (ptr-read-u64 ctx 728)) (parent 0) (file 0) (target 0) (started 0) (good 1)
+         (policy (if widget (extern-call g_object_get_data widget (data-addr transfer_policy)) 0))
          (text (extern-call gtk_editable_get_text (ptr-read-u64 (ptr-read-u64 ctx 728) 8))))
      (seq
       (if (or (ptr-read-u64 ctx 144) (sumi_explorer_same text (data-addr empty)))
@@ -3840,12 +5187,14 @@
          (if (> (ptr-read-u64 ui 32) 1)
            (if (= (= (extern-call g_file_query_file_type file 0 0) 2) 0)
              (seq (setq good 0) (sumi_explorer_publish ctx 0 (data-addr batch_hint))))
-           (if (extern-call g_file_query_exists file 0)
+           (if (and (= policy 0) (extern-call g_file_query_exists file 0))
              (seq (setq good 0) (sumi_explorer_publish ctx 0 (data-addr existing_target)))))
          (if good
-           (if (> (ptr-read-u64 ui 32) 1)
+           (if (> policy 0)
+             (setq started (sumi_explorer_transfer_start ctx (ptr-read-u64 ui 24) (ptr-read-u64 ui 32) target policy (ptr-read-u64 ui 16) (> (ptr-read-u64 ui 32) 1) 0 0 0))
+            (if (> (ptr-read-u64 ui 32) 1)
              (setq started (sumi_explorer_start_batch ctx (+ (ptr-read-u64 ui 16) 5) (ptr-read-u64 ui 24) (ptr-read-u64 ui 32) target 0))
-             (setq started (sumi_explorer_start_operation ctx (ptr-read-u64 ui 16) (ptr-read-u64 (ptr-read-u64 ui 24) 0) target 0))))
+             (setq started (sumi_explorer_start_operation ctx (ptr-read-u64 ui 16) (ptr-read-u64 (ptr-read-u64 ui 24) 0) target 0)))))
          (extern-call g_free target) (extern-call g_object_unref file) (extern-call g_object_unref parent)
          (if started (sumi_explorer_transfer_close 0 ctx)))) 0)))
 
@@ -3882,6 +5231,15 @@
          (extern-call gtk_widget_add_css_class button (data-addr active_class))
          (extern-call g_signal_connect_data button (data-addr clicked) (addr-of sumi_explorer_transfer_accept) ctx 0 0)
          (extern-call gtk_box_append box button)
+         (setq i 1)
+         (while (<= i 4)
+           (seq
+            (setq button (extern-call gtk_button_new_with_label
+              (cond ((= i 1) (data-addr transfer_replace_label)) ((= i 2) (data-addr transfer_merge_label))
+                    ((= i 3) (data-addr transfer_merge_replace_label)) (t (data-addr transfer_skip_label)))))
+            (extern-call g_object_set_data button (data-addr transfer_policy) i)
+            (extern-call g_signal_connect_data button (data-addr clicked) (addr-of sumi_explorer_transfer_accept) ctx 0 0)
+            (extern-call gtk_box_append box button) (setq i (+ i 1))))
          (setq button (extern-call gtk_button_new_with_label (data-addr cancel_label)))
          (extern-call g_signal_connect_data button (data-addr clicked) (addr-of sumi_explorer_transfer_close) ctx 0 0)
          (extern-call gtk_box_append box button)
@@ -3893,7 +5251,7 @@
  (defun sumi_explorer_platform_action (ctx op paths count request)
    (let ((copies 0) (i 0) (surface 0) (slot (extern-call g_malloc0 8)) (result -1) (message 0))
      (seq
-      (if (or (ptr-read-u64 ctx 144) (= (extern-call sumi_explorer_platform_is_windows) 0) (< count 1) (> count 256))
+      (if (or (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152) (= (extern-call sumi_explorer_platform_is_windows) 0) (< count 1) (> count 256))
         (seq (if (> request 0) (ptr-write-u64 ctx 72 request))
              (sumi_explorer_publish ctx 0 (if (ptr-read-u64 ctx 144) (data-addr copy_busy) (data-addr platform_unsupported))))
         (seq
@@ -3915,7 +5273,7 @@
          (if surface (extern-call g_object_unref surface))
          (sumi_explorer_paths_free copies count)
          (extern-call g_free message)
-         (if (ptr-read-u64 ctx 152) (extern-call g_main_loop_quit (ptr-read-u64 ctx 0)))))
+         (sumi_explorer_maybe_quit ctx)))
       (extern-call g_free slot) 0)))
 
  ;; Main-thread-only prompt storage follows the Undo store's worker-owned prefix.
@@ -4116,13 +5474,30 @@
         (extern-call gtk_popover_set_pointing_to (ptr-read-u64 ctx 96) (+ ctx 120))
         (sumi_explorer_context_popup ctx 1) 1)) 0)))
 
+ (defun sumi_explorer_maybe_quit (ctx)
+   ;; Every completion joins the same barrier. Looking up existing search
+   ;; ownership must not allocate state during shutdown.
+   (let ((search (extern-call g_object_get_data (ptr-read-u64 ctx 8) (data-addr search_state_key))))
+     (seq
+      (if (and (ptr-read-u64 ctx 152) (= (ptr-read-u64 ctx 144) 0)
+               (or (= search 0) (= (ptr-read-u64 search 16) 0)))
+        (extern-call g_main_loop_quit (ptr-read-u64 ctx 0))) 0)))
+
  (defun sumi_explorer_close_window (widget ctx)
-   ;; Keep the window alive until main performs the single ownership cleanup.
+   ;; Publish close intent before cancelling either independent owner. Neither
+   ;; callback may acknowledge MOVE or release ctx while the other is alive.
    (seq
-    (if (ptr-read-u64 ctx 144)
-      (seq (ptr-write-u64 ctx 152 1)
-           (if (ptr-read-u64 ctx 616) (extern-call g_cancellable_cancel (ptr-read-u64 ctx 184))))
-      (extern-call g_main_loop_quit (ptr-read-u64 ctx 0))) 1))
+    (ptr-write-u64 ctx 152 1)
+    (extern-call gtk_widget_set_sensitive (ptr-read-u64 ctx 8) 0)
+    (search_owner_close ctx)
+    (if (and (ptr-read-u64 ctx 184)
+             (or (ptr-read-u64 ctx 616)
+                 (extern-call g_object_get_data (ptr-read-u64 ctx 8) (data-addr transfer_drop_key))
+                 (and (ptr-read-u64 ctx 176)
+                   (or (extern-call g_task_get_source_object (ptr-read-u64 ctx 176))
+                       (= (ptr-read-u64 (extern-call g_task_get_task_data (ptr-read-u64 ctx 176)) 0) 13)))))
+      (extern-call g_cancellable_cancel (ptr-read-u64 ctx 184)))
+    (sumi_explorer_maybe_quit ctx) 1))
 
  (defun sumi_explorer_menu_open (widget ctx)
    (let ((row (sumi_explorer_find_row ctx (ptr-read-u64 ctx 48))))
@@ -4273,7 +5648,7 @@
          (if (> (ptr-read-u64 read 8) 0) (ptr-write-u64 ctx 72 (ptr-read-u64 read 8)))
          (sumi_explorer_publish ctx 0 (if (ptr-read-u64 ctx 88) (ptr-read-u64 (ptr-read-u64 ctx 88) 8) (data-addr clipboard_failure)))))
       (if (and (= started 0) (> (ptr-read-u64 read 8) 0)) (sumi_explorer_response ctx))
-      (if (and (= started 0) (ptr-read-u64 ctx 152)) (extern-call g_main_loop_quit (ptr-read-u64 ctx 0)))
+      (if (= started 0) (sumi_explorer_maybe_quit ctx))
       (if (= started 0) (ptr-write-u64 ctx 224 0))
       (if (ptr-read-u64 ctx 88) (seq (extern-call g_error_free (ptr-read-u64 ctx 88)) (ptr-write-u64 ctx 88 0)))
       (sumi_explorer_paths_free paths count)
@@ -4284,7 +5659,7 @@
  (defun sumi_explorer_clipboard_action (ctx op value request)
    (let ((read 0) (target 0) (file 0) (en 0) (good 1))
      (seq
-      (if (ptr-read-u64 ctx 144) (setq good 0))
+      (if (or (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152)) (setq good 0))
       (if (< op 3)
         (seq
          (sumi_explorer_selection_snapshot ctx)
@@ -4360,14 +5735,14 @@
     (extern-call g_object_unref (ptr-read-u64 ctx 184))
     (ptr-write-u64 ctx 184 0)
     (ptr-write-u64 ctx 416 0)
-    (if (ptr-read-u64 ctx 152) (extern-call g_main_loop_quit (ptr-read-u64 ctx 0)))
+    (sumi_explorer_maybe_quit ctx)
     0)))
 
  (defun sumi_explorer_receive_drop (target value)
    (let ((ctx (extern-call g_object_get_data target (data-addr context_key)))
          (paths 0) (count 0) (accepted 0))
      (seq
-      (if (ptr-read-u64 ctx 144) (sumi_explorer_publish ctx 0 (data-addr copy_busy))
+      (if (or (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152)) (sumi_explorer_publish ctx 0 (data-addr copy_busy))
         (seq
          (setq paths (sumi_explorer_value_paths ctx value)) (setq count (ptr-read-u64 ctx 104))
          (if paths
@@ -4376,8 +5751,62 @@
          (sumi_explorer_paths_free paths count)))
       accepted)))
 
+ ;; GTK passes floating coordinates in FP registers. These handlers use only
+ ;; the target/drop integer arguments and query modifiers on the controller.
+ (defun sumi_explorer_drop_finish (drop action)
+   (seq
+    ;; GTK 4.18 X11 emits dnd-finished even for a failed XdndFinished message.
+    ;; Revoke the selected MOVE before finishing NONE so its GtkDragSource
+    ;; cannot mistake failure for permission to delete the original source.
+    (if (= action 0) (extern-call gdk_drop_status drop 0 0))
+    (extern-call gdk_drop_finish drop action) 0))
+ (defun sumi_explorer_drop_action (target drop)
+   (let ((offered (extern-call gdk_drop_get_actions drop)) (state (extern-call gtk_event_controller_get_current_event_state target)))
+     (cond ((and (logand state 1) (logand offered 2)) 2)
+           ((logand offered 1) 1) ((logand offered 2) 2) (t 0))))
+ (defun sumi_explorer_drop_motion (target drop)
+   (let ((ctx (extern-call g_object_get_data target (data-addr context_key))))
+     (if (or (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152)) 0 (sumi_explorer_drop_action target drop))))
+ (defun sumi_explorer_drop_read (drop result read)
+   (let ((ctx (ptr-read-u64 read 0)) (value 0) (paths 0) (count 0) (started 0) (action (ptr-read-u64 read 24)))
+     (seq
+      (setq value (extern-call gdk_drop_read_value_finish drop result (+ ctx 88)))
+      (if (and value (= (ptr-read-u64 ctx 152) 0) (= (extern-call g_cancellable_is_cancelled (ptr-read-u64 ctx 184)) 0))
+        (seq (setq paths (sumi_explorer_value_paths ctx value)) (setq count (ptr-read-u64 ctx 104))))
+      (if (ptr-read-u64 ctx 88) (seq (extern-call g_error_free (ptr-read-u64 ctx 88)) (ptr-write-u64 ctx 88 0)))
+      (extern-call g_object_unref (ptr-read-u64 ctx 184)) (ptr-write-u64 ctx 184 0) (ptr-write-u64 ctx 144 0)
+      (extern-call g_object_set_data (ptr-read-u64 ctx 8) (data-addr transfer_drop_key) 0)
+      ;; Validate the complete manifest. Never filter an unsupported item and
+      ;; then acknowledge MOVE for the surviving subset.
+      (if paths
+        (if (= action 1)
+          (setq started (sumi_explorer_start_batch_drop ctx 6 paths count (ptr-read-u64 read 16) 0 drop))
+          (setq started (sumi_explorer_transfer_start ctx paths count (ptr-read-u64 read 16) 0 3 1 0 drop action))))
+      (if (= started 0)
+        (seq (sumi_explorer_drop_finish drop 0) (sumi_explorer_publish ctx 0 (data-addr copy_rejected))))
+      (sumi_explorer_paths_free paths count)
+      (extern-call g_object_unref (ptr-read-u64 read 8)) (extern-call g_free (ptr-read-u64 read 16)) (extern-call g_free read)
+      (if (= started 0) (sumi_explorer_maybe_quit ctx)) 0)))
+ (defun sumi_explorer_receive_drop_async (target drop)
+   (let ((ctx (extern-call g_object_get_data target (data-addr context_key))) (read 0) (action (sumi_explorer_drop_action target drop)))
+     (if (or (= action 0) (ptr-read-u64 ctx 144) (ptr-read-u64 ctx 152)) 0
+       (seq
+        (setq read (extern-call g_malloc0 32)) (ptr-write-u64 read 0 ctx)
+        (ptr-write-u64 read 8 (extern-call g_object_ref drop)) (ptr-write-u64 read 16 (extern-call g_strdup (ptr-read-u64 ctx 40)))
+        (ptr-write-u64 read 24 action)
+        (extern-call g_object_set_data (ptr-read-u64 ctx 8) (data-addr transfer_drop_key) read)
+        ;; Busy ownership keeps the context/main loop alive through Cancel and
+        ;; close until this read or its filesystem task finishes exactly once.
+        (ptr-write-u64 ctx 144 1) (ptr-write-u64 ctx 184 (extern-call g_cancellable_new))
+        (sumi_explorer_publish ctx 1 (data-addr operation_pending)) (sumi_explorer_poll_cancel ctx)
+        (extern-call gdk_drop_read_value_async drop (extern-call gdk_file_list_get_type) 0 (ptr-read-u64 ctx 184) (addr-of sumi_explorer_drop_read) read)
+        1))))
+
  (defun sumi_explorer_explorer_poll (ctx)
-   (let ((key (extern-call g_key_file_new)) (id 0) (cmd 0) (path 0) (row 0) (found 0) (destination 0) (op 0) (count 0) (paths 0) (workspace 0))
+   (if (ptr-read-u64 ctx 152) 1 (sumi_explorer_explorer_dispatch ctx)))
+
+ (defun sumi_explorer_explorer_dispatch (ctx)
+   (let ((key (extern-call g_key_file_new)) (id 0) (cmd 0) (path 0) (row 0) (found 0) (destination 0) (op 0) (count 0) (paths 0) (workspace 0) (policy 0) (mode 0))
      (seq
       (sumi_explorer_poll_cancel ctx)
       ;; Preserve the owning task's durable completion. A navigation command
@@ -4409,12 +5838,22 @@
                      (= (sumi_explorer_same cmd (data-addr move_many)) 0) (= (sumi_explorer_same cmd (data-addr trash_many)) 0)
                      (= (sumi_explorer_same cmd (data-addr zip_create)) 0) (= (sumi_explorer_same cmd (data-addr zip_extract)) 0)
                      (= (sumi_explorer_same cmd (data-addr undo_command)) 0)
+                     (= (sumi_explorer_same cmd (data-addr transfer_command)) 0)
                      (= (sumi_explorer_same cmd (data-addr chmod_command)) 0)
                      (= (sumi_explorer_same cmd (data-addr paste_command)) 0)) (ptr-write-u64 ctx 72 id))
             (if (or (= id (ptr-read-u64 ctx 408)) (= (= (extern-call g_key_file_get_integer key (data-addr group) (data-addr version) 0) 1) 0)
                     (= (sumi_explorer_request_schema ctx key cmd path) 0))
               (seq (ptr-write-u64 ctx 72 id) (sumi_explorer_publish ctx 0 (if (= id (ptr-read-u64 ctx 408)) (data-addr workspace_busy) (data-addr invalid))))
               (cond
+               ((search_code cmd) (search_command ctx (search_code cmd) path id))
+               ((sumi_explorer_same cmd (data-addr transfer_command))
+                (seq
+                 (setq policy (extern-call g_key_file_get_string key (data-addr group) (data-addr transfer_policy) 0))
+                 (setq mode (extern-call g_key_file_get_string key (data-addr group) (data-addr transfer_mode) 0))
+                 (setq paths (extern-call g_malloc0 8)) (ptr-write-u64 paths 0 path)
+                 (sumi_explorer_transfer_start ctx paths 1 destination (sumi_explorer_transfer_policy_code policy)
+                   (if (sumi_explorer_same mode (data-addr move_command)) 2 1) 0 id 0 0)
+                 (extern-call g_free paths) (setq paths 0) (extern-call g_free policy) (extern-call g_free mode)))
                ((sumi_explorer_same cmd (data-addr zip_create))
                 (seq
                  (setq count (extern-call g_key_file_get_integer key (data-addr group) (data-addr count_key) 0))
@@ -4475,6 +5914,361 @@
             (extern-call g_free cmd) (extern-call g_free path) (extern-call g_free destination)))))
       (extern-call g_key_file_unref key) 1)))
 
+ ;; SearchState is independently owned by the main window, never a ctx/UI slot.
+ ;; ctx0 job8 busy16 dialog24 entry32 list40 label48 snapshot-path56 closing64 root-label72.
+ ;; SearchJob: root0 query8 fold16 paths24 cancel32 visited40 warnings48
+ ;; truncated56 cancelled64 serialized-upper-bound72 error-slot80 request88.
+ ;; The worker alone touches job fields until GTask completion. GTK and state
+ ;; stay on the main thread; close waits for completion before ctx teardown.
+ (data-blob search_state_key "sumi-recursive-search\0" rodata)
+ (data-blob search_name "search.ini\0" rodata)
+ (data-blob search_group "Search\0" rodata)
+ (data-blob search_chunk "Search%lld\0" rodata)
+ (data-blob search_start_command "search\0" rodata)
+ (data-blob search_cancel_command "search-cancel\0" rodata)
+ (data-blob search_open_command "search-open\0" rodata)
+ (data-blob search_title "Search subfolders\0" rodata)
+ (data-blob search_query_label "Search filenames\0" rodata)
+ (data-blob search_run_label "Search\0" rodata)
+ (data-blob search_cancel_label "Cancel search\0" rodata)
+ (data-blob search_close_label "Close search\0" rodata)
+ (data-blob search_icon "system-search-symbolic\0" rodata)
+ (data-blob search_root_key "root\0" rodata)
+ (data-blob search_query_key "query\0" rodata)
+ (data-blob search_warnings_key "warnings\0" rodata)
+ (data-blob search_visited_key "visited\0" rodata)
+ (data-blob search_truncated_key "truncated\0" rodata)
+ (data-blob search_running "running\0" rodata)
+ (data-blob search_complete "complete\0" rodata)
+ (data-blob search_cancelled "cancelled\0" rodata)
+ (data-blob search_invalid "Search requires 1–256 Unicode characters and a local directory without symlink/reparse components\0" rodata)
+ (data-blob search_busy "Search is running; cancel and wait before starting another search\0" rodata)
+ (data-blob search_changed "Search result disappeared, changed, or cannot be safely selected\0" rodata)
+ (data-blob search_summary "%s: %u results; %lld visited; %lld inaccessible paths; truncated=%lld\0" rodata)
+ (data-blob search_attrs "standard::name,standard::type,standard::is-symlink\0" rodata)
+ (data-blob search_unc "\\\\\0" rodata)
+ (data-blob search_double_slash "//\0" rodata)
+
+ (defun search_state (ctx)
+   (let ((state (extern-call g_object_get_data (ptr-read-u64 ctx 8) (data-addr search_state_key))) (parent 0) (file 0))
+     (seq
+      (if (= state 0)
+        (seq
+         (setq state (extern-call g_malloc0 80)) (ptr-write-u64 state 0 ctx)
+         (setq parent (extern-call g_path_get_dirname (ptr-read-u64 ctx 56)))
+         (setq file (extern-call g_build_filename parent (data-addr search_name) 0))
+         (ptr-write-u64 state 56 file) (extern-call g_free parent)
+         (extern-call g_object_set_data (ptr-read-u64 ctx 8) (data-addr search_state_key) state))) state)))
+
+ (defun search_job_free (job)
+   (seq
+    (if job
+      (seq
+       (extern-call g_free (ptr-read-u64 job 0)) (extern-call g_free (ptr-read-u64 job 8))
+       (extern-call g_free (ptr-read-u64 job 16)) (extern-call g_ptr_array_unref (ptr-read-u64 job 24))
+       (extern-call g_object_unref (ptr-read-u64 job 32))
+       (if (ptr-read-u64 job 80) (extern-call g_error_free (ptr-read-u64 job 80)))
+       (extern-call g_free job))) 0))
+
+ ;; Reject remote/UNC roots and every static symlink component. On Windows the
+ ;; platform witness also rejects junctions/reparse points and non-local drives.
+ (defun search_safe_directory (file)
+   (let ((cursor (extern-call g_object_ref file)) (parent 0) (info 0) (path 0) (stamp 0) (good 1) (depth 0))
+     (seq
+      (setq path (extern-call g_file_get_path file))
+      (if (or (= path 0) (= (extern-call g_file_is_native file) 0)
+              (extern-call g_str_has_prefix path (data-addr search_double_slash))
+              (extern-call g_str_has_prefix path (data-addr search_unc))) (setq good 0))
+      (if (and good (extern-call sumi_explorer_platform_is_windows))
+        (seq (setq stamp (extern-call sumi_explorer_platform_metadata_stamp path 0))
+             (if (= stamp 0) (setq good 0)) (extern-call g_free stamp)))
+      (extern-call g_free path)
+      (while (and good cursor)
+        (seq
+         (if (> depth 512) (setq good 0)
+           (seq
+            (setq info (extern-call g_file_query_info cursor (data-addr search_attrs) 1 0 0))
+            (if (= info 0) (setq good 0)
+              (seq
+               (if (or (= (= (extern-call g_file_info_get_file_type info) 2) 0)
+                       (extern-call g_file_info_get_is_symlink info)) (setq good 0))
+               (extern-call g_object_unref info)))))
+         (setq parent (extern-call g_file_get_parent cursor)) (extern-call g_object_unref cursor)
+         (setq cursor parent) (setq depth (+ depth 1))))
+      (if cursor (extern-call g_object_unref cursor)) good)))
+
+ (defun search_walk (job file depth)
+   (let ((en 0) (info 0) (child 0) (name 0) (fold 0) (path 0) (size 0) (kind 0))
+     (seq
+      (if (extern-call g_cancellable_is_cancelled (ptr-read-u64 job 32)) (ptr-write-u64 job 64 1))
+      (if (> depth 64) (ptr-write-u64 job 56 1)
+       (if (and (= (ptr-read-u64 job 64) 0) (= (ptr-read-u64 job 56) 0))
+        (if (= (search_safe_directory file) 0) (ptr-write-u64 job 48 (+ (ptr-read-u64 job 48) 1))
+         (seq
+          (setq en (extern-call g_file_enumerate_children file (data-addr search_attrs) 1 (ptr-read-u64 job 32) (+ job 80)))
+          (if (= en 0) (ptr-write-u64 job 48 (+ (ptr-read-u64 job 48) 1))
+           (seq
+            (setq info (extern-call g_file_enumerator_next_file en (ptr-read-u64 job 32) (+ job 80)))
+            (while (and info (= (ptr-read-u64 job 56) 0) (= (ptr-read-u64 job 64) 0))
+              (seq
+               (if (extern-call g_cancellable_is_cancelled (ptr-read-u64 job 32)) (ptr-write-u64 job 64 1))
+               (if (>= (ptr-read-u64 job 40) 100000) (ptr-write-u64 job 56 1)
+                (seq
+                 (ptr-write-u64 job 40 (+ (ptr-read-u64 job 40) 1))
+                 (setq name (extern-call g_file_info_get_name info))
+                 (setq child (extern-call g_file_get_child file name))
+                 (setq kind (extern-call g_file_info_get_file_type info))
+                 (if (extern-call g_utf8_validate name -1 0)
+                   (seq
+                    (setq fold (extern-call g_utf8_casefold name -1))
+                    (if (extern-call g_strstr_len fold -1 (ptr-read-u64 job 16))
+                      (seq
+                       (setq path (extern-call g_file_get_path child))
+                       ;; GKeyFile escaping adds at most one byte per input
+                       ;; byte; reserve ample fixed/header/key overhead too.
+                       (setq size (+ 80 (* 2 (extern-call strlen path))))
+                       (if (or (>= (ptr-read-u32 (ptr-read-u64 job 24) 8) 2000)
+                               (> (+ (ptr-read-u64 job 72) size) 1000000))
+                         (seq (ptr-write-u64 job 56 1) (extern-call g_free path))
+                         (seq (extern-call g_ptr_array_add (ptr-read-u64 job 24) path)
+                              (ptr-write-u64 job 72 (+ (ptr-read-u64 job 72) size))))))
+                    (extern-call g_free fold))
+                   (ptr-write-u64 job 48 (+ (ptr-read-u64 job 48) 1)))
+                 (if (and (= kind 2) (= (extern-call g_file_info_get_is_symlink info) 0))
+                   (search_walk job child (+ depth 1)))
+                 (extern-call g_object_unref child)))
+               (extern-call g_object_unref info) (setq info 0)
+               (if (and (= (ptr-read-u64 job 56) 0) (= (ptr-read-u64 job 64) 0) (= (ptr-read-u64 job 80) 0))
+                 (setq info (extern-call g_file_enumerator_next_file en (ptr-read-u64 job 32) (+ job 80))))))
+            (if info (extern-call g_object_unref info))
+            (extern-call g_file_enumerator_close en 0 0) (extern-call g_object_unref en)))
+          (if (ptr-read-u64 job 80)
+            (seq
+             (if (extern-call g_cancellable_is_cancelled (ptr-read-u64 job 32)) (ptr-write-u64 job 64 1)
+               (ptr-write-u64 job 48 (+ (ptr-read-u64 job 48) 1)))
+             (extern-call g_error_free (ptr-read-u64 job 80)) (ptr-write-u64 job 80 0))))))) 0)))
+
+ (defun search_worker (task object job cancel)
+   (let ((file (extern-call g_file_new_for_path (ptr-read-u64 job 0))))
+     (seq (search_walk job file 0) (extern-call g_object_unref file)
+          (if (extern-call g_cancellable_is_cancelled cancel) (ptr-write-u64 job 64 1))
+          (extern-call g_task_return_boolean task 1) 0)))
+
+ (defun search_snapshot (state running)
+   (let ((job (ptr-read-u64 state 8)) (key (extern-call g_key_file_new)) (status 0) (buf 0) (size (extern-call g_malloc0 8))
+         (i 0) (count 0) (group 0) (name 0) (summary 0) (good 0))
+     (seq
+      (setq status (if running (data-addr search_running) (if (ptr-read-u64 job 64) (data-addr search_cancelled) (data-addr search_complete))))
+      ;; Never read mutable worker results in the running publication.
+      (if (= running 0) (setq count (ptr-read-u32 (ptr-read-u64 job 24) 8)))
+      (extern-call g_key_file_set_integer key (data-addr search_group) (data-addr version) 1)
+      (extern-call g_key_file_set_int64 key (data-addr search_group) (data-addr request) (ptr-read-u64 job 88))
+      (extern-call g_key_file_set_string key (data-addr search_group) (data-addr search_root_key) (ptr-read-u64 job 0))
+      (extern-call g_key_file_set_string key (data-addr search_group) (data-addr search_query_key) (ptr-read-u64 job 8))
+      (extern-call g_key_file_set_string key (data-addr search_group) (data-addr status) status)
+      (extern-call g_key_file_set_integer key (data-addr search_group) (data-addr count_key) count)
+      (extern-call g_key_file_set_int64 key (data-addr search_group) (data-addr search_warnings_key) (if running 0 (ptr-read-u64 job 48)))
+      (extern-call g_key_file_set_int64 key (data-addr search_group) (data-addr search_visited_key) (if running 0 (ptr-read-u64 job 40)))
+      (extern-call g_key_file_set_integer key (data-addr search_group) (data-addr search_truncated_key) (if running 0 (ptr-read-u64 job 56)))
+      (while (< i count)
+        (seq
+         (setq group (extern-call g_strdup_printf (data-addr search_chunk) (/ i 250)))
+         (setq name (extern-call g_strdup_printf (data-addr indexed_path) (mod i 250)))
+         (extern-call g_key_file_set_string key group name (ptr-read-u64 (ptr-read-u64 (ptr-read-u64 job 24) 0) (* i 8)))
+         (extern-call g_free name) (extern-call g_free group) (setq i (+ i 1))))
+      (setq buf (extern-call g_key_file_to_data key size 0))
+      (if (<= (ptr-read-u64 size 0) 1048576)
+        (setq good (extern-call g_file_set_contents (ptr-read-u64 state 56) buf (ptr-read-u64 size 0) 0)))
+      (if (ptr-read-u64 state 48)
+        (seq
+         (setq summary (extern-call g_strdup_printf (data-addr search_summary) status count
+           (if running 0 (ptr-read-u64 job 40)) (if running 0 (ptr-read-u64 job 48)) (if running 0 (ptr-read-u64 job 56))))
+         (extern-call gtk_label_set_text (ptr-read-u64 state 48) (if good summary (data-addr failure)))
+         (extern-call g_free summary)))
+      (extern-call g_free buf) (extern-call g_free size) (extern-call g_key_file_unref key) good)))
+
+ (defun search_done (object task state)
+   (let ((job (ptr-read-u64 state 8)) (ctx (ptr-read-u64 state 0)) (i 0) (row 0) (label 0) (path 0))
+     (seq
+      (ptr-write-u64 state 16 0)
+      (search_snapshot state 0)
+      (if (= (ptr-read-u64 ctx 144) 0)
+        (sumi_explorer_publish ctx 1 (if (ptr-read-u64 job 64) (data-addr search_cancelled) (data-addr search_complete))))
+      (if (ptr-read-u64 state 40)
+        (while (< i (ptr-read-u32 (ptr-read-u64 job 24) 8))
+          (seq
+           (setq path (ptr-read-u64 (ptr-read-u64 (ptr-read-u64 job 24) 0) (* i 8)))
+           (setq row (extern-call gtk_list_box_row_new)) (setq label (extern-call gtk_label_new path))
+           (extern-call gtk_label_set_xalign label 0) (extern-call gtk_label_set_ellipsize label 3)
+           (extern-call gtk_widget_set_tooltip_text label path)
+           (extern-call gtk_list_box_row_set_child row label)
+           (extern-call g_object_set_data_full row (data-addr identity) (extern-call g_strdup path) (addr-of sumi_explorer_free_path))
+           (extern-call gtk_list_box_append (ptr-read-u64 state 40) row) (setq i (+ i 1)))))
+      (extern-call g_object_unref task)
+      (sumi_explorer_maybe_quit ctx) 0)))
+
+ (defun search_start (ctx query request)
+   (let ((state (search_state ctx)) (root 0) (file 0) (job 0) (task 0) (row 0) (good 1))
+     (seq
+      (if (or (ptr-read-u64 state 16) (ptr-read-u64 ctx 144) (ptr-read-u64 state 64) (ptr-read-u64 ctx 152))
+       (search_feedback state (data-addr search_busy))
+       (seq
+        (setq root (ptr-read-u64 ctx 40))
+        (if (or (= query 0) (= (extern-call g_utf8_validate query -1 0) 0)
+                (= (extern-call strlen query) 0) (> (extern-call g_utf8_strlen query -1) 256)
+                (= (extern-call g_path_is_absolute root) 0) (> (extern-call strlen root) 131072)) (setq good 0))
+        (setq file (extern-call g_file_new_for_path root))
+        (if (= (search_safe_directory file) 0) (setq good 0)) (extern-call g_object_unref file)
+        (if (= good 0) (search_feedback state (data-addr search_invalid))
+         (seq
+          (search_job_free (ptr-read-u64 state 8))
+          (setq job (extern-call g_malloc0 96))
+          (ptr-write-u64 job 0 (extern-call g_strdup root)) (ptr-write-u64 job 8 (extern-call g_strdup query))
+          (ptr-write-u64 job 16 (extern-call g_utf8_casefold query -1))
+          (ptr-write-u64 job 24 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_free_path)))
+          (ptr-write-u64 job 32 (extern-call g_cancellable_new)) (ptr-write-u64 job 88 request)
+          (ptr-write-u64 job 72 (+ 8192 (* 2 (extern-call strlen root))))
+          (ptr-write-u64 state 8 job) (ptr-write-u64 state 16 1)
+          (if (ptr-read-u64 state 72) (extern-call gtk_label_set_text (ptr-read-u64 state 72) root))
+          (if (ptr-read-u64 state 40)
+            (seq
+             (setq row (extern-call gtk_list_box_get_row_at_index (ptr-read-u64 state 40) 0))
+             (while row
+               (seq (extern-call gtk_list_box_remove (ptr-read-u64 state 40) row)
+                    (setq row (extern-call gtk_list_box_get_row_at_index (ptr-read-u64 state 40) 0))))))
+          (if (= (search_snapshot state 1) 0)
+            (seq (ptr-write-u64 state 16 0) (sumi_explorer_publish ctx 0 (data-addr failure)))
+            (seq
+             (setq task (extern-call g_task_new 0 (ptr-read-u64 job 32) (addr-of search_done) state))
+             (extern-call g_task_set_check_cancellable task 0) (extern-call g_task_set_return_on_cancel task 0)
+             (extern-call g_task_set_task_data task job 0)
+             (extern-call g_task_run_in_thread task (addr-of search_worker))
+             (sumi_explorer_publish ctx 1 (data-addr search_running)))))))) 0)))
+
+ (defun search_cancel (widget state)
+   (seq
+    (if (ptr-read-u64 state 16) (extern-call g_cancellable_cancel (ptr-read-u64 (ptr-read-u64 state 8) 32))) 0))
+
+ (defun search_dialog_close (widget state)
+   (let ((window (ptr-read-u64 state 24)))
+     (seq
+      (search_cancel 0 state)
+      (ptr-write-u64 state 24 0) (ptr-write-u64 state 32 0) (ptr-write-u64 state 40 0) (ptr-write-u64 state 48 0) (ptr-write-u64 state 72 0)
+      (if window (extern-call gtk_window_destroy window)) 1)))
+
+ (defun search_open (ctx path)
+   (let ((state (search_state ctx)) (job 0) (i 0) (found 0) (file 0) (parent 0) (directory 0) (row 0))
+     (seq
+      (setq job (ptr-read-u64 state 8))
+      (if (and job (= (ptr-read-u64 state 16) 0) (= (ptr-read-u64 ctx 144) 0))
+        (while (< i (ptr-read-u32 (ptr-read-u64 job 24) 8))
+          (seq
+           (if (sumi_explorer_same path (ptr-read-u64 (ptr-read-u64 (ptr-read-u64 job 24) 0) (* i 8))) (setq found 1))
+           (setq i (+ i 1)))))
+      (if found
+        (seq
+         (setq file (extern-call g_file_new_for_path path)) (setq parent (extern-call g_file_get_parent file))
+         (if (and parent (extern-call g_file_query_exists file 0) (search_safe_directory parent))
+           (seq
+            (setq directory (extern-call g_file_get_path parent))
+            ;; Make the exact target visible, then use the existing navigator
+            ;; and direct-child identity lookup. Never select a row by index.
+            (sumi_explorer_presentation ctx 1 (data-addr empty))
+            (sumi_explorer_presentation ctx 4 (data-addr show_value))
+            (sumi_explorer_navigate ctx directory)
+            (if (and (ptr-read-u64 ctx 384) (sumi_explorer_same directory (ptr-read-u64 ctx 40)))
+              (setq row (sumi_explorer_find_row ctx path)))
+            (extern-call g_free directory)))
+         (if parent (extern-call g_object_unref parent)) (extern-call g_object_unref file)))
+      (if row
+        (seq
+         (ptr-write-u64 ctx 80 1) (extern-call gtk_list_box_unselect_all (ptr-read-u64 ctx 16))
+         (extern-call gtk_list_box_select_row (ptr-read-u64 ctx 16) row) (ptr-write-u64 ctx 80 0)
+         (extern-call gtk_widget_grab_focus row) (sumi_explorer_publish ctx 1 (data-addr empty))
+         (search_dialog_close 0 state))
+        (sumi_explorer_publish ctx 0 (data-addr search_changed))) 0)))
+
+ (defun search_result_activate (list row state)
+   (search_open (ptr-read-u64 state 0) (extern-call g_object_get_data row (data-addr identity))))
+
+ (defun search_accept (widget state)
+   (search_start (ptr-read-u64 state 0) (extern-call gtk_editable_get_text (ptr-read-u64 state 32)) 0))
+
+ (defun search_dialog (widget ctx)
+   (let ((state (search_state ctx)) (window 0) (box 0) (bar 0) (button 0) (scroll 0))
+     (seq
+      (if (ptr-read-u64 state 24) (extern-call gtk_window_present (ptr-read-u64 state 24))
+        (seq
+         (setq window (extern-call gtk_window_new)) (ptr-write-u64 state 24 window)
+         (extern-call gtk_window_set_title window (data-addr search_title))
+         (extern-call gtk_window_set_transient_for window (ptr-read-u64 ctx 8))
+         (extern-call gtk_window_set_default_size window 760 480)
+         (setq box (extern-call gtk_box_new 1 8)) (extern-call gtk_widget_add_css_class box (data-addr dialog_class))
+         (ptr-write-u64 state 72 (extern-call gtk_label_new (ptr-read-u64 ctx 40)))
+         (extern-call gtk_label_set_ellipsize (ptr-read-u64 state 72) 3)
+         (extern-call gtk_box_append box (ptr-read-u64 state 72))
+         (ptr-write-u64 state 32 (extern-call gtk_entry_new))
+         (sumi_explorer_ui_name (ptr-read-u64 state 32) (data-addr search_query_label))
+         (extern-call gtk_entry_set_max_length (ptr-read-u64 state 32) 256)
+         (extern-call gtk_box_append box (ptr-read-u64 state 32))
+         (extern-call g_signal_connect_data (ptr-read-u64 state 32) (data-addr activate) (addr-of search_accept) state 0 0)
+         (ptr-write-u64 state 48 (extern-call gtk_label_new (data-addr search_invalid)))
+         (extern-call gtk_label_set_wrap (ptr-read-u64 state 48) 1)
+         (extern-call gtk_box_append box (ptr-read-u64 state 48))
+         (setq scroll (extern-call gtk_scrolled_window_new)) (extern-call gtk_widget_set_vexpand scroll 1)
+         (ptr-write-u64 state 40 (extern-call gtk_list_box_new))
+         (extern-call gtk_list_box_set_activate_on_single_click (ptr-read-u64 state 40) 0)
+         (extern-call g_signal_connect_data (ptr-read-u64 state 40) (data-addr row_activated) (addr-of search_result_activate) state 0 0)
+         (extern-call gtk_scrolled_window_set_child scroll (ptr-read-u64 state 40)) (extern-call gtk_box_append box scroll)
+         (setq bar (extern-call gtk_box_new 0 8))
+         (setq button (extern-call gtk_button_new_with_label (data-addr search_run_label)))
+         (extern-call g_signal_connect_data button (data-addr clicked) (addr-of search_accept) state 0 0) (extern-call gtk_box_append bar button)
+         (setq button (extern-call gtk_button_new_with_label (data-addr search_cancel_label)))
+         (extern-call g_signal_connect_data button (data-addr clicked) (addr-of search_cancel) state 0 0) (extern-call gtk_box_append bar button)
+         (setq button (extern-call gtk_button_new_with_label (data-addr search_close_label)))
+         (extern-call g_signal_connect_data button (data-addr clicked) (addr-of search_dialog_close) state 0 0) (extern-call gtk_box_append bar button)
+         (extern-call gtk_box_append box bar) (extern-call gtk_window_set_child window box)
+         (extern-call g_signal_connect_data window (data-addr close_request) (addr-of search_dialog_close) state 0 0)
+         (extern-call gtk_window_present window) (extern-call gtk_widget_grab_focus (ptr-read-u64 state 32)))) 0)))
+
+ (defun search_button (menu ctx)
+   (let ((button (extern-call gtk_button_new_with_label (data-addr search_title))))
+     (seq
+      (extern-call g_signal_connect_data button (data-addr clicked) (addr-of search_dialog) ctx 0 0)
+      (extern-call gtk_box_append menu button) 0)))
+
+ (defun search_code (command)
+   (cond ((sumi_explorer_same command (data-addr search_start_command)) 1)
+         ((sumi_explorer_same command (data-addr search_cancel_command)) 2)
+         ((sumi_explorer_same command (data-addr search_open_command)) 3) (t 0)))
+
+ (defun search_command (ctx command path request)
+   (cond
+    ((= command 1) (search_start ctx path request))
+    ((= command 2)
+     (if (sumi_explorer_same path (data-addr empty))
+       (seq (search_cancel 0 (search_state ctx)) (sumi_explorer_publish ctx 1 (data-addr empty)))
+       (sumi_explorer_publish ctx 0 (data-addr invalid))))
+    ((= command 3) (search_open ctx path))))
+
+ (defun search_owner_close (ctx)
+   (let ((state (extern-call g_object_get_data (ptr-read-u64 ctx 8) (data-addr search_state_key))))
+     (if (and state (ptr-read-u64 state 16))
+       (seq (ptr-write-u64 state 64 1) (search_cancel 0 state) 1) 0)))
+
+ (defun search_feedback (state message)
+   (seq
+    (if (ptr-read-u64 state 48) (extern-call gtk_label_set_text (ptr-read-u64 state 48) message))
+    (sumi_explorer_publish (ptr-read-u64 state 0) 0 message)))
+
+ (defun search_destroy (ctx owned)
+   (let ((state (extern-call g_object_get_data (ptr-read-u64 ctx 8) (data-addr search_state_key))))
+     (seq
+      (if state
+        (seq (search_dialog_close 0 state) (search_job_free (ptr-read-u64 state 8))
+             (if owned (extern-call g_unlink (ptr-read-u64 state 56))) (extern-call g_free (ptr-read-u64 state 56))
+             (extern-call g_object_set_data (ptr-read-u64 ctx 8) (data-addr search_state_key) 0) (extern-call g_free state))) 0)))
+
  (defun main (argc argv)
    (let ((session (extern-call g_getenv (data-addr env_session))) (owned 0) (root 0) (ctx 0) (box 0) (bar 0) (button 0) (scroll 0) (file 0) (child 0) (timer 0) (controller 0) (menu 0) (css 0))
     (if (= (extern-call gtk_init_check) 0) 3
@@ -4485,7 +6279,7 @@
        (seq
         (setq ctx (extern-call g_malloc0 736))
         (ptr-write-u64 ctx 728 (extern-call g_malloc0 160))
-        (ptr-write-u64 ctx 512 (extern-call g_malloc0 96))
+        (ptr-write-u64 ctx 512 (extern-call g_malloc0 136))
         (ptr-write-u64 (ptr-read-u64 ctx 512) 0 (extern-call g_ptr_array_new_with_free_func (addr-of sumi_explorer_undo_group_free)))
         (ptr-write-u64 ctx 344 (extern-call g_malloc0 512))
         (ptr-write-u64 ctx 368 2)
@@ -4502,6 +6296,7 @@
         (setq child (extern-call g_file_get_child file (data-addr undo_name)))
         (ptr-write-u64 (ptr-read-u64 ctx 512) 16 (extern-call g_file_get_path child))
         (extern-call g_object_unref child)
+        (sumi_explorer_journal_restore ctx)
         (sumi_explorer_undo_snapshot ctx)
         (setq child (extern-call g_file_get_child file (data-addr state_name)))
         (ptr-write-u64 ctx 56 (extern-call g_file_get_path child))
@@ -4652,9 +6447,11 @@
         (extern-call g_object_set_data controller (data-addr context_key) ctx)
         (extern-call g_signal_connect_data controller (data-addr prepare_signal) (addr-of sumi_explorer_drag_prepare) 0 0 0)
         (extern-call gtk_widget_add_controller (ptr-read-u64 ctx 16) controller)
-        (setq controller (extern-call gtk_drop_target_new (extern-call gdk_file_list_get_type) 1))
+        (setq controller (extern-call gtk_drop_target_async_new (extern-call gdk_content_formats_new_for_gtype (extern-call gdk_file_list_get_type)) 3))
         (extern-call g_object_set_data controller (data-addr context_key) ctx)
-        (extern-call g_signal_connect_data controller (data-addr drop_signal) (addr-of sumi_explorer_receive_drop) 0 0 0)
+        (extern-call g_signal_connect_data controller (data-addr transfer_drag_enter) (addr-of sumi_explorer_drop_motion) 0 0 0)
+        (extern-call g_signal_connect_data controller (data-addr transfer_drag_motion) (addr-of sumi_explorer_drop_motion) 0 0 0)
+        (extern-call g_signal_connect_data controller (data-addr drop_signal) (addr-of sumi_explorer_receive_drop_async) 0 0 0)
         (extern-call gtk_widget_add_controller (ptr-read-u64 ctx 16) controller)
         (setq root (extern-call g_getenv (data-addr env_root)))
         (if (= root 0) (setq root (extern-call g_get_home_dir)))
@@ -4665,6 +6462,8 @@
         (extern-call g_free child) (extern-call g_object_unref file)
         (sumi_explorer_navigate ctx root)
         (sumi_explorer_tabs_ui ctx)
+        (if (ptr-read-u64 (ptr-read-u64 ctx 512) 128)
+          (sumi_explorer_publish ctx 1 (ptr-read-u64 (ptr-read-u64 ctx 512) 128)))
         (extern-call gtk_window_present (ptr-read-u64 ctx 8))
         (setq timer (extern-call g_timeout_add 50 (addr-of sumi_explorer_explorer_poll) ctx))
         (extern-call g_main_loop_run (ptr-read-u64 ctx 0))
@@ -4674,6 +6473,7 @@
         (extern-call gtk_widget_unparent (ptr-read-u64 ctx 96))
         (sumi_explorer_advanced_close 0 ctx)
         (sumi_explorer_transfer_close 0 ctx)
+        (search_destroy ctx owned)
         (extern-call g_object_unref (ptr-read-u64 ctx 200))
         (extern-call gtk_window_destroy (ptr-read-u64 ctx 8))
         (extern-call g_main_loop_unref (ptr-read-u64 ctx 0))
@@ -4720,6 +6520,7 @@
         (extern-call g_free (ptr-read-u64 ctx 456))
         (extern-call g_free (ptr-read-u64 ctx 464))
         (sumi_explorer_paths_free (ptr-read-u64 ctx 472) (ptr-read-u64 ctx 480))
+        (sumi_explorer_journal_close (ptr-read-u64 ctx 512))
         (extern-call g_ptr_array_unref (ptr-read-u64 (ptr-read-u64 ctx 512) 0))
         (extern-call g_free (ptr-read-u64 (ptr-read-u64 ctx 512) 16))
         (extern-call g_free (ptr-read-u64 ctx 512))

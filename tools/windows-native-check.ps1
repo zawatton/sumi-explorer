@@ -161,6 +161,7 @@ try {
     $env:NELISP_REPO_ROOT = (Resolve-Path -LiteralPath 'target/deps/nelisp').Path
     $env:XDG_CONFIG_HOME = Join-Path $output 'config'
     $env:SUMI_EXPLORER_ROOT = Join-Path $output 'fixtures'
+    $env:SUMI_EXPLORER_UNDO_DIR = Join-Path $output 'undo-profile'
     [Environment]::SetEnvironmentVariable('SUMI_EXPLORER_SESSION', $null, 'Process')
     New-Item -ItemType Directory -Force $env:XDG_CONFIG_HOME, $env:SUMI_EXPLORER_ROOT | Out-Null
     $env:TEMP = $env:SUMI_EXPLORER_ROOT
@@ -487,6 +488,7 @@ try {
 '@ | Set-Content -Encoding utf8 $ertRunner
     $ertResults = @()
     foreach ($name in $ertTests) {
+        $env:SUMI_EXPLORER_UNDO_DIR = Join-Path $output ("undo-profile-" + $name)
         $log = Join-Path $output "$name.log"
         $receipt = Join-Path $output "$name.json"
         Remove-Item -LiteralPath $receipt -Force -ErrorAction SilentlyContinue
@@ -514,6 +516,7 @@ try {
         Set-Content (Join-Path $output 'windows-ert-summary.log')
     [Environment]::SetEnvironmentVariable('SUMI_WINDOWS_ERT_NAME', $null, 'Process')
     [Environment]::SetEnvironmentVariable('SUMI_WINDOWS_ERT_RECEIPT', $null, 'Process')
+    $env:SUMI_EXPLORER_UNDO_DIR = Join-Path $output 'undo-profile'
 
     # A console-subsystem app can have a console as MainWindowHandle. Select
     # GTK's actual PID-owned visible top-level window and close that HWND.

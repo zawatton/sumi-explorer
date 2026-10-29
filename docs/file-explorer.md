@@ -153,20 +153,19 @@ locking, reload and atomic replacement. Lock contention/stale locks and corrupt
 data fail explicitly; locks are not stolen and corrupt config is not replaced.
 Context actions and file-view shortcuts retain normal text-editing shortcuts,
 single-target Rename, and confirmation of frozen Trash targets. The subsequent
-[advanced increment](advanced-features.md) adds bounded ZIP operations, session
+[advanced increment](advanced-features.md) adds bounded ZIP operations, durable
 Undo and Windows Shell/Security entry points. Indexing, permanent deletion and
 complete native desktop integration remain outside these increments.
 
 ## File transfer
 
-Incoming multiple local file/directory/symlink COPY uses the existing shared
-bounded preflight/worker engine without following symlink entries or bypassing
-traversal limits. MOVE and remote inputs are rejected. Owned paths and context
-last through actual completion, cancellation and partial-output reporting.
-GTK's synchronous drop acceptance means accepted/queued; the source does not
-receive an asynchronous filesystem-completion result. Actual outcomes are
-reported by the GUI/engine. Existing destinations are never replaced or merged.
-A failed copy may leave an explicitly reported partial new destination.
+Incoming local COPY and MOVE use asynchronous drop completion and bounded
+preflight. MOVE copies first, durably records a source-restoring inverse, then
+acknowledges MOVE so that the sender can clean up. Failure/cancellation/close
+finishes without a successful MOVE acknowledgement. The complete manifest must
+be valid; remote input is rejected. Owned paths/context survive actual completion.
+Default drops refuse existing targets; explicit conflict transfers follow
+[the productivity expansion](productivity-expansion.md). A failed copy may leave
+an explicitly reported partial new destination.
 Outbound drag exports selected local paths as a GdkFileList; the receiving
-application owns its operation. Atomic destination publication remains future
-work.
+application owns its operation.

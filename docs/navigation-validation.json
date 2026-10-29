@@ -6,45 +6,57 @@
     "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
     "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
     "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
-    "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
-    "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
-    "explorer/sumi-explorer-native.el": "0584904ed166d0e7e23dca33ae88c2f02478277ce92ae84edc49205dd2fc69f5",
-    "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
-    "tests/explorer-advanced-test.py": "c606a21981c5fe20c772d4e1f4b053972d6ca5b9c8ac5666627353ec9a3ee6e8",
+    "explorer/platform.c": "c39396a2a2279973295957cf71cb76f4888d49fcd33cd23f8658847b50732931",
+    "explorer/platform.h": "b9dd68e79926bb737742ff6bed16ec3984cd064092ddd43c8682a30669a32e5b",
+    "explorer/sumi-explorer-native.el": "d6ee68984584998dc993daac09217d621a87375c0a34018608be7aedabdeb563",
+    "explorer/sumi-explorer.el": "0a25dbd2a36869830afc63d60bd673e2924595f9180320242f8a309d9f394101",
+    "tests/explorer-advanced-test.py": "f543092bb76a7b897cc46d935cce106efc948fd735000bad7e2307fa9dfc9743",
     "tests/explorer-batches-test.py": "ff09c2e50eb81648f18f876a038e540f4b1219b0cde4e4321d2d2b658b8d390f",
     "tests/explorer-design-test.py": "eca38c2f35278e262c180926e8abdca2081746b8f67d77283195fcb3ebfddb6d",
     "tests/explorer-dnd-test.py": "9a2ada101618b74d834887ce0c18163a4b75d96e05bc039f789eb5e78085b393",
-    "tests/explorer-everyday-test.py": "6401a66361fca2750119f2bb378323ff80d38c321a522ab8896fa7a66dc79a05",
-    "tests/explorer-gui-test.py": "492629080073bef845e8e0aa16d1a15a58bac1528513ce630d2f3ed47adcf58b",
+    "tests/explorer-durable-undo-test.py": "df3dd0672ae5ff15da4274a14e8c852e1e7bfbee61b67058cbd057e43ce2bcf2",
+    "tests/explorer-everyday-test.py": "9a1b7313c0828b2b164df27ace767887a909002f4113521afcea92e9c85c2a2d",
+    "tests/explorer-gui-test.py": "3a7e9a03a317f46adbc9390501a3d936c9302694de131f4c6b66cef156a582ed",
     "tests/explorer-navigation-test.py": "15e922795aa4563784d34d8333e0f73a51c241f14f64a44ee4d039e16b3498f4",
-    "tests/explorer-operations-test.py": "386840888cc758f8f49c16244fb9b6bfaa2fae463b94f13834f9d9b7561abfe7",
-    "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
+    "tests/explorer-operations-test.py": "0f0050ef08989b48122a187314bf6bc51e09a95458663e51a90c55c78d0073a8",
+    "tests/explorer-platform-metadata-test.c": "45da9d768d0b2bd9c1aa986008aa13fa5f5ec7a504b99a2f8e64b091c819bdb1",
     "tests/explorer-platform-test.c": "dd5d10bbe060368715605aec0b5602a7216f54e29aad0df5f76befcc787ee0a1",
     "tests/explorer-platform-windows-test.c": "f530e8c0522da4fd4b01d56c53d026481a1aa873efa4a64a7902962c79bf96de",
     "tests/explorer-platform-zip-test.c": "28201ed658115dd59ceb707af17f73acad1d644b82901d33ce6830323092a84f",
+    "tests/explorer-productivity-test.py": "318d541fc16cfff39edcf2992ae11d2e4c956bd97de30c6d3e700de968fe1765",
+    "tests/explorer-search-test.py": "5b1e3e982be727903b03ede5409a9b92a82f495dbfc4069e7673acc90f737361",
+    "tests/explorer-transfer-test.py": "3efbe6eaeb01c2c52a8bc5b1a91f3169d63221c93459076f9c7eec6ba0c8b057",
     "tests/explorer-workspace-test.py": "89215f451e9409ee6dc1af8b7a545868d05b63886908de3eded24fc7b10521cd",
+    "tests/explorer-zero-mode-test.py": "119d0c686ecea18b72a829435447b00472ca2a429900218cadf16e7ccba71db1",
+    "tests/explorer-zip64-test.py": "cff396e6f0ae7f4662acc4e273288d1a9bf08a194bcf593ac8c9848a6ad844d5",
     "tests/sumi-explorer-client-test.el": "68d0762f882c1c60229dd3a60b11da33885e1bb35ab99fd0fb9df4e14f361954",
     "tests/sumi-explorer-integration-test.el": "25fccbc984d24600a4fbcc82e4c8e8c702aac7e5e604682ec846c2c8fe137394",
     "tests/sumi-explorer-windows-test.el": "52a51a3642044e246db410a46aebbd10a3c4db2865938962e249037f66f4c25c",
-    "tools/check.sh": "e7c3860e863a5adfb9196a0825ebe5273e20dac6a844e1019ddc4bbf7935d6b3",
+    "tools/check.sh": "32921a282198e7f637cb6b96b26b5c4bc2d31b2421896126bb72a6090ef48706",
     "tools/verify-validation.py": "d8985b423d550bec2ec50dc9df707250e3fc3ceaa255c5c9587c6f9ad41aae16",
     "tools/verify-windows-validation.py": "9437b0178cbe5f4818c6892dbf85b68dc8abe7a1b200a49d5335cde619757ff0",
-    "tools/windows-native-check.ps1": "96fc0cb663a79f2173ee597d171c5c69e7b6d8e471493da133f829957114f455"
+    "tools/windows-native-check.ps1": "0bc3c607a5c3aeee71d9040703b06eedd74023e8437ee35563d5d4d48302b58e"
   },
   "assertions": {
     "tests/explorer-advanced-test.py": 214,
     "tests/explorer-batches-test.py": 41,
     "tests/explorer-design-test.py": 0,
     "tests/explorer-dnd-test.py": 19,
+    "tests/explorer-durable-undo-test.py": 99,
     "tests/explorer-everyday-test.py": 57,
     "tests/explorer-gui-test.py": 16,
     "tests/explorer-navigation-test.py": 0,
     "tests/explorer-operations-test.py": 29,
-    "tests/explorer-workspace-test.py": 44
+    "tests/explorer-productivity-test.py": 0,
+    "tests/explorer-search-test.py": 0,
+    "tests/explorer-transfer-test.py": 0,
+    "tests/explorer-workspace-test.py": 44,
+    "tests/explorer-zero-mode-test.py": 6,
+    "tests/explorer-zip64-test.py": 0
   },
   "binary": {
     "path": "target/sumi-explorer",
-    "sha256": "c1c3c65c4f344ce08c1b3519e991d87494414fa86896b5427877929019d47793"
+    "sha256": "9e9c06a625198a73d116b5e719d68a7c98e574659a0199731e179f59e6019eae"
   },
   "groups": {
     "breadcrumbs": {
@@ -119,128 +131,128 @@
   },
   "artifacts": [
     {
-      "path": "target/navigation/final-gui/breadcrumbs-host.log",
-      "sha256": "dd46bccf124b1eb407c51f546491c515551988b12bbf90abd0263d32a959b2c2",
+      "path": "target/productivity/delivery/navigation-final/breadcrumbs-host.log",
+      "sha256": "4934adf21a38286fb23482fb00727946c437ef14657602bc6b161244951b43e1",
       "kind": "log",
       "group": "breadcrumbs"
     },
     {
-      "path": "target/navigation/final-gui/breadcrumbs.png",
+      "path": "target/productivity/delivery/navigation-final/breadcrumbs.png",
       "sha256": "f1002a4168186c5d3b068d56b788455699add2eff3f54cf25eb047c7fb24aae8",
       "kind": "screenshot",
       "group": "breadcrumbs"
     },
     {
-      "path": "target/navigation/final-gui/breadcrumbs-events.json",
-      "sha256": "967cab54cfbdc7a6a2aeb0fed7c34e3e5a8e0d3d5a4e691ff19e268f4a215779",
+      "path": "target/productivity/delivery/navigation-final/breadcrumbs-events.json",
+      "sha256": "6abd64c8e7cdd1077eaf75e6cef0d274f357750fc65792b2d805735ae7cfcebf",
       "kind": "events",
       "group": "breadcrumbs"
     },
     {
-      "path": "target/navigation/final-gui/breadcrumbs-1000x700.png",
-      "sha256": "11689f3b3a67d1e45fddb542f50a453c9e5fe8a4d044d4d087933a506ef0085e",
+      "path": "target/productivity/delivery/navigation-final/breadcrumbs-1000x700.png",
+      "sha256": "54576b2a7314b453b9b7fbcaadf46c4b8f9aef9fa4153c7bbdbdde9186d1fca1",
       "kind": "viewport-1000x700",
       "group": "breadcrumbs"
     },
     {
-      "path": "target/navigation/final-gui/breadcrumbs-1280x800.png",
-      "sha256": "d8bae34d0894a685b5e98b054f0c3f08569a97906ad470fe3d9e8e9e48aa4fad",
+      "path": "target/productivity/delivery/navigation-final/breadcrumbs-1280x800.png",
+      "sha256": "53bdd8e86db703ebf28e6a3f54b100c6132be3aed8d52b8476f08bdfa0bbe0cf",
       "kind": "viewport-1280x800",
       "group": "breadcrumbs"
     },
     {
-      "path": "target/navigation/final-gui/breadcrumbs-1600x900.png",
+      "path": "target/productivity/delivery/navigation-final/breadcrumbs-1600x900.png",
       "sha256": "f1002a4168186c5d3b068d56b788455699add2eff3f54cf25eb047c7fb24aae8",
       "kind": "viewport-1600x900",
       "group": "breadcrumbs"
     },
     {
-      "path": "target/navigation/final-gui/address-host.log",
-      "sha256": "44d2807ce6526f5099c5cc1038ebd79a9fff527e5f34442a17b658a290a65a90",
+      "path": "target/productivity/delivery/navigation-final/address-host.log",
+      "sha256": "2b918b9a5408c1273f7ac0fd9ab7ef075e523f6d6828fbd6631015bff37d8a5d",
       "kind": "log",
       "group": "address"
     },
     {
-      "path": "target/navigation/final-gui/address.png",
+      "path": "target/productivity/delivery/navigation-final/address.png",
       "sha256": "abf7a4546a9a914f2477262cc7554be12f0a4688c04fd03e84bb01997c082035",
       "kind": "screenshot",
       "group": "address"
     },
     {
-      "path": "target/navigation/final-gui/address-events.json",
-      "sha256": "e19e1606f0b01e12f0d2e6c390ed35db41e95f851ab3f66bf6ad50476c8b1599",
+      "path": "target/productivity/delivery/navigation-final/address-events.json",
+      "sha256": "041adb398783dd7ac1a09b4d761bccf82eb00c4e657af886bc916214820de91d",
       "kind": "events",
       "group": "address"
     },
     {
-      "path": "target/navigation/final-gui/workspace-host.log",
-      "sha256": "7f257fba0d809cdac7b5fb50ffa02f5595b03b53f44cc63e6c2335fd0d88b5fa",
+      "path": "target/productivity/delivery/navigation-final/workspace-host.log",
+      "sha256": "f168c75c7ec12acd36e1eca8e48043d183d9107a8fdced3bb58349cc642a2cc6",
       "kind": "log",
       "group": "workspace"
     },
     {
-      "path": "target/navigation/final-gui/workspace.png",
+      "path": "target/productivity/delivery/navigation-final/workspace.png",
       "sha256": "a293858130ea033985b0f7ed06acbe3f1e2eb8d604eef304c0354ae15401c595",
       "kind": "screenshot",
       "group": "workspace"
     },
     {
-      "path": "target/navigation/final-gui/workspace-events.json",
-      "sha256": "45033864d7bad9013fbe0748536d673a7257ff3fa6b2a9f5f6ef3858f5976bc7",
+      "path": "target/productivity/delivery/navigation-final/workspace-events.json",
+      "sha256": "72627b7fc7a8559f79cbcc6552df82224d0344657310ef73186c37f2c88efc5d",
       "kind": "events",
       "group": "workspace"
     },
     {
-      "path": "target/navigation/final-gui/folders-host.log",
-      "sha256": "f6a49d923bb622d9fa62e1c6a0b4946c29eec20690cdb7b84188301c66a2e520",
+      "path": "target/productivity/delivery/navigation-final/folders-host.log",
+      "sha256": "73788b1649291f708015c07b25d04b5933a13cdce8b409dce778268ea2232d41",
       "kind": "log",
       "group": "folders"
     },
     {
-      "path": "target/navigation/final-gui/folders.png",
-      "sha256": "f5fd2322e39339fb832ea1102cc1ed0360a10aa174334588ddbc73ecd53c63f3",
+      "path": "target/productivity/delivery/navigation-final/folders.png",
+      "sha256": "caef913c7017b98b3b5dc9eb077647988a4a6c5a239d992e5dfb796ffc244917",
       "kind": "screenshot",
       "group": "folders"
     },
     {
-      "path": "target/navigation/final-gui/folders-events.json",
-      "sha256": "72a8d07097ce121164c964b85fefbfc7836cf6c733a77cc861899b0586d35012",
+      "path": "target/productivity/delivery/navigation-final/folders-events.json",
+      "sha256": "8ac55551abcdd55cf22d112dfda15ad545d9948cae5e371a0c5ef5ac83835356",
       "kind": "events",
       "group": "folders"
     },
     {
-      "path": "target/navigation/final-gui/omissions-host.log",
-      "sha256": "7f23ec160899575ae11736655f0799c8730119bf299c25a8944a5aacb76754f8",
+      "path": "target/productivity/delivery/navigation-final/omissions-host.log",
+      "sha256": "c897f64033deef719722bbca9a986b04046ec23f021cb11ec49d7fe487708ece",
       "kind": "log",
       "group": "omissions"
     },
     {
-      "path": "target/navigation/final-gui/omissions.png",
+      "path": "target/productivity/delivery/navigation-final/omissions.png",
       "sha256": "eb4ec983583d638f2c9c9112fc7e6f29f3fab1b79ba6cc1c4acd3c8d5c1bedb5",
       "kind": "screenshot",
       "group": "omissions"
     },
     {
-      "path": "target/navigation/final-gui/omissions-events.json",
-      "sha256": "1007f1851802ce45be18641b393bc1c63579e006b22bc9c1a903f8f5b4bad6bd",
+      "path": "target/productivity/delivery/navigation-final/omissions-events.json",
+      "sha256": "13d517786345f2afb8a201b63a0a1d2cef652fcf65228a7fef7a96dd6ed752fc",
       "kind": "events",
       "group": "omissions"
     },
     {
-      "path": "target/navigation/final-gui/workflow-host.log",
-      "sha256": "aa3bfd23d1c16bc4b3d3baabb2af2895c8da76e7a0f147fc2ee905ddc8bfbd8f",
+      "path": "target/productivity/delivery/navigation-final/workflow-host.log",
+      "sha256": "b1cb85ea31b05e7848f37e10b65d3716650b6e17c84d661765977c4bf94da58c",
       "kind": "log",
       "group": "workflow"
     },
     {
-      "path": "target/navigation/final-gui/workflow.png",
+      "path": "target/productivity/delivery/navigation-final/workflow.png",
       "sha256": "c18a1ff7b983ee9a1cd4b2e3b34afa6ab2fa4e32ea9c646833e7e1a22fccf004",
       "kind": "screenshot",
       "group": "workflow"
     },
     {
-      "path": "target/navigation/final-gui/workflow-events.json",
-      "sha256": "9c33b9a6c703dc0c421a39cce2df31fe947c6894e3be96c3bfc29c5780831443",
+      "path": "target/productivity/delivery/navigation-final/workflow-events.json",
+      "sha256": "bb415c35dc72961279a8ab119fb8f3ba4af8a1a2ad59b87896f08c4253f7429b",
       "kind": "events",
       "group": "workflow"
     }

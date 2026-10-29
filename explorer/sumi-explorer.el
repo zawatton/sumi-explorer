@@ -158,7 +158,8 @@ Run ON-PUBLISHED before allowing a quit after publication."
                                     "back" "forward" "home" "filter" "sort" "order"
                                     "hidden" "view" "bookmark-add" "bookmark-remove"
                                     "bookmark-open" "clipboard-copy" "clipboard-cut" "paste"
-                                    "zip-extract" "undo" "permissions" "chmod")
+                                    "zip-extract" "undo" "permissions" "chmod"
+                                    "search" "search-cancel" "search-open")
                                   sumi-explorer--mutation-commands))
     (error "Unsupported Explorer command"))
   (let* ((encoded (sumi-explorer--escape (or path "")))
@@ -176,6 +177,13 @@ Run ON-PUBLISHED before allowing a quit after publication."
       (unless (sumi-explorer--local-absolute-path-p path) (error "Bookmark must be absolute and local")))
      ((equal command "filter")
       (when (> (length (or path "")) 256) (error "Filter exceeds 256 scalar characters")))
+     ((equal command "search")
+      (unless (and (stringp path) (<= 1 (length path) 256))
+        (error "Search requires 1–256 Unicode characters")))
+     ((equal command "search-cancel")
+      (unless (string-empty-p (or path "")) (error "Search cancellation requires an empty path")))
+     ((equal command "search-open")
+      (unless (sumi-explorer--local-absolute-path-p path) (error "Search result must be absolute and local")))
      ((equal command "sort")
       (unless (member path '("name" "size" "date" "type")) (error "Invalid Explorer sort key")))
      ((equal command "order")
@@ -322,6 +330,43 @@ Commands requiring a destination use the operation API instead."
   "Move SOURCE to the exact new DESTINATION and await completion."
   (interactive (sumi-explorer--interactive-transfer "Move"))
   (sumi-explorer--run-operation "move" source destination timeout))
+
+;;;###autoload
+(defun sumi-explorer-transfer (source destination policy &optional mode timeout)
+  "Transfer SOURCE to exact DESTINATION using explicit conflict POLICY.
+POLICY is `replace', `merge', `merge-replace', or `skip' (symbols or strings).
+MODE is `copy' (default) or `move'. Merge preserves unrelated entries; move
+retains the source if any item is skipped or the transfer only partly succeeds.
+Interactive Cancel publishes no request. Ordinary copy/move stay no-overwrite."
+  (interactive
+   (let* ((source (sumi-explorer--interactive-source "Transfer source: "))
+          (destination (read-file-name "Exact destination: " nil nil nil))
+          (policy (completing-read "Conflict policy: "
+                                   '("Cancel" "replace" "merge" "merge-replace" "skip") nil t nil nil "Cancel")))
+     (when (equal policy "Cancel") (keyboard-quit))
+     (list source destination policy
+           (completing-read "Transfer: " '("copy" "move") nil t nil nil "copy"))))
+  (setq policy (if (symbolp policy) (symbol-name policy) policy)
+        mode (if (symbolp mode) (symbol-name (or mode 'copy)) mode))
+  (unless (and (member policy '("replace" "merge" "merge-replace" "skip"))
+               (member mode '("copy" "move"))
+               (sumi-explorer--local-absolute-path-p source)
+               (sumi-explorer--local-absolute-path-p destination)
+               (or (null timeout) (and (numberp timeout) (> timeout 0))))
+    (error "Invalid explicit Explorer transfer"))
+  (unless (and (processp sumi-explorer--process) (process-live-p sumi-explorer--process))
+    (error "Explorer is not running"))
+  (when sumi-explorer--pending (error "Explorer request is pending"))
+  (unless (and (integerp sumi-explorer--request-id)
+               (<= 0 sumi-explorer--request-id)
+               (< sumi-explorer--request-id sumi-explorer--maximum-request-id))
+    (error "Explorer request identifiers exhausted or invalid"))
+  (let* ((id (1+ sumi-explorer--request-id))
+         (data (format "[Explorer]\nversion=1\nrequest=%d\ncommand=transfer\npath=%s\ndestination=%s\npolicy=%s\nmode=%s\n"
+                       id (sumi-explorer--escape source) (sumi-explorer--escape destination) policy mode)))
+    (sumi-explorer--publish "request.ini" data
+                            (lambda () (setq sumi-explorer--request-id id sumi-explorer--pending id)))
+    (sumi-explorer-await timeout)))
 
 ;;;###autoload
 (defun sumi-explorer-rename (path new-name &optional timeout)
@@ -791,7 +836,7 @@ This snapshot does not establish that a reversal will still be safe."
           (sumi-explorer--decimal (cdr (assoc "count" fields)) 1 256)
           (unless (and (not (gethash id seen))
                        (member (cdr (assoc "operation" fields))
-                               '("copy" "move" "rename" "mkdir" "trash" "zip-create" "zip-extract" "chmod")))
+                               '("copy" "move" "rename" "mkdir" "trash" "zip-create" "zip-extract" "chmod" "transfer")))
             (error "Invalid undo group"))
           (puthash id t seen)
           (push fields result)))
@@ -924,6 +969,94 @@ Unresolved requests and slow operations retain their process and session."
   (setq sumi-explorer--process nil sumi-explorer--session-directory nil
         sumi-explorer--owned-session nil sumi-explorer--owned-process nil
         sumi-explorer--pending nil sumi-explorer--quit-requested nil))
+
+;;;###autoload
+(defun sumi-explorer-begin-search (query)
+  "Begin asynchronous literal filename QUERY below the current GUI directory.
+The acknowledgement only confirms launch; use `sumi-explorer-search-results'
+for completion, bounds, cancellation, and inaccessible-directory warnings."
+  (interactive (list (read-string "Search subfolders: ")))
+  (sumi-explorer--submit "search" query))
+
+;;;###autoload
+(defun sumi-explorer-search-results ()
+  "Read one bounded, strictly decoded recursive-search snapshot.
+Return string-key header fields plus `results', an ordered list of full paths.
+Reading a snapshot does not establish freshness after a publication failure."
+  (let* ((groups (sumi-explorer--read-groups "search.ini"))
+         (header (cdr (assoc "Search" groups)))
+         (count (sumi-explorer--decimal (cdr (assoc "count" header)) 0 2000))
+         (root (cdr (assoc "root" header)))
+         (query (cdr (assoc "query" header)))
+         (chunks (/ (+ count 249) 250)) paths)
+    (sumi-explorer--exact-keys header '("version" "request" "root" "query" "status" "count" "warnings" "visited" "truncated"))
+    (unless (and (equal (cdr (assoc "version" header)) "1")
+                 (sumi-explorer--local-absolute-path-p root)
+                 (<= 1 (length query) 256)
+                 (member (cdr (assoc "status" header)) '("running" "complete" "cancelled"))
+                 (member (cdr (assoc "truncated" header)) '("0" "1"))
+                 (equal (mapcar #'car groups)
+                        (cons "Search" (cl-loop for i below chunks collect (format "Search%d" i)))))
+      (error "Invalid Explorer search snapshot"))
+    (sumi-explorer--decimal (cdr (assoc "request" header)) 0 sumi-explorer--maximum-request-id)
+    (sumi-explorer--decimal (cdr (assoc "visited" header)) 0 100000)
+    (sumi-explorer--decimal (cdr (assoc "warnings" header)) 0 200002)
+    (when (and (equal (cdr (assoc "status" header)) "running")
+               (not (and (= count 0) (equal (cdr (assoc "visited" header)) "0")
+                         (equal (cdr (assoc "warnings" header)) "0")
+                         (equal (cdr (assoc "truncated" header)) "0"))))
+      (error "Invalid running Explorer search snapshot"))
+    (dotimes (chunk chunks)
+      (let* ((fields (cdr (assoc (format "Search%d" chunk) groups)))
+             (size (min 250 (- count (* chunk 250)))))
+        (sumi-explorer--exact-keys fields (cl-loop for i below size collect (format "path%d" i)))
+        (dotimes (index size)
+          (let ((path (cdr (assoc (format "path%d" index) fields))))
+            (unless (and (sumi-explorer--local-absolute-path-p path)
+                         (string-prefix-p (file-name-as-directory root) path)
+                         (equal path (directory-file-name (expand-file-name path))))
+              (error "Invalid Explorer search result path"))
+            (push path paths)))))
+    (setq paths (nreverse paths))
+    (unless (= (length paths) (length (delete-dups (copy-sequence paths))))
+      (error "Duplicate Explorer search result"))
+    (append header (list (cons "results" paths)))))
+
+;;;###autoload
+(defun sumi-explorer-search (query &optional timeout)
+  "Search current-directory descendants for literal QUERY and await TIMEOUT.
+TIMEOUT defaults to 30 seconds. A timeout leaves the running search available
+for `sumi-explorer-search-results' and `sumi-explorer-cancel-search'."
+  (interactive (list (read-string "Search subfolders: ")))
+  (setq timeout (or timeout 30))
+  (unless (and (numberp timeout) (> timeout 0)) (error "Invalid search timeout"))
+  (let ((id (sumi-explorer-begin-search query)) (deadline (+ (float-time) timeout)) result)
+    (sumi-explorer-await (max 0.01 (- deadline (float-time))))
+    (while (progn
+             (setq result (sumi-explorer-search-results))
+             (unless (equal (cdr (assoc "request" result)) (number-to-string id))
+               (error "Explorer search was superseded"))
+             (equal (cdr (assoc "status" result)) "running"))
+      (when (>= (float-time) deadline) (error "Explorer search timed out; search remains available"))
+      (unless (process-live-p sumi-explorer--process) (error "Explorer exited during search"))
+      (accept-process-output sumi-explorer--process 0.02))
+    result))
+
+;;;###autoload
+(defun sumi-explorer-open-search-result (path &optional timeout)
+  "Navigate to the containing folder of current search result PATH and select it.
+The GUI clears its current filename filter and shows hidden files so the exact
+result can be selected. Missing or obsolete results produce an explicit error."
+  (interactive
+   (list (completing-read "Open containing folder: "
+                          (cdr (assoc "results" (sumi-explorer-search-results))) nil t)))
+  (sumi-explorer-send "search-open" path timeout))
+
+;;;###autoload
+(defun sumi-explorer-cancel-search (&optional timeout)
+  "Request cancellation of the active recursive search and await acknowledgement.
+The independent search snapshot reaches `cancelled' after its worker stops."
+  (interactive) (sumi-explorer-send "search-cancel" "" timeout))
 
 (provide 'sumi-explorer)
 ;;; sumi-explorer.el ends here

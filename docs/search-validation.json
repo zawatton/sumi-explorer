@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "kind": "sumi-search-real",
+  "sources": {
+    "docs/productivity-expansion.md": "b99bcb724baf7cdb1f00e7929e6eea308f33ad279a32f9796b7167c82e8e8f98",
+    "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
+    "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
+    "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
+    "explorer/platform.c": "c39396a2a2279973295957cf71cb76f4888d49fcd33cd23f8658847b50732931",
+    "explorer/platform.h": "b9dd68e79926bb737742ff6bed16ec3984cd064092ddd43c8682a30669a32e5b",
+    "explorer/sumi-explorer-native.el": "d6ee68984584998dc993daac09217d621a87375c0a34018608be7aedabdeb563",
+    "explorer/sumi-explorer.el": "0a25dbd2a36869830afc63d60bd673e2924595f9180320242f8a309d9f394101",
+    "tests/explorer-gui-test.py": "3a7e9a03a317f46adbc9390501a3d936c9302694de131f4c6b66cef156a582ed",
+    "tests/explorer-search-test.py": "5b1e3e982be727903b03ede5409a9b92a82f495dbfc4069e7673acc90f737361"
+  },
+  "binary": {
+    "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/sumi-explorer",
+    "sha256": "9e9c06a625198a73d116b5e719d68a7c98e574659a0199731e179f59e6019eae"
+  },
+  "groups": {
+    "behavior": {
+      "status": "pass",
+      "checks": [
+        "recursive-unicode-literal",
+        "full-paths",
+        "filter-stays-local",
+        "repeated-frozen-root",
+        "result-containing-folder"
+      ],
+      "error": ""
+    },
+    "safety": {
+      "status": "pass",
+      "checks": [
+        "empty-and-oversized-refused",
+        "invalid-root-refused",
+        "symlink-loop-not-followed",
+        "permissions-visible",
+        "results-bounded",
+        "depth-bounded",
+        "visited-bounded",
+        "busy-refused",
+        "cancel-completes",
+        "close-waits"
+      ],
+      "error": ""
+    },
+    "workflow": {
+      "status": "pass",
+      "checks": [
+        "gui-distinct-action",
+        "gui-shortcut",
+        "gui-unicode-search",
+        "gui-exact-result",
+        "gui-close-cancels",
+        "gui-repeat",
+        "emacs-search-open",
+        "emacs-begin-cancel",
+        "emacs-strict-decoder"
+      ],
+      "error": ""
+    }
+  },
+  "artifacts": [
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/search/gui-host.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "native-log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/search/emacs.log",
+      "sha256": "af6691d34d008c2584647ebf9ca47188ee1f90ffe92db7c443d9507a2cbc7b3c",
+      "kind": "emacs-log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/search/search-results.png",
+      "sha256": "7b5ea66861cf18c4b5a78cdee857ecaa164b184df5551afad3c93f35543a5f01",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/search/host.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "native-log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/productivity/delivery/search/events.log",
+      "sha256": "0ab4e8e6de076b4075bbf32e95be7d7e11e14aba7bf86ee50a38ae72d157de39",
+      "kind": "event-log"
+    }
+  ]
+}

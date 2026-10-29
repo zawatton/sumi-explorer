@@ -1,0 +1,183 @@
+{
+  "binary_sha256": "9e9c06a625198a73d116b5e719d68a7c98e574659a0199731e179f59e6019eae",
+  "checks": [
+    {
+      "directory": false,
+      "old_mode": "0o0",
+      "forward_mode": "0o700",
+      "fault": "none",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "ok",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/0/root",
+        "selected": "",
+        "message": ""
+      },
+      "actual_mode": "0o0",
+      "pending_intent": false,
+      "journal_sha256": "3a0c08e5bcfa9ce55bd4da525f73a20073cc76fcfe579253a7d675100fa395aa"
+    },
+    {
+      "directory": false,
+      "old_mode": "0o0",
+      "forward_mode": "0o700",
+      "fault": "fsync",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "error",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/1/root",
+        "selected": "",
+        "message": "Undo rejected: stale history, changed object or parent, occupied original path, or unsupported backend\nUndo unavailable: private durable history could not be read or saved; existing recovery data retained"
+      },
+      "actual_mode": "0o0",
+      "pending_intent": true,
+      "journal_sha256": "4e166de49f0bd2449d824004a5850876315aaf65b03ea3b542a0b1b3825f7816"
+    },
+    {
+      "directory": false,
+      "old_mode": "0o700",
+      "forward_mode": "0o0",
+      "fault": "none",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "ok",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/2/root",
+        "selected": "",
+        "message": ""
+      },
+      "actual_mode": "0o700",
+      "pending_intent": false,
+      "journal_sha256": "3a0c08e5bcfa9ce55bd4da525f73a20073cc76fcfe579253a7d675100fa395aa"
+    },
+    {
+      "directory": false,
+      "old_mode": "0o700",
+      "forward_mode": "0o0",
+      "fault": "fsync",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "error",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/3/root",
+        "selected": "",
+        "message": "Undo rejected: stale history, changed object or parent, occupied original path, or unsupported backend\nUndo unavailable: private durable history could not be read or saved; existing recovery data retained"
+      },
+      "actual_mode": "0o700",
+      "pending_intent": true,
+      "journal_sha256": "df56d97abd889ffd4a2f9c21a3eb44c6f89101ad14235ddd34651249b76b01b2"
+    },
+    {
+      "directory": true,
+      "old_mode": "0o0",
+      "forward_mode": "0o700",
+      "fault": "none",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "ok",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/4/root",
+        "selected": "",
+        "message": ""
+      },
+      "actual_mode": "0o0",
+      "pending_intent": false,
+      "journal_sha256": "3a0c08e5bcfa9ce55bd4da525f73a20073cc76fcfe579253a7d675100fa395aa"
+    },
+    {
+      "directory": true,
+      "old_mode": "0o0",
+      "forward_mode": "0o700",
+      "fault": "fsync",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "error",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/5/root",
+        "selected": "",
+        "message": "Undo rejected: stale history, changed object or parent, occupied original path, or unsupported backend\nUndo unavailable: private durable history could not be read or saved; existing recovery data retained"
+      },
+      "actual_mode": "0o0",
+      "pending_intent": true,
+      "journal_sha256": "23339bd7b3d9a7747f1404da82a7ce262210364bd345a31773f5bcb41c79437c"
+    },
+    {
+      "directory": true,
+      "old_mode": "0o700",
+      "forward_mode": "0o0",
+      "fault": "none",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "ok",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/6/root",
+        "selected": "",
+        "message": ""
+      },
+      "actual_mode": "0o700",
+      "pending_intent": false,
+      "journal_sha256": "3a0c08e5bcfa9ce55bd4da525f73a20073cc76fcfe579253a7d675100fa395aa"
+    },
+    {
+      "directory": true,
+      "old_mode": "0o700",
+      "forward_mode": "0o0",
+      "fault": "fsync",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "error",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/7/root",
+        "selected": "",
+        "message": "Undo rejected: stale history, changed object or parent, occupied original path, or unsupported backend\nUndo unavailable: private durable history could not be read or saved; existing recovery data retained"
+      },
+      "actual_mode": "0o700",
+      "pending_intent": true,
+      "journal_sha256": "ea5d5a49c3cbc18b0b3348119e311d97f66b732872301487db198593ac3909d2"
+    },
+    {
+      "directory": false,
+      "old_mode": "0o700",
+      "forward_mode": "0o0",
+      "fault": "open",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "error",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/8/root",
+        "selected": "",
+        "message": "Undo rejected: stale history, changed object or parent, occupied original path, or unsupported backend\nUndo unavailable: private durable history could not be read or saved; existing recovery data retained"
+      },
+      "actual_mode": "0o400",
+      "pending_intent": true,
+      "journal_sha256": "e4e67d4f1319dc763a440d5f66bc24fc517bb7df271c7ac025dbf92fd6950e9f"
+    },
+    {
+      "directory": true,
+      "old_mode": "0o700",
+      "forward_mode": "0o0",
+      "fault": "open",
+      "inverse": {
+        "version": "1",
+        "request": "2",
+        "status": "error",
+        "directory": "/home/madblack-21/.cache/tmp/sumi-zero-mode-wu0i0fva/9/root",
+        "selected": "",
+        "message": "Undo rejected: stale history, changed object or parent, occupied original path, or unsupported backend\nUndo unavailable: private durable history could not be read or saved; existing recovery data retained"
+      },
+      "actual_mode": "0o400",
+      "pending_intent": true,
+      "journal_sha256": "6eef07418e8e4e91ee460e0605b54f64e55b3261ddf5d768618bcf646555e53e"
+    }
+  ],
+  "sources": {
+    "explorer/sumi-explorer-native.el": "d6ee68984584998dc993daac09217d621a87375c0a34018608be7aedabdeb563",
+    "explorer/platform.c": "c39396a2a2279973295957cf71cb76f4888d49fcd33cd23f8658847b50732931",
+    "explorer/platform.h": "b9dd68e79926bb737742ff6bed16ec3984cd064092ddd43c8682a30669a32e5b",
+    "tests/explorer-zero-mode-test.py": "119d0c686ecea18b72a829435447b00472ca2a429900218cadf16e7ccba71db1"
+  },
+  "fault_source_sha256": "1564eeb1a805a909a0c000d90b68d62d3d81e5c341ad80884bf5ba8cb0f64ee9",
+  "fault_binary_sha256": "b46d4f843af475542b7621b088f2e1b329eab8406f0b5b5dab8006602715adee"
+}

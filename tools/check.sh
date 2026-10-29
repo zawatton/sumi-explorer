@@ -6,9 +6,35 @@ cd "$root"
 ulimit -v 8388608
 client_scratch=
 native_scratch=
+remove_private_scratch() {
+    # A session daemon can finish flushing metadata after the test has exited.
+    # Retry only these two owned scratch trees, with a fixed four-second wait.
+    cleanup_attempt=1
+    while [ "$cleanup_attempt" -le 5 ]; do
+        if rm -rf -- "$1" 2>/dev/null; then return 0; fi
+        if [ "$cleanup_attempt" -lt 5 ]; then sleep 1; fi
+        cleanup_attempt=$((cleanup_attempt + 1))
+    done
+    printf 'Could not remove private test scratch after 5 attempts: %s\n' "$1" >&2
+    return 1
+}
 cleanup() {
-    if [ -n "$client_scratch" ]; then rm -r -- "$client_scratch"; fi
-    if [ -n "$native_scratch" ]; then rm -r -- "$native_scratch"; fi
+    check_status=$?
+    trap - EXIT
+    cleanup_status=0
+    if [ -n "$client_scratch" ]; then
+        if ! remove_private_scratch "$client_scratch"; then cleanup_status=1; fi
+    fi
+    if [ -n "$native_scratch" ]; then
+        if ! remove_private_scratch "$native_scratch"; then cleanup_status=1; fi
+    fi
+    if [ "$check_status" -ne 0 ]; then
+        if [ "$cleanup_status" -ne 0 ]; then
+            printf 'Preserving original check failure (exit %s).\n' "$check_status" >&2
+        fi
+        exit "$check_status"
+    fi
+    exit "$cleanup_status"
 }
 trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
@@ -52,9 +78,16 @@ native() {
     export SUMI_EXPLORER_TEST_BIN="$binary"
     native_scratch=$(mktemp -d)
     native_scratch=$(CDPATH= cd -- "$native_scratch" && pwd)
-    mkdir "$native_scratch/config"
+    mkdir -m 700 "$native_scratch/config" "$native_scratch/data" "$native_scratch/cache" "$native_scratch/state" "$native_scratch/runtime"
     XDG_CONFIG_HOME="$native_scratch/config"
-    export XDG_CONFIG_HOME
+    XDG_DATA_HOME="$native_scratch/data"
+    XDG_CACHE_HOME="$native_scratch/cache"
+    XDG_STATE_HOME="$native_scratch/state"
+    XDG_RUNTIME_DIR="$native_scratch/runtime"
+    export XDG_CONFIG_HOME XDG_DATA_HOME XDG_CACHE_HOME XDG_STATE_HOME XDG_RUNTIME_DIR
+    # These local-file tests do not need a FUSE mount in their disposable runtime.
+    GVFS_DISABLE_FUSE=1
+    export GVFS_DISABLE_FUSE
     python3 - "$root" "$native_scratch" "${CC:-cc}" <<'PY'
 import pathlib
 import shlex
@@ -83,7 +116,7 @@ subprocess.run([str(zip_io)], check=True)
 PY
     xvfb-run -a python3 tests/explorer-gui-test.py --binary "$binary" --group all
     xvfb-run -a -s '-screen 0 2200x1080x24' dbus-run-session -- python3 tests/explorer-dnd-test.py --binary "$binary"
-    xvfb-run -a emacs -Q --batch -L explorer -l tests/sumi-explorer-integration-test.el
+    SUMI_EXPLORER_UNDO_DIR="$native_scratch/ert-undo-profile" xvfb-run -a emacs -Q --batch -L explorer -l tests/sumi-explorer-integration-test.el
     xvfb-run -a -s '-screen 0 2200x1080x24' python3 tests/explorer-operations-test.py --binary "$binary"
     xvfb-run -a -s '-screen 0 2200x1080x24' dbus-run-session -- python3 tests/explorer-batches-test.py --binary "$binary"
     xvfb-run -a dbus-run-session -- python3 tests/explorer-workspace-test.py --binary "$binary"

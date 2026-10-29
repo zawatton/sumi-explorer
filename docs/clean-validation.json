@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "compiler": {
+    "repository": "https://github.com/zawatton/nelisp.git",
+    "revision": "f3551799d210ed32f594383997843f0e1bf25e24"
+  },
+  "platform": {
+    "os": "linux",
+    "architecture": "x86_64"
+  },
+  "binary_sha256": "544bbbb7340c0daed35ff5f965dbb6bc726a6a7a40014c75b833e540d4fafaa4",
+  "sources": {
+    ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
+    "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
+    "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
+    "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
+    "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
+    "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
+    "explorer/sumi-explorer-native.el": "764cc037998124765464bd931502d300cc5fff0bf8e773ecc4bcd4dcafcd50a8",
+    "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
+    "tests/explorer-advanced-test.py": "8057f2bfac44036488189cae5ed9dd73459db89948ad5b32c7cae486803c678a",
+    "tests/explorer-batches-test.py": "cfec3b96b3ce24acb438ff94796624e0f4da023f23968dbecf48a57d59562102",
+    "tests/explorer-dnd-test.py": "808a4d84f6d9d1d68eb0d8ca522697a41bdb0b167438e117cdd791dd3a910448",
+    "tests/explorer-everyday-test.py": "ebcbcfd0e8ee876bfcb526900655b6e6cc7bfc6f1f971bba64dd8ee452796638",
+    "tests/explorer-gui-test.py": "9ba503b0510a9a015fd844a78c19f6c4785d4e524e6968a2ffe5b0719e28d7da",
+    "tests/explorer-operations-test.py": "0e7c831abe236b08ace3ab4afadf7bdef67da7df246958926444b75feee0fe6b",
+    "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
+    "tests/explorer-platform-test.c": "dd5d10bbe060368715605aec0b5602a7216f54e29aad0df5f76befcc787ee0a1",
+    "tests/explorer-platform-zip-test.c": "28201ed658115dd59ceb707af17f73acad1d644b82901d33ce6830323092a84f",
+    "tests/explorer-workspace-test.py": "924e40d90ed98f0dade29b63607d119a7736cbb9ac6767c3db95cabed6769c91",
+    "tests/sumi-explorer-client-test.el": "68d0762f882c1c60229dd3a60b11da33885e1bb35ab99fd0fb9df4e14f361954",
+    "tests/sumi-explorer-integration-test.el": "25fccbc984d24600a4fbcc82e4c8e8c702aac7e5e604682ec846c2c8fe137394",
+    "tests/sumi-explorer-windows-test.el": "52a51a3642044e246db410a46aebbd10a3c4db2865938962e249037f66f4c25c",
+    "tools/check.sh": "96089def75816b74ed8db13f1ef2dfd7aff81095bd921e6d983a67379484cdee"
+  },
+  "checks": {
+    "build": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 1,
+      "log_sha256": "5a1e618d04594a08bb044603092886ecfa82cc73a359f21cfed17cab69ad0e51"
+    },
+    "byte_compile": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 4,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "client": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 65,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "emacs_native": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 7,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "gui": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 1,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "batches": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 15,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "operations": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 12,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "dnd": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 7,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "workspace": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 12,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "everyday": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 21,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "platform": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 6,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "metadata_stub": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 4,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "zip_stub": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 11,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    },
+    "advanced": {
+      "status": "pass",
+      "exit_code": 0,
+      "cases": 54,
+      "log_sha256": "7542d149d63984725a2ec5a4c2e0d639802dbdd20be5f242aac298537537859d"
+    }
+  },
+  "limitations": [
+    "Historical clean public-main clone b9ea315cb5e743177d7fdf7533b07db06b7b918f and fresh anonymous public compiler fetch at the pinned revision. A clean build and the complete public helper passed all 220 defined checks under an 8 GiB address-space cap and 600-second heavy-job limit. This receipt binds sources and outcomes rather than independently proving or rerunning execution.",
+    "GTK4/system tools and the existing isolated libarchive development SDK are build dependencies; the clean app/compiler checkouts did not use sibling Notes source checkouts or user Emacs initialization.",
+    "Linux runtime execution does not certify Windows or macOS. Windows has a separate actual native receipt; native Security-page visual Cancel/ACL Apply, third-party handlers, full external Explorer transfer and macOS runtime remain unverified.",
+    "Session Undo remains conservative and identity-provider dependent. External pathname writers can race revalidation, and unavailable Trash/Windows identity capabilities never imply recovery."
+  ]
+}

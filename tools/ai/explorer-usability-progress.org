@@ -67,10 +67,10 @@ evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c
 ** S5.2 Documentation and source-bound evidence describe verified limits
 cmd: python3 tools/verify-validation.py
 evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
-evidence: README.org sha256=59f350582e5e6b8531d2c6a313dcf15b3106d5563f772ed90b3ec17dd62746b4
+evidence: README.org sha256=e243925e24f77269512822b7dfad095b2b83aaf03d37a88d8b0576cdcc94e732
 evidence: docs/everyday-features.md sha256=0ed1a7781ad2ff2a01d673e3951c1bc4867186efe2f95d8da2cea2eb8b735e54
 evidence: docs/file-explorer.md sha256=88314e5914795f022fd3d47b7ea51ec2279cb43a41d8e988d2b32897df349fd8
-evidence: docs/windows-validation.md sha256=eb1a43a5c698cdb48a8feef8f6978ce15ab39b5f1562041ee33dc3cbbac8422a
+evidence: docs/windows-validation.md sha256=cf27f1bb6eeea779b0005bd70658dd4d33c142416c81d2a2a38daf3026cd59f5
 
 ** S5.3 An independently audited integrated build passes actual native and Emacs workflows
 cmd: python3 tools/verify-validation.py

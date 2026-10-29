@@ -2,9 +2,9 @@
   "schema_version": 1,
   "run": {
     "repository": "https://github.com/zawatton/sumi-explorer",
-    "id": 40805110576,
+    "id": 40806815295,
     "attempt": 1,
-    "commit": "e092b03faa6da67afee71ac5c23552ec183b74d8",
+    "commit": "b9ea315cb5e743177d7fdf7533b07db06b7b918f",
     "conclusion": "success"
   },
   "compiler": {
@@ -20,7 +20,7 @@
     "archive_sha256": "414d3a1a21147af257ebd98bdd15976fdcb5ed0563f6de89f76d4a4b5dad9c72",
     "executable_sha256": "24848ae901463e3c56dac17031ddd45d58220723aa35102fc778458d17ff2f0b"
   },
-  "binary_sha256": "a24fd8c1aa69c2667019c2b98296c302478daca3d69de5e1be9203688f0d095f",
+  "binary_sha256": "87f123c26d2256a7ecacc8e6ed39bf26774a9cf0176278671a14e0357fe3164f",
   "limits": {
     "per_process_private_commit_bytes": 8589934592,
     "job_private_commit_bytes": 8589934592,
@@ -59,13 +59,13 @@
       "status": "pass",
       "exit_code": 0,
       "cases": 59,
-      "log_sha256": "f9ef1da97b43f0d47468aed18ed5b6e75beb47ec28cb7d0f1edda37bae740fd1"
+      "log_sha256": "b8ca21353e06868530678557c15854eb1fad0d202c3c8ae30d88e7e020360151"
     },
     "metadata": {
       "status": "pass",
       "exit_code": 0,
       "cases": 229,
-      "log_sha256": "768d24b3d5d00e75d32ad1825aaea3709d961bbb459d01061b1ee6b4242981a1"
+      "log_sha256": "913aaa6a04c58f6947fee697706e1e9da158fcc3a1b5a5add70f40ab9a019bee"
     },
     "zip_io": {
       "status": "pass",
@@ -89,7 +89,7 @@
       "status": "pass",
       "exit_code": 0,
       "cases": 1,
-      "log_sha256": "e8314561a62cd872ddd0d10797bd76d8cb57d7df37752768722c2f6dcca185ee"
+      "log_sha256": "e2880b77c39bd9537e3b083c633c19d114a9a40aa2d0acac5f11ee8df0d4ad73"
     }
   },
   "limitations": [

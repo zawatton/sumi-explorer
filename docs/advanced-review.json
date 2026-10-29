@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-10-29",
-  "status": "accepted-for-publication",
+  "status": "accepted-for-delivery",
   "reviewer": {
     "model": "gpt-6-astra",
     "reasoning_effort": "ultra",
@@ -11,13 +11,14 @@
   "sources": {
     ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
     ".github/workflows/windows-native.yml": "12a2e25c2eb40a71b2e624791de1e0a24a08cbac8185bf40b71518b398cfedd3",
-    "README.org": "59f350582e5e6b8531d2c6a313dcf15b3106d5563f772ed90b3ec17dd62746b4",
+    "README.org": "e243925e24f77269512822b7dfad095b2b83aaf03d37a88d8b0576cdcc94e732",
     "docs/advanced-features.md": "9f81d6861496fbe2708c803cb1b3ebe8d0ce71e91bc2d8dc51b1c687db3d1d64",
+    "docs/clean-validation.json": "2b2dddd369cd3675f5759dd2bf849193e45876ec514ee92af287aa206dc466ad",
     "docs/everyday-features.md": "0ed1a7781ad2ff2a01d673e3951c1bc4867186efe2f95d8da2cea2eb8b735e54",
     "docs/file-explorer.md": "88314e5914795f022fd3d47b7ea51ec2279cb43a41d8e988d2b32897df349fd8",
     "docs/validation.json": "26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395",
-    "docs/windows-validation.json": "252c7d9e735f8b8a0d8aca6b1f6be07bedb7dd4e34f2c893580cb832d018d953",
-    "docs/windows-validation.md": "eb1a43a5c698cdb48a8feef8f6978ce15ab39b5f1562041ee33dc3cbbac8422a",
+    "docs/windows-validation.json": "9b63c34e14c6011be220e1b59af73cdc5edcf5d8351891a8c6f3045fc27761be",
+    "docs/windows-validation.md": "cf27f1bb6eeea779b0005bd70658dd4d33c142416c81d2a2a38daf3026cd59f5",
     "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
     "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
     "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
@@ -53,7 +54,7 @@
   },
   "execution": {
     "linux_defined_checks": 220,
-    "windows_run": 40805110576,
+    "windows_run": 40806815295,
     "windows_shell": 59,
     "windows_metadata": 229,
     "windows_zip_io": 63,
@@ -62,12 +63,10 @@
     "windows_emacs_assertions": 62,
     "raw_windows_source_hashes_matched": 14,
     "original_python_assertions_retained": 206,
-    "original_elisp_test_lines_retained": true
+    "original_elisp_test_lines_retained": true,
+    "clean_public_linux_checks": 220
   },
-  "remaining_delivery": [
-    "Exact scoped main commit/push and actual main CI.",
-    "Clean public-clone build, full tests, source-bound receipt and delivery audit."
-  ],
+  "remaining_delivery": [],
   "unverified": [
     "Native Windows Security-page visual observation/Cancel and ACL Apply.",
     "Third-party Shell handler coverage, full Windows Properties/external Explorer transfer and packaging.",
@@ -76,5 +75,13 @@
   "limitations": [
     "This editable audit receipt records the independent review and checked historical diagnostics. It is not a cryptographic attestation or a new execution of the tests.",
     "Session Undo remains conservative and identity-provider dependent; source/path revalidation does not eliminate every external-writer race."
-  ]
+  ],
+  "delivery": {
+    "main_code_commit": "b9ea315cb5e743177d7fdf7533b07db06b7b918f",
+    "windows_main_run": 40806815295,
+    "clean_public_app_commit": "b9ea315cb5e743177d7fdf7533b07db06b7b918f",
+    "clean_public_compiler_revision": "f3551799d210ed32f594383997843f0e1bf25e24",
+    "clean_record": "docs/clean-validation.json",
+    "clean_record_sha256": "2b2dddd369cd3675f5759dd2bf849193e45876ec514ee92af287aa206dc466ad"
+  }
 }

@@ -338,4 +338,11 @@ native binary, actual LF source bytes and suite/log hashes.
 The source set includes =.gitattributes= and the workflow; the native driver
 rejects CR bytes before hashing. It does not normalize the tested sources.
 
+=docs/clean-validation.json= records a fresh anonymous public clone of main
+=b9ea315cb5e743177d7fdf7533b07db06b7b918f=, a separately fetched public compiler
+at the pinned revision, a clean build and the complete helper: 220 defined Linux
+checks passed. GTK/system tools and the isolated libarchive SDK remain build
+dependencies. Check this receipt with
+=python3 tools/verify-validation.py --record docs/clean-validation.json=.
+
 The historical-record verifier requires Python 3.9 or newer.

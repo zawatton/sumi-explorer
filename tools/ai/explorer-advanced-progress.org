@@ -1,6 +1,6 @@
 #+TITLE: Sumi Explorer archives undo and native integration
 
-#+NOTE: The same15 criteria are retained. Historical receipt checks bind current source hashes; they do not rerun behavior or independently prove editable evidence. The ZIP/Undo/GUI gates replace obsolete private intermediate receipts after their regressions passed. Windows ACL Apply/Cancel remains pending; clean delivery remains a failing command until its actual receipt exists.
+#+NOTE: The same 15 criteria are retained. Verification commands now use source-bound Linux, Windows and clean-public-clone receipts plus reviewed source hashes. They do not rerun behavior or independently prove editable evidence. Earlier ZIP/Undo/GUI regressions passed before replacing their intermediate receipts. Windows ACL Apply/Cancel remains pending; independent delivery acceptance must match the current reviewed sources.
 
 * S1 ZIP operations
 
@@ -68,9 +68,10 @@ evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c
 ** S5.2 Independent review and source-bound records document verified limitations
 cmd: python3 tools/verify-validation.py
 cmd: python3 tools/verify-windows-validation.py
-cmd: test -s docs/advanced-review.json
-evidence: docs/advanced-review.json sha256=69418a974231c3ec23ab7407bd54ada9b54cce091da8119b149d7122342917a4
+cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/advanced-review.json")); assert r["status"]=="accepted-for-delivery" and all(hashlib.sha256(Path(n).read_bytes()).hexdigest()==h for n,h in r["sources"].items())'
+evidence: docs/advanced-review.json sha256=06c14b5d6b279f442dcc9e69a77b7e27acb00f0b83883658fdda593e9647e0a9
 evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
 
 ** S5.3 Clean integrated build completes archive undo and permission workflows
 cmd: python3 tools/verify-validation.py --record docs/clean-validation.json
+evidence: docs/clean-validation.json sha256=2b2dddd369cd3675f5759dd2bf849193e45876ec514ee92af287aa206dc466ad

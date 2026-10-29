@@ -569,18 +569,36 @@ typedef struct { JournalProfile *profile; char *name; HANDLE lock; } JournalHand
 static WCHAR *journal_wide(const char *path)
 { return (WCHAR *)g_utf8_to_utf16(path, -1, NULL, NULL, NULL); }
 
+/* Opt-in bounded diagnostics contain stage names and booleans, never paths,
+ * SIDs or serialized recovery data. Preserve Win32 error classification. */
+static void journal_diagnostic(const char *stage, DWORD error, int detail)
+{
+    static LONG count;
+    DWORD saved = GetLastError();
+    const char *enabled = g_getenv("SUMI_EXPLORER_UNDO_DIAGNOSTICS");
+    if (enabled && !strcmp(enabled, "1") && InterlockedIncrement(&count) <= 96)
+        g_printerr("SUMI_UNDO stage=%s win-error=%lu detail=%d\n", stage, (unsigned long)error, detail);
+    SetLastError(saved);
+}
+
 static int journal_private_handle(HANDLE handle, PSID user)
 {
     PSID owner = NULL; PACL acl = NULL; PSECURITY_DESCRIPTOR sd = NULL;
     int good = 0;
-    if (GetSecurityInfo(handle, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION |
-                        DACL_SECURITY_INFORMATION, &owner, NULL, &acl, NULL, &sd) != ERROR_SUCCESS)
+    DWORD security_error = GetSecurityInfo(handle, SE_FILE_OBJECT, OWNER_SECURITY_INFORMATION |
+                        DACL_SECURITY_INFORMATION, &owner, NULL, &acl, NULL, &sd);
+    if (security_error != ERROR_SUCCESS) {
+        journal_diagnostic("private-security-query", security_error, 0);
         return 0;
+    }
+    journal_diagnostic("private-owner-matches-user", 0, owner && EqualSid(owner, user));
     if (!owner || !EqualSid(owner, user) || !acl) goto out;
     for (DWORD i = 0; i < acl->AceCount; ++i) {
         ACCESS_ALLOWED_ACE *ace = NULL;
         if (!GetAce(acl, i, (void **)&ace) || ace->Header.AceType != ACCESS_ALLOWED_ACE_TYPE ||
-            !EqualSid((PSID)&ace->SidStart, user)) goto out;
+            !EqualSid((PSID)&ace->SidStart, user)) {
+            journal_diagnostic("private-ace-rejected", 0, (int)i); goto out;
+        }
     }
     good = acl->AceCount > 0;
 out:
@@ -605,8 +623,8 @@ static HANDLE journal_win_open(JournalProfile *p, const char *name, DWORD access
     DWORD open_error = ERROR_INVALID_DATA;
     PSECURITY_DESCRIPTOR sd = NULL; LPWSTR sid = NULL;
     if (wide && ConvertSidToStringSidW(p->user, &sid)) {
-        size_t n = wcslen(sid) + 32; WCHAR *sddl = g_malloc(n * sizeof(WCHAR));
-        swprintf(sddl, n, L"D:P(A;;FA;;;%ls)", sid);
+        size_t n = 2 * wcslen(sid) + 32; WCHAR *sddl = g_malloc(n * sizeof(WCHAR));
+        swprintf(sddl, n, L"O:%lsD:P(A;;FA;;;%ls)", sid, sid);
         if (ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl, SDDL_REVISION_1, &sd, NULL)) {
             SECURITY_ATTRIBUTES sa = {sizeof(sa), sd, FALSE};
             file = CreateFileW(wide, access | READ_CONTROL, share, &sa, create,
@@ -620,7 +638,10 @@ static HANDLE journal_win_open(JournalProfile *p, const char *name, DWORD access
         (!journal_plain(file, 0) || !journal_private_handle(file, p->user))) {
         CloseHandle(file); file = INVALID_HANDLE_VALUE; open_error = ERROR_ACCESS_DENIED;
     }
-    if (file == INVALID_HANDLE_VALUE) SetLastError(open_error);
+    if (file == INVALID_HANDLE_VALUE) {
+        journal_diagnostic("journal-entry-open", open_error, 0);
+        SetLastError(open_error);
+    }
     return file;
 }
 #else
@@ -651,6 +672,9 @@ static int journal_name(const char *name)
 void *sumi_explorer_platform_profile_open(void)
 {
     JournalProfile *p = g_malloc0(sizeof(*p));
+#ifdef _WIN32
+    const char *stage = "profile-path-validation";
+#endif
 #ifndef _WIN32
     p->directory = -1;
 #endif
@@ -662,16 +686,30 @@ void *sumi_explorer_platform_profile_open(void)
     HANDLE token = NULL; DWORD bytes = 0; TOKEN_USER *user = NULL;
     WCHAR *wide = NULL; LPWSTR sid = NULL; PSECURITY_DESCRIPTOR sd = NULL;
     p->directory = INVALID_HANDLE_VALUE;
+    stage = "profile-open-token";
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) goto bad;
     GetTokenInformation(token, TokenUser, NULL, 0, &bytes);
     user = g_malloc0(bytes);
+    stage = "profile-read-token-user";
     if (!GetTokenInformation(token, TokenUser, user, bytes, &bytes)) { CloseHandle(token); g_free(user); goto bad; }
+    const char *diagnostics = g_getenv("SUMI_EXPLORER_UNDO_DIAGNOSTICS");
+    if (diagnostics && !strcmp(diagnostics, "1")) {
+        DWORD owner_bytes = 0;
+        GetTokenInformation(token, TokenOwner, NULL, 0, &owner_bytes);
+        TOKEN_OWNER *owner = g_malloc0(owner_bytes);
+        BOOL queried = GetTokenInformation(token, TokenOwner, owner, owner_bytes, &owner_bytes);
+        journal_diagnostic("token-default-owner-matches-user", queried ? 0 : GetLastError(),
+                           queried && EqualSid(owner->Owner, user->User.Sid));
+        g_free(owner);
+    }
     CloseHandle(token);
     p->user = g_malloc(GetLengthSid(user->User.Sid)); CopySid(GetLengthSid(user->User.Sid), p->user, user->User.Sid); g_free(user);
+    stage = "profile-encode-path-owner";
     wide = journal_wide(p->path);
     if (!wide || !ConvertSidToStringSidW(p->user, &sid)) { g_free(wide); goto bad; }
-    size_t n = wcslen(sid) + 32; WCHAR *sddl = g_malloc(n * sizeof(WCHAR));
-    swprintf(sddl, n, L"D:P(A;;FA;;;%ls)", sid);
+    size_t n = 2 * wcslen(sid) + 32; WCHAR *sddl = g_malloc(n * sizeof(WCHAR));
+    swprintf(sddl, n, L"O:%lsD:P(A;;FA;;;%ls)", sid, sid);
+    stage = "profile-parse-private-descriptor";
     int secure = ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl, SDDL_REVISION_1, &sd, NULL);
     g_free(sddl); LocalFree(sid);
     if (!secure) { g_free(wide); goto bad; }
@@ -680,12 +718,17 @@ void *sumi_explorer_platform_profile_open(void)
     char *slash = strrchr(p->path, '/');
     if (slash) { char saved = *slash; *slash = 0; g_mkdir_with_parents(p->path, 0700); *slash = saved; }
     SECURITY_ATTRIBUTES sa = {sizeof(sa), sd, FALSE};
+    stage = "profile-create-directory";
     if (!CreateDirectoryW(wide, &sa) && GetLastError() != ERROR_ALREADY_EXISTS) { LocalFree(sd); g_free(wide); goto bad; }
     LocalFree(sd);
+    stage = "profile-open-directory";
     p->directory = CreateFileW(wide, GENERIC_READ | READ_CONTROL, FILE_SHARE_READ | FILE_SHARE_WRITE,
         NULL, OPEN_EXISTING, FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    DWORD directory_error = p->directory == INVALID_HANDLE_VALUE ? GetLastError() : ERROR_SUCCESS;
     g_free(wide);
-    if (p->directory == INVALID_HANDLE_VALUE || !journal_plain(p->directory, 1) ||
+    if (p->directory == INVALID_HANDLE_VALUE) { SetLastError(directory_error); goto bad; }
+    stage = "profile-validate-private-directory";
+    if (!journal_plain(p->directory, 1) ||
         !journal_private_handle(p->directory, p->user)) goto bad;
 #else
     p->directory = -1;
@@ -693,8 +736,14 @@ void *sumi_explorer_platform_profile_open(void)
     p->directory = open(p->path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
     if (p->directory < 0 || !journal_private_stat(p->directory, 1)) goto bad;
 #endif
+#ifdef _WIN32
+    journal_diagnostic("profile-open-success", 0, 1);
+#endif
     return p;
 bad:
+#ifdef _WIN32
+    journal_diagnostic(stage, GetLastError(), 0);
+#endif
     sumi_explorer_platform_profile_close(p); return NULL;
 }
 

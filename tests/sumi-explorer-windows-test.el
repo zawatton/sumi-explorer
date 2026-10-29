@@ -4,11 +4,13 @@
 ;; never starts tests.  Only owned-menu cancellation is automated; Security UI
 ;; remains a manual check.
 (require 'ert)
+(require 'cl-lib)
 (require 'json)
 (require 'sumi-explorer)
 
 (defvar sumi-explorer-windows-test--fixture-root nil)
 (defvar sumi-explorer-windows-test--native-buffer nil)
+(defvar sumi-explorer-windows-test--native-process nil)
 (defconst sumi-explorer-windows-test--source-coding
   (list buffer-file-coding-system enable-multibyte-characters coding-system-for-read)
   "Source loading coding/buffer state for dependency diagnostics.")
@@ -100,12 +102,27 @@
     (should (cdr (assoc "id" group)))
     (cdr (assoc "id" group))))
 
+(defun sumi-explorer-windows-test--start-owned-host (root binary)
+  "Start the host with output capture installed before its readiness wait."
+  (setq sumi-explorer-windows-test--native-buffer
+        (generate-new-buffer " *sumi-windows-native-output*"))
+  (let ((create-process (symbol-function 'make-process)))
+    (cl-letf (((symbol-function 'make-process)
+               (lambda (&rest arguments)
+                 (if (equal (plist-get arguments :name) "sumi-explorer")
+                     (setq sumi-explorer-windows-test--native-process
+                           (apply create-process
+                                  (plist-put (copy-sequence arguments) :buffer
+                                             sumi-explorer-windows-test--native-buffer)))
+                   (apply create-process arguments)))))
+      (sumi-explorer-start root binary))))
+
 (defun sumi-explorer-windows-test--native-output-diagnostic ()
   "Report only the owned host's final output on failure, within 8192 ASCII bytes."
   (condition-case nil
-      (let* ((process sumi-explorer--owned-process)
+      (let* ((process sumi-explorer-windows-test--native-process)
              (buffer (and (processp process) (process-buffer process))))
-        (if (and (eq process sumi-explorer--process)
+        (if (and (processp process)
                  (buffer-live-p buffer)
                  (eq buffer sumi-explorer-windows-test--native-buffer))
             (with-current-buffer buffer
@@ -133,6 +150,7 @@
             (root (make-temp-file "sumi-windows-acceptance-" t))
             (sumi-explorer-windows-test--fixture-root root)
             (sumi-explorer-windows-test--native-buffer nil)
+            (sumi-explorer-windows-test--native-process nil)
             (process-environment (copy-sequence process-environment))
             (sumi-explorer--session-directory nil)
             (sumi-explorer--owned-session nil)
@@ -152,9 +170,7 @@
              (setenv "XDG_CONFIG_HOME" (expand-file-name "config" root))
              (setenv "XDG_DATA_HOME" (expand-file-name "data" root))
              (setenv "SUMI_EXPLORER_SESSION" nil)
-             (sumi-explorer-start root binary)
-             (setq sumi-explorer-windows-test--native-buffer
-                   (generate-new-buffer " *sumi-windows-native-output*"))
+             (sumi-explorer-windows-test--start-owned-host root binary)
              (set-process-buffer sumi-explorer--process sumi-explorer-windows-test--native-buffer)
              (should (process-live-p sumi-explorer--process))
              (should (file-equal-p root (cdr (assoc "directory" (sumi-explorer-state)))))

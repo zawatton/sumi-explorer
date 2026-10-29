@@ -6,6 +6,7 @@ $root = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $root
 $output = Join-Path $root 'target/windows-native'
 New-Item -ItemType Directory -Force $output | Out-Null
+$env:SUMI_EXPLORER_UNDO_DIAGNOSTICS = '1'
 $gnuEmacsUrl = 'https://ftp.gnu.org/gnu/emacs/windows/emacs-30/emacs-30.2.zip'
 # Published by GNU in emacs-30.2-sha256sum.txt beside the portable archive.
 $gnuEmacsArchiveHash = '414d3a1a21147af257ebd98bdd15976fdcb5ed0563f6de89f76d4a4b5dad9c72'

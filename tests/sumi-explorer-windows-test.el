@@ -4,6 +4,7 @@
 ;; never starts tests.  Only owned-menu cancellation is automated; Security UI
 ;; remains a manual check.
 (require 'ert)
+(require 'json)
 (require 'sumi-explorer)
 
 (defvar sumi-explorer-windows-test--fixture-root nil)
@@ -193,14 +194,28 @@
 Removal uses nonrecursive Directory.Delete, never traversing the junction."
   (let* ((powershell (or (executable-find "powershell.exe") (executable-find "pwsh.exe")))
          (script (expand-file-name "owned-junction.ps1" sumi-explorer-windows-test--fixture-root))
+         (data-file (expand-file-name "owned-junction.json" sumi-explorer-windows-test--fixture-root))
          (output (generate-new-buffer " *sumi-owned-junction*"))
          child)
     (unwind-protect
         (progn
           (unless powershell (error "PowerShell is required for the real junction fixture"))
+          (unless (cl-every (lambda (character) (< character 128)) (concat script data-file))
+            (error "Junction helper transport requires an ASCII fixture container"))
+          (let ((coding-system-for-write 'utf-8-unix))
+            (with-temp-file data-file
+              (insert (json-encode `((action . ,action) (alias . ,alias) (source . ,source))))))
           (with-temp-file script
-            (insert "param([ValidateSet('Create','Remove')][string]$Action,[string]$AliasDirectory,[string]$SourceDirectory)\n"
+            (insert "param([string]$DataPath)\n"
                     "$ErrorActionPreference='Stop'\n"
+                    "if(([IO.FileInfo]$DataPath).Length -gt 65536) { throw 'Oversized junction data' }\n"
+                    "$utf8=[Text.UTF8Encoding]::new($false,$true)\n"
+                    "$data=ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($DataPath,$utf8))\n"
+                    "$Action=[string]$data.action; $AliasDirectory=[string]$data.alias; $SourceDirectory=[string]$data.source\n"
+                    "if($Action -notin @('Create','Remove')) { throw 'Invalid junction action' }\n"
+                    "foreach($field in @('alias','source')) {\n"
+                    "$hex=([string]$data.$field).ToCharArray() | Select-Object -First 256 | ForEach-Object { '{0:X4}' -f [int]$_ }\n"
+                    "[Console]::WriteLine('DIAG junction '+$field+'_utf16='+($hex -join ','))\n}\n"
                     "if($Action -eq 'Create') { New-Item -ItemType Junction -Path $AliasDirectory -Target $SourceDirectory | Out-Null }\n"
                     "$item=Get-Item -LiteralPath $AliasDirectory -Force\n"
                     "if($item.LinkType -ne 'Junction') { throw 'Owned alias is not a junction' }\n"
@@ -209,13 +224,19 @@ Removal uses nonrecursive Directory.Delete, never traversing the junction."
           (setq child (make-process :name "sumi-owned-junction" :buffer output :noquery t
                                     :command (list powershell "-NoProfile" "-NonInteractive"
                                                    "-ExecutionPolicy" "Bypass" "-File" script
-                                                   "-Action" action "-AliasDirectory" alias
-                                                   "-SourceDirectory" source)))
+                                                   "-DataPath" data-file)))
           (let ((deadline (+ (float-time) 8)))
             (while (and (process-live-p child) (< (float-time) deadline))
               (accept-process-output child 0.02)))
+          (let* ((tail (with-current-buffer output
+                         (buffer-substring-no-properties (max (point-min) (- (point-max) 2000)) (point-max))))
+                 (encoded (mapconcat (lambda (character)
+                                       (if (<= 32 character 126) (char-to-string character)
+                                         (format "\\u{%X}" character))) tail "")))
+            (message "DIAG junction helper alive=%S exit=%S output=%s" (process-live-p child)
+                     (process-exit-status child) (substring encoded (max 0 (- (length encoded) 2000)))))
           (when (or (process-live-p child) (/= (process-exit-status child) 0))
-            (error "Owned junction helper failed or timed out: %s" (with-current-buffer output (buffer-string)))))
+            (error "Owned junction helper failed or timed out; see bounded output diagnostic")))
       (when (and child (process-live-p child)) (delete-process child))
       (kill-buffer output))))
 

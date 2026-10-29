@@ -14,6 +14,7 @@ static unsigned checks, failures;
 
 static HANDLE owned[128];
 static unsigned opened, closed, active, close_failures;
+static unsigned legacy_identity_calls;
 static int query_fault = -1, identity_unavailable, provider, close_fault, high_identity, omit_identity;
 static GCancellable *cancel_after_write;
 static WCHAR last_snapshot[32768];
@@ -64,6 +65,11 @@ static BOOL WINAPI observed_volume(HANDLE handle, LPWSTR label, DWORD label_size
         wcscpy(filesystem, provider == 1 ? L"FAT32" : L"ReFS");
     return result;
 }
+static BOOL WINAPI observed_legacy_identity(HANDLE handle, LPBY_HANDLE_FILE_INFORMATION information)
+{
+    ++legacy_identity_calls;
+    return GetFileInformationByHandle(handle, information);
+}
 static BOOL WINAPI observed_write(HANDLE handle, const void *data, DWORD size, LPDWORD written, LPOVERLAPPED overlapped)
 {
     BOOL result = WriteFile(handle, data, size, written, overlapped);
@@ -75,12 +81,14 @@ static BOOL WINAPI observed_write(HANDLE handle, const void *data, DWORD size, L
 #define CloseHandle observed_close
 #define GetFileInformationByHandleEx observed_query
 #define GetVolumeInformationByHandleW observed_volume
+#define GetFileInformationByHandle observed_legacy_identity
 #define WriteFile observed_write
 #include <platform-zip.inc>
 #undef CreateFileW
 #undef CloseHandle
 #undef GetFileInformationByHandleEx
 #undef GetVolumeInformationByHandleW
+#undef GetFileInformationByHandle
 #undef WriteFile
 
 enum { PAYLOAD_SIZE = 3 * 65536 + 37 };
@@ -267,10 +275,12 @@ static void test_failures(const WCHAR *path)
     }
     query_fault = -1;
     provider = 1; identity_unavailable = ERROR_INVALID_FUNCTION;
+    unsigned legacy_before = legacy_identity_calls;
     GFileInfo *info = sumi_explorer_zip_path_query(name, G_FILE_QUERY_INFO_NONE, NULL, &error);
     SumiExplorerZipIO *io = sumi_explorer_zip_open_source(name, NULL, &error);
     GFileInfo *opened_info = io ? sumi_explorer_zip_io_query(io, NULL, &error) : NULL;
-    CHECK(info && opened_info && !error && strstr(attribute(info, G_FILE_ATTRIBUTE_ID_FILE), "fat-id64:") == attribute(info, G_FILE_ATTRIBUTE_ID_FILE) &&
+    CHECK(info && opened_info && !error && legacy_identity_calls == legacy_before + 3 &&
+          strstr(attribute(info, G_FILE_ATTRIBUTE_ID_FILE), "fat-id64:") == attribute(info, G_FILE_ATTRIBUTE_ID_FILE) &&
           same_attribute(info, opened_info, G_FILE_ATTRIBUTE_ID_FILESYSTEM) && same_attribute(info, opened_info, G_FILE_ATTRIBUTE_ID_FILE),
           "calibrated FAT provider fallback uses actual native64 identity consistently");
     clear_info(&info); clear_info(&opened_info); if (io) sumi_explorer_zip_io_close(io, NULL);
@@ -278,8 +288,17 @@ static void test_failures(const WCHAR *path)
     info = sumi_explorer_zip_path_query(name, G_FILE_QUERY_INFO_NONE, NULL, &error);
     CHECK(!info && error, "ReFS never falls back to truncated64 identity"); clear_info(&info); g_clear_error(&error);
     provider = 1; identity_unavailable = ERROR_ACCESS_DENIED;
+    legacy_before = legacy_identity_calls;
     info = sumi_explorer_zip_path_query(name, G_FILE_QUERY_INFO_NONE, NULL, &error);
-    CHECK(!info && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED), "FAT identity access failure never becomes capability fallback");
+    /* GLib's public Win32 converter returns FAILED for unmapped native codes;
+     * 2.90.1 maps WSAEACCES, but not ERROR_ACCESS_DENIED, to PERMISSION_DENIED. */
+    GIOErrorEnum mapped = g_io_error_from_win32_error(ERROR_ACCESS_DENIED);
+    printf("DIAG FAT access-denial domain=%s code=%d mapped=%d message=%s legacy_before=%u legacy_after=%u\n",
+        error ? g_quark_to_string(error->domain) : "<none>", error ? error->code : -1, mapped,
+        error ? error->message : "<none>", legacy_before, legacy_identity_calls);
+    CHECK(!info && g_error_matches(error, G_IO_ERROR, mapped) &&
+          !strcmp(error->message, "Query full ZIP file identity failed (Win32 error 5)") &&
+          legacy_identity_calls == legacy_before, "FAT identity access failure never becomes capability fallback");
     clear_info(&info); g_clear_error(&error); identity_unavailable = 0;
     provider = 2; high_identity = 1;
     HANDLE raw = CreateFileW(path, FILE_READ_ATTRIBUTES, sharing, NULL, OPEN_EXISTING, 0, NULL);

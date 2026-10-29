@@ -1,0 +1,288 @@
+{
+  "schema": 1,
+  "kind": "sumi-explorer-design-gui",
+  "sources": {
+    "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
+    "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
+    "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
+    "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
+    "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
+    "explorer/sumi-explorer-native.el": "6678e925c53c6454245b61573142c831d779f638537b605c097bf1dc07663825",
+    "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
+    "tests/explorer-advanced-test.py": "c606a21981c5fe20c772d4e1f4b053972d6ca5b9c8ac5666627353ec9a3ee6e8",
+    "tests/explorer-batches-test.py": "ff09c2e50eb81648f18f876a038e540f4b1219b0cde4e4321d2d2b658b8d390f",
+    "tests/explorer-design-test.py": "12c69e84eb04ac406122ccb2eb77da2b9ade7ceb5eb26068ed3a319609f98bfe",
+    "tests/explorer-dnd-test.py": "9a2ada101618b74d834887ce0c18163a4b75d96e05bc039f789eb5e78085b393",
+    "tests/explorer-everyday-test.py": "6401a66361fca2750119f2bb378323ff80d38c321a522ab8896fa7a66dc79a05",
+    "tests/explorer-gui-test.py": "492629080073bef845e8e0aa16d1a15a58bac1528513ce630d2f3ed47adcf58b",
+    "tests/explorer-operations-test.py": "386840888cc758f8f49c16244fb9b6bfaa2fae463b94f13834f9d9b7561abfe7",
+    "tests/explorer-workspace-test.py": "91730d859b8707caa8a3b14784778c1d8646ff8e29b6fd383049028a9bb8635d"
+  },
+  "assertions": {
+    "tests/explorer-advanced-test.py": 214,
+    "tests/explorer-batches-test.py": 41,
+    "tests/explorer-design-test.py": 0,
+    "tests/explorer-dnd-test.py": 19,
+    "tests/explorer-everyday-test.py": 57,
+    "tests/explorer-gui-test.py": 16,
+    "tests/explorer-operations-test.py": 29,
+    "tests/explorer-workspace-test.py": 44
+  },
+  "binary": {
+    "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/sumi-explorer",
+    "sha256": "ae570494e9cba0ac52487644c1e0a5a0fc29ae15ae30e3d5a0ad8ac17c415a6b"
+  },
+  "groups": {
+    "layout": {
+      "status": "pass",
+      "checks": [
+        "hierarchy",
+        "sidebar",
+        "no-permanent-destination"
+      ],
+      "error": ""
+    },
+    "actions": {
+      "status": "pass",
+      "checks": [
+        "common-controls",
+        "sort-menu",
+        "view-menu",
+        "more-menu",
+        "context-menu"
+      ],
+      "error": ""
+    },
+    "viewports": {
+      "status": "pass",
+      "checks": [
+        "1000x700",
+        "1280x800",
+        "1600x900"
+      ],
+      "error": ""
+    },
+    "navigation": {
+      "status": "pass",
+      "checks": [
+        "address",
+        "back-forward-up",
+        "filter",
+        "tabs"
+      ],
+      "error": ""
+    },
+    "operations": {
+      "status": "pass",
+      "checks": [
+        "new-folder-cancel",
+        "rename-cancel",
+        "copy-cancel",
+        "move-cancel",
+        "zip-cancel",
+        "permissions-cancel",
+        "properties",
+        "invalid-input-retained",
+        "multi-trash-cancel"
+      ],
+      "error": ""
+    },
+    "workflow": {
+      "status": "pass",
+      "checks": [
+        "create",
+        "rename",
+        "copy-paste",
+        "undo"
+      ],
+      "error": ""
+    }
+  },
+  "artifacts": [
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/actions-final.png",
+      "sha256": "299a26ae207445b7122bea4c6c93c97eb807cd2a44fa582535e7de14e697c311",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/actions-host.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/actions-menu-more.png",
+      "sha256": "ab433f31fa82a5c99f0124c5af52510e0c3a64161cad3b55b8472095b6677415",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/actions-menu-sort.png",
+      "sha256": "585ca613ded4ac95ac8318e833887656bcde7bac1bcc56e7b61923ef7061936e",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/actions-menu-view.png",
+      "sha256": "c7c2e7e437e916b6debe8994c0a575956cac3c3d700e35b916737714ba250d91",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/actions.png",
+      "sha256": "299a26ae207445b7122bea4c6c93c97eb807cd2a44fa582535e7de14e697c311",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/layout-final.png",
+      "sha256": "92f8d6103344d2c98ef55be55951a044adef6b3878d5c0f3ea3a1d3d1a3f2a09",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/layout-host.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/layout.png",
+      "sha256": "92f8d6103344d2c98ef55be55951a044adef6b3878d5c0f3ea3a1d3d1a3f2a09",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/navigation-final.png",
+      "sha256": "6ea3d03e85e26dc0bf366ddc543d4a9a29f97d5b099eb6b741c9170354b6e63a",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/navigation-host.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/navigation-menu-more.png",
+      "sha256": "b1951e58adac14eb642efb33f44f3a9cd2c05d4f934b43d4c0f10e07c34897e3",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/navigation.png",
+      "sha256": "2ebcd4e9f8979ccc22646d818e46eedcbe6efa9218690f85d463dafda6479241",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-dialog-confirm-trash.png",
+      "sha256": "a34c2f4563f809d30b957dcbea263983a88951f708e050a5eeba6246f2e154f0",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-dialog-copy-to.png",
+      "sha256": "b35570d22862d5dca75273963a899143ace90dd199c6e6463bc772c21065ffc2",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-dialog-move-to.png",
+      "sha256": "50a374c5843f4580201b98288dc297b0586e03de075c57de34b88853185dceb7",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-dialog-sumi-create-zip.png",
+      "sha256": "5455ce09e0ecbfa73b2693bce2eb878e09058de48dac8de37f1cc2995caf201d",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-dialog-sumi-new-folder.png",
+      "sha256": "10cf265f02828ea59695e8cc48b3faf951e85776ce07ef6879b11be8a9098bba",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-dialog-sumi-permissions.png",
+      "sha256": "ac7a016bdb26c5b2c12aaa4a8fd6589f0a2609aee154730f063d13ffdb0a6c60",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-dialog-sumi-rename.png",
+      "sha256": "87285e44a50830f13f15ccc1f8b928e7b8195b40b20b4bda9b0eb2fdc413b3f7",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-final.png",
+      "sha256": "f80f86dea3110cbd82e578374033fc657122ea74dca70d31938bfa3b2d22a770",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-host.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations-menu-more.png",
+      "sha256": "e5a9de05dfc0925d30b48247a918c04f8fff0b8fb38891f5f774e829d7c1453b",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/operations.png",
+      "sha256": "f80f86dea3110cbd82e578374033fc657122ea74dca70d31938bfa3b2d22a770",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/viewport-1000x700.png",
+      "sha256": "8e20d21417a9b79a5ca47437aadc73a7ad0612db1334435d9a18ca794ab8a30e",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/viewport-1280x800.png",
+      "sha256": "8cbfd0952b6fe4693f46ae6f0b94a33c3ad597a9f3c577e16325d21e9786bc2e",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/viewport-1600x900.png",
+      "sha256": "696c5e81fe8f31daf848e26554c74cdeaf6fdafb8d8e6f480511cf2fbc1cf3ab",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/viewports-dialog-sumi-new-folder.png",
+      "sha256": "113f6482f1e706ee442059e522834b5840b82406f01b51441d6352a8f8142679",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/viewports-final.png",
+      "sha256": "71d34833c82d1e9a8b5af8c914a5da056ced3429fd4dec67191ec96733c95ab8",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/viewports-host.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/viewports-menu-more.png",
+      "sha256": "cd23417661c850aaa23d544dad060545d1554381b77fc0abbe582e5a9e15d3a0",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/viewports.png",
+      "sha256": "5a089c92e61708be96b94d039ecb8010e81c36ace2e683467985897ba271b55e",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/workflow-dialog-sumi-new-folder.png",
+      "sha256": "10cf265f02828ea59695e8cc48b3faf951e85776ce07ef6879b11be8a9098bba",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/workflow-dialog-sumi-rename.png",
+      "sha256": "660f59b69ceed93aab0e008dd0a68a6ba0e6b0162a09924e323a397965240b9d",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/workflow-final.png",
+      "sha256": "8ca77f25bcc88b026ef760f40075742342764b349d86c1cafbb003f24b25bfbb",
+      "kind": "screenshot"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/workflow-host.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "kind": "log"
+    },
+    {
+      "path": "/home/madblack-21/Cowork/Notes/dev/sumi-explorer/target/design/final-gui/workflow.png",
+      "sha256": "7fa044b4c643a0cfc3350f2954b0bd959b5f6e28090560ec7fda4614fcd26842",
+      "kind": "screenshot"
+    }
+  ]
+}

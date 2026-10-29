@@ -73,8 +73,8 @@ def run(args):
                 found = set(gui.xdo("search", "--sync", "--name", "^Sumi Explorer$").splitlines()) - previous
                 assert len(found) == 1, found
                 windows.append(found.pop())
-                gui.xdo("windowsize", windows[-1], "500", "500")
-                gui.xdo("windowmove", windows[-1], str(i * 600), "0")
+                gui.xdo("windowsize", windows[-1], "1000", "700")
+                gui.xdo("windowmove", windows[-1], str(i * 1100), "0")
             time.sleep(0.3)
 
             def drag(start, finish):
@@ -96,17 +96,13 @@ def run(args):
             sessions[0].command("select", str(source))
             gui.xdo("windowfocus", windows[0])
             gui.xdo("key", "Home")
-            # GIO order is not stable: the selected row's Y is discovered by
-            # actual clicks and published state, rather than assuming sorting.
-            def row_y(path):
-                for y in range(45, 200, 10):
-                    time.sleep(0.4)
-                    gui.xdo("mousemove", "80", str(y))
-                    gui.xdo("click", "1")
-                    time.sleep(0.06)
-                    if sessions[0].state()["selected"] == str(path):
-                        return y
-                raise AssertionError(f"No visible row for {path}")
+            # Discover row geometry, then verify it through actual pointer selection.
+            def row_point(path):
+                point = sessions[0].ui().row_point(path)
+                time.sleep(0.4)
+                gui.xdo("mousemove", *map(str, point)); gui.xdo("click", "1")
+                wait_for(lambda: sessions[0].state()["selected"] == str(path), "pointer-selected row")
+                return point
 
             sessions[0].command("select", str(folder))
             failed = sessions[0].command("open", str(roots[0] / "missing-directory"))
@@ -114,11 +110,11 @@ def run(args):
             response = sessions[0].directory / "response.ini"
             wait_for(lambda: response.exists() and b"status=error" in response.read_bytes(), "durable error response")
             durable = response.read_bytes()
-            file_y = row_y(source)
+            file_point = row_point(source)
             wait_for(lambda: sessions[0].state()["status"] == "ok", "mouse selection updates live state")
             assert response.read_bytes() == durable, "GUI selection overwrote command failure"
             print("PASS failed command response remains immutable after real mouse selection", flush=True)
-            drag((80, file_y), (800, 200))
+            drag(file_point, sessions[1].ui().point(role="list"))
             destination = roots[1] / source.name
             wait_for(lambda: destination.exists()
                      and (state := sessions[1].state())["status"] == "ok"
@@ -129,15 +125,15 @@ def run(args):
             print("PASS real Sumi -> separate Sumi process file-list COPY", flush=True)
 
             destination.write_bytes(b"existing destination must survive")
-            drag((80, file_y), (800, 200))
+            drag(file_point, sessions[1].ui().point(role="list"))
             wait_for(lambda: sessions[1].state()["status"] == "error", "collision error")
             assert destination.read_bytes() == b"existing destination must survive"
             assert "exist" in sessions[1].state()["message"].lower()
             print("PASS collision error preserves existing destination bytes", flush=True)
 
             sessions[1].command("refresh")
-            directory_y = row_y(folder)
-            drag((80, directory_y), (800, 200))
+            directory_point = row_point(folder)
+            drag(directory_point, sessions[1].ui().point(role="list"))
             directory_destination = roots[1] / folder.name
             nested_destination = directory_destination / nested.name / "spaced file.txt"
             wait_for(lambda: nested_destination.exists()
@@ -148,7 +144,7 @@ def run(args):
                 assert (directory_destination / relative).read_bytes() == (folder / relative).read_bytes()
                 assert (folder / relative).exists(), "Directory COPY deleted source"
             nested_destination.write_bytes(b"existing nested destination must survive\n")
-            drag((80, directory_y), (800, 200))
+            drag(directory_point, sessions[1].ui().point(role="list"))
             wait_for(lambda: (state := sessions[1].state())["status"] == "error"
                      and state["message"].startswith("0 completed, 0 skipped;"),
                      "directory COPY collision preflight completion")
@@ -162,10 +158,10 @@ def run(args):
 
             # Right-click must select the row under the pointer, not stale state.
             sessions[0].command("select", str(source))
-            gui.xdo("mousemove", "80", str(directory_y))
+            gui.xdo("mousemove", *map(str, directory_point))
             gui.xdo("click", "3")
             wait_for(lambda: sessions[0].state()["selected"] == str(folder), "right-click row selection")
-            gui.xdo("key", "Tab", "Return")
+            sessions[0].ui().click("Properties", "button")
             properties = gui.xdo("search", "--sync", "--name", "^Sumi Properties$")
             assert properties
             print("PASS real right-click row selection and context Properties window", flush=True)
@@ -183,19 +179,19 @@ def run(args):
             sessions.append(sender)
             sender.state()
             w = gui.xdo("search", "--sync", "--name", "^Sumi Explorer$").splitlines()[-1]
-            gui.xdo("windowsize", w, "500", "500")
+            gui.xdo("windowsize", w, "1000", "700")
             gui.xdo("windowmove", w, "0", "0")
             nautilus = subprocess.Popen(["nautilus", "--new-window", str(external)],
                                         stdout=environment_log, stderr=environment_log)
             nw = gui.xdo("search", "--sync", "--onlyvisible", "--class", "org.gnome.Nautilus").splitlines()[-1]
             gui.xdo("windowsize", nw, "650", "500")
-            gui.xdo("windowmove", nw, "600", "0")
+            gui.xdo("windowmove", nw, "1100", "0")
             time.sleep(0.5)
             sender.command("select", str(source))
             # Discover current sender row by real clicks as above.
             sessions[0] = sender
-            file_y = row_y(source)
-            drag((80, file_y), (900, 220))
+            file_point = row_point(source)
+            drag(file_point, (1400, 220))
             wait_for(lambda: (external / source.name).exists(), "Nautilus external COPY")
             assert (external / source.name).read_bytes() == source.read_bytes()
             assert source.exists()

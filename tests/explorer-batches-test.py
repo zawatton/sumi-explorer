@@ -198,15 +198,13 @@ def run(args):
             gui_cancel.mkdir()
             command("select-many", [paths[0], large, paths[2]])
             durable = (directory / "batch-result.ini").read_bytes()
-            gui.xdo("mousemove", "260", "542")
-            gui.xdo("click", "1")
+            session.ui().click("More", "button"); session.ui().click("Copy to…", "button")
+            session.ui().find("Destination path", "text")
             gui.xdo("key", "ctrl+a")
             gui.xdo("type", "--clearmodifiers", "--", "gui-cancel")
-            gui.xdo("mousemove", "30", "582")
-            gui.xdo("click", "1")
+            gui.xdo("key", "Return")
             wait(lambda: (gui_cancel / large.name).exists() and any((gui_cancel / large.name).iterdir()), "GUI batch partial copy")
-            gui.xdo("mousemove", "460", "582")
-            gui.xdo("click", "1")
+            session.ui().click("Cancel", "button")
             wait(lambda: session.state().get("status") == "error" and "partial new destination" in session.state().get("message", ""), "GUI batch partial warning")
             assert str(gui_cancel / large.name) in session.state()["message"]
             assert (directory / "batch-result.ini").read_bytes() == durable
@@ -226,30 +224,28 @@ def run(args):
 
 def selection_checks(gui, session, paths, command, read):
     window = gui.xdo("search", "--sync", "--name", "^Sumi Explorer$").splitlines()[-1]
-    gui.xdo("windowsize", window, "800", "600")
+    gui.xdo("windowsize", window, "1000", "700")
     gui.xdo("windowmove", window, "0", "0")
     gui.xdo("windowfocus", window)
     ys = {}
     for path in paths:
-        for y in range(45, 190, 12):
-            command("select-many", [])
-            time.sleep(0.3)
-            gui.xdo("mousemove", "80", str(y))
-            gui.xdo("click", "1")
-            time.sleep(0.04)
-            selected = read("selection.ini")["Selection"]
-            if selected["count"] == "1" and selected["path0"] == str(path):
-                ys[path] = y
-                break
+        command("select-many", [])
+        time.sleep(0.3)
+        point = session.ui().row_point(path)
+        gui.xdo("mousemove", *map(str, point)); gui.xdo("click", "1")
+        wait(lambda: read("selection.ini")["Selection"]["count"] == "1", "pointer row selection")
+        selected = read("selection.ini")["Selection"]
+        if selected["count"] == "1" and selected["path0"] == str(path):
+            ys[path] = point
         assert path in ys, path
-    ordered = sorted(paths, key=ys.__getitem__)
+    ordered = sorted(paths, key=lambda path: ys[path][1])
     command("select-many", [])
     time.sleep(0.3)
-    gui.xdo("mousemove", "80", str(ys[ordered[0]]))
+    gui.xdo("mousemove", *map(str, ys[ordered[0]]))
     gui.xdo("click", "1")
     gui.xdo("keydown", "ctrl")
     try:
-        gui.xdo("mousemove", "80", str(ys[ordered[1]]))
+        gui.xdo("mousemove", *map(str, ys[ordered[1]]))
         gui.xdo("click", "1")
     finally:
         gui.xdo("keyup", "ctrl")
@@ -260,11 +256,11 @@ def selection_checks(gui, session, paths, command, read):
     gui.xdo("key", "Escape")
     command("select-many", [])
     time.sleep(0.3)
-    gui.xdo("mousemove", "80", str(ys[ordered[0]]))
+    gui.xdo("mousemove", *map(str, ys[ordered[0]]))
     gui.xdo("click", "1")
     gui.xdo("keydown", "shift")
     try:
-        gui.xdo("mousemove", "80", str(ys[ordered[-1]]))
+        gui.xdo("mousemove", *map(str, ys[ordered[-1]]))
         gui.xdo("click", "1")
     finally:
         gui.xdo("keyup", "shift")
@@ -280,13 +276,12 @@ def gui_batch_trash(gui, session, root, paths, command, read):
     session.command("refresh")
     command("select-many", [a, b])
     durable = (session.directory / "batch-result.ini").read_bytes()
-    gui.xdo("mousemove", "385", "582")
-    gui.xdo("click", "1")
+    session.ui().click("Trash", "button")
     confirm = gui.xdo("search", "--sync", "--name", "^Confirm Trash$").splitlines()[-1]
     assert a.exists() and b.exists()
     command("select-many", [c])
     gui.xdo("windowfocus", confirm)
-    gui.xdo("key", "Return")
+    session.ui().click("Trash", "button")
     wait(lambda: not a.exists() and not b.exists(), "frozen GUI batch Trash")
     assert c.exists()
     assert (session.directory / "batch-result.ini").read_bytes() == durable
@@ -311,7 +306,7 @@ def selection_limits(gui, session, root, read):
     descriptor = os.open(os.fsencode(bad) + b"/bad-\xff", os.O_WRONLY | os.O_CREAT, 0o600)
     os.close(descriptor)
     session.command("open", str(bad))
-    gui.xdo("mousemove", "80", "52")
+    gui.xdo("mousemove", *map(str, session.ui().point(role="list item")))
     gui.xdo("click", "1")
     wait(lambda: read("selection.ini")["Selection"]["status"] == "error", "invalid filename compact error")
     assert read("selection.ini")["Selection"]["count"] == "0"
@@ -329,17 +324,19 @@ def multi_dnd(gui, session, root, paths, ys, command, artifacts):
     try:
         window = gui.xdo("search", "--sync", "--onlyvisible", "--class", "org.gnome.Nautilus").splitlines()[-1]
         gui.xdo("windowsize", window, "650", "500")
-        gui.xdo("windowmove", window, "600", "0")
+        gui.xdo("windowmove", window, "1100", "0")
         sender = gui.xdo("search", "--name", "^Sumi Explorer$").splitlines()[-1]
-        gui.xdo("windowsize", sender, "500", "500")
+        gui.xdo("windowsize", sender, "1000", "700")
         gui.xdo("windowmove", sender, "0", "0")
         command("select-many", paths[:2])
         gui.xdo("windowraise", sender)
-        gui.xdo("mousemove", "80", str(ys[paths[0]]))
+        start = session.ui().row_point(paths[0])
+        finish = (1400, 220)
+        gui.xdo("mousemove", *map(str, start))
         gui.xdo("mousedown", "1")
         try:
-            for x in (100, 180, 300, 450, 600, 750, 900):
-                gui.xdo("mousemove", str(x), "220")
+            for part in range(1, 9):
+                gui.xdo("mousemove", *(str(round(a+(b-a)*part/8)) for a,b in zip(start, finish)))
                 time.sleep(0.13)
             time.sleep(0.3)
         finally:

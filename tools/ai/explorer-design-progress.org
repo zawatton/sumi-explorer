@@ -1,0 +1,36 @@
+#+TITLE: Sumi Explorer familiar desktop interaction redesign
+#+NOTE: Nine newly defined criteria. The baseline application fails the new layout contract. Existing advanced, usability and broad Explorer criteria remain separate and are not removed.
+
+* S1 Layout and discoverability
+
+** S1.1 Tabs navigation address and left sidebar have coherent placement
+cmd: python3 tests/explorer-design-test.py --verify docs/design-validation.json --check layout
+
+** S1.2 Common commands and infrequent menus remain discoverable
+cmd: python3 tests/explorer-design-test.py --verify docs/design-validation.json --check actions
+
+** S1.3 Actual GUI fits all three defined viewports without clipped controls
+cmd: python3 tests/explorer-design-test.py --verify docs/design-validation.json --check viewports
+
+* S2 Interaction
+
+** S2.1 Mouse and keyboard preserve tabs folder navigation and filtering
+cmd: python3 tests/explorer-design-test.py --verify docs/design-validation.json --check navigation
+
+** S2.2 Operation dialogs context menus confirmations and cancellation work
+cmd: python3 tests/explorer-design-test.py --verify docs/design-validation.json --check operations
+
+** S2.3 Actual GUI file workflow completes without protocol substitution
+cmd: python3 tests/explorer-design-test.py --verify docs/design-validation.json --check workflow
+
+* S3 Integration and delivery
+
+** S3.1 Existing Linux and Windows behavior checks pass on current sources
+cmd: python3 tools/verify-validation.py
+cmd: python3 tools/verify-windows-validation.py
+
+** S3.2 Independent design and completion audit accepts current sources
+cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/design-review.json")); assert r["status"]=="accepted-for-delivery" and all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in r["sources"].items())'
+
+** S3.3 Redesigned desktop application is launched and visually reviewed
+cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/design-desktop.json")); assert hashlib.sha256(Path("explorer/sumi-explorer-native.el").read_bytes()).hexdigest()==r["native_source_sha256"] and hashlib.sha256(Path(r["published_screenshot"]).read_bytes()).hexdigest()==r["published_screenshot_sha256"]'

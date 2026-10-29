@@ -39,9 +39,13 @@ class Session:
         self.directory = session
         self.serial = 0
         self.log = (session / "host.log").open("wb")
+        environment = dict(os.environ, GTK_A11Y="atspi", SUMI_EXPLORER_ROOT=str(root), SUMI_EXPLORER_SESSION=str(session))
+        # A previous GUI inspection may have pinned another temporary bus.
+        # GTK must discover the provider belonging to this child's session.
+        environment.pop("AT_SPI_BUS_ADDRESS", None)
         self.process = subprocess.Popen(
             [str(binary)],
-            env=dict(os.environ, SUMI_EXPLORER_ROOT=str(root), SUMI_EXPLORER_SESSION=str(session)),
+            env=environment,
             stdout=self.log,
             stderr=subprocess.STDOUT,
         )
@@ -99,6 +103,122 @@ class Session:
                     self.process.kill()
                     self.process.wait(timeout=3)
         self.log.close()
+
+    def ui(self):
+        """Return PID-scoped accessibility geometry for real pointer interaction."""
+        return AccessibleUI(self.process.pid)
+
+
+class AccessibleUI:
+    """Discover GTK geometry; activation always uses actual mouse/keyboard input."""
+
+    def __init__(self, pid):
+        import gi
+        from gi.repository import GLib, Gio
+        address = os.environ.get("DBUS_SESSION_BUS_ADDRESS")
+        if not address:
+            raise AssertionError("Accessibility inspection requires an isolated D-Bus session")
+        # Resolve before importing Atspi: loading its library may establish the
+        # global connection before the explicit init() call below.
+        connection = Gio.DBusConnection.new_for_address_sync(
+            address, Gio.DBusConnectionFlags.AUTHENTICATION_CLIENT | Gio.DBusConnectionFlags.MESSAGE_BUS_CONNECTION,
+            None, None)
+        try:
+            reply = connection.call_sync("org.a11y.Bus", "/org/a11y/bus", "org.a11y.Bus", "GetAddress",
+                None, GLib.VariantType.new("(s)"), Gio.DBusCallFlags.NONE, 5000, None)
+            a11y_address = reply.unpack()[0]
+        finally:
+            connection.close_sync(None)
+        os.environ["AT_SPI_BUS_ADDRESS"] = a11y_address
+        gi.require_version("Atspi", "2.0")
+        from gi.repository import Atspi
+        self.api, self.context, self.pid = Atspi, GLib.MainContext.default(), pid
+        # The harness is dynamically imported under several module names, but
+        # libatspi owns one process-global connection. Keep its ownership on the
+        # shared GI module rather than on this repeatedly reloaded Python class.
+        if hasattr(Atspi, "_sumi_bus_address") and Atspi._sumi_bus_address != address:
+            # libatspi in this image cannot safely reinitialize its desktop
+            # caches after exit(). Refuse before querying a dead connection.
+            raise AssertionError("Accessibility client bus changed; run the GUI phase in a fresh Python process")
+        if not hasattr(Atspi, "_sumi_bus_address"):
+            # init() is lazy: keep this address pinned through get_desktop()
+            # and subsequent calls, rather than restoring the stale X11 path.
+            Atspi.init()
+            Atspi._sumi_bus_address = address
+
+    def nodes(self):
+        # Deliver AT-SPI lifecycle events so destroyed dialogs and old names
+        # cannot remain in libatspi's client-side cache between interactions.
+        while self.context.pending():
+            self.context.iteration(False)
+        desktop = self.api.get_desktop(0)
+        applications = [desktop.get_child_at_index(i) for i in range(desktop.get_child_count())]
+        stack = [app for app in applications if app.get_process_id() == self.pid]
+        result = []
+        while stack:
+            node = stack.pop()
+            node.clear_cache()
+            result.append(node)
+            if len(result) > 4096:
+                raise AssertionError("Accessibility tree exceeded bounded discovery")
+            stack.extend(node.get_child_at_index(i) for i in range(node.get_child_count()))
+        return result
+
+    def rect(self, node):
+        # GTK 4.18 reports (0,0) for SCREEN coordinates under Xvfb. WINDOW
+        # coordinates are accurate; add the actual PID-scoped X11 origin.
+        bounds = node.get_component_iface().get_extents(self.api.CoordType.WINDOW)
+        frame = node
+        while frame.get_role_name() != "frame" and frame.get_parent() is not None:
+            frame = frame.get_parent()
+        if frame.get_role_name() != "frame":
+            raise AssertionError(f"No owning window for {node.get_name()!r}")
+        windows = xdo("search", "--all", "--onlyvisible", "--pid", str(self.pid), "--name", "^" + re.escape(frame.get_name()) + "$").splitlines()
+        geometries = [dict(line.split("=", 1) for line in xdo("getwindowgeometry", "--shell", window).splitlines()) for window in windows]
+        origin = max(geometries, key=lambda g: int(g["WIDTH"])*int(g["HEIGHT"]))
+        return bounds.x+int(origin["X"]), bounds.y+int(origin["Y"]), bounds.width, bounds.height
+
+    def find(self, name=None, role=None, visible=True, seconds=5):
+        end = time.monotonic() + seconds
+        while True:
+            for node in self.nodes():
+                if ((name is None or node.get_name() == name)
+                        and (role is None or node.get_role_name() == role)):
+                    if not visible or node.get_state_set().contains(self.api.StateType.SHOWING):
+                        return node
+            if time.monotonic() >= end:
+                raise AssertionError(f"No accessible {name!r} role={role!r} for PID {self.pid}")
+            time.sleep(0.05)
+
+    def point(self, name=None, role=None):
+        node = self.find(name, role)
+        x, y, width, height = self.rect(node)
+        if width <= 0 or height <= 0:
+            raise AssertionError(f"Invisible geometry: {name!r}")
+        # GTK's accessible allocation omits CSS content insets. The lower
+        # interior remains inside the actual button under the supported theme,
+        # including the dialog's 18px outer margin (a 34px button is typical).
+        return x + width // 2, y + (height * 3 // 4 if node.get_role_name() == "button" else height // 2)
+
+    def click(self, name=None, role=None, button=1):
+        xdo("mousemove", *map(str, self.point(name, role)))
+        xdo("click", str(button))
+
+    def row_point(self, path):
+        """Find a row through its filename label, then use the row's geometry."""
+        node = self.find(Path(path).name)
+        while node.get_parent() is not None:
+            if node.get_role_name() in {"list item", "table row"}:
+                break
+            node = node.get_parent()
+        x, y, width, height = self.rect(node)
+        if width <= 0 or height <= 0:
+            raise AssertionError(f"File row is not visible: {path}")
+        return x + min(width // 2, 80), y + height // 2
+
+    def row_click(self, path, button=1):
+        xdo("mousemove", *map(str, self.row_point(path)))
+        xdo("click", str(button))
 
 
 def xdo(*arguments: str) -> str:

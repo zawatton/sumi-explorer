@@ -57,11 +57,13 @@ def cut_completion_unit(artifacts, first, second, third):
     (if (or (= (ptr-read-u64 ctx 616) 0) (> (ptr-read-u64 ctx 136) 500))
       (seq (extern-call g_main_loop_quit (ptr-read-u64 ctx 0)) 0) 1)))
  (defun main (argc argv)
-   (let ((ctx (extern-call g_malloc0 728)) (window 0) (paths (extern-call g_malloc0 24))
+   (let ((ctx (extern-call g_malloc0 736)) (window 0) (paths (extern-call g_malloc0 24))
          (job (extern-call g_malloc0 120)) (items (extern-call g_malloc0 24))
          (a (extern-call g_malloc0 104)) (b (extern-call g_malloc0 104)) (c (extern-call g_malloc0 104)) (good 0) (generation 0) (read 0) (timer 0))
      (seq
       (extern-call gtk_init)
+      ;; Production publication reads the separately owned UI state at ctx728.
+      (ptr-write-u64 ctx 728 (extern-call g_malloc0 160))
       (setq window (extern-call gtk_window_new))
       (ptr-write-u64 ctx 568 (extern-call gtk_widget_get_clipboard window))
       (ptr-write-u64 paths 0 (ptr-read-u64 argv 8)) (ptr-write-u64 paths 8 (ptr-read-u64 argv 16))
@@ -130,6 +132,7 @@ def cut_completion_unit(artifacts, first, second, third):
       (sumi_explorer_paths_free (ptr-read-u64 ctx 600) (ptr-read-u64 ctx 608))
       (extern-call gtk_window_destroy window)
       (extern-call g_free a) (extern-call g_free b) (extern-call g_free c) (extern-call g_free items)
+      (extern-call g_free (ptr-read-u64 ctx 728))
       (extern-call g_free paths) (extern-call g_free job) (extern-call g_free ctx)
       (if good 0 1))))
 '''
@@ -277,8 +280,7 @@ def run(args):
             gui.xdo("key", "Down")
             session.wait(lambda state: state["selected"] == str(alpha))
             print("PASS actual GTK size ordering keeps directories first in both directions", flush=True)
-            gui.xdo("mousemove", "--window", window, "700", "52")
-            gui.xdo("click", "1")
+            session.ui().click("Filter current folder", "text")
             gui.xdo("key", "ctrl+a")
             gui.xdo("type", "Beta")
             gui.xdo("key", "Return")
@@ -289,14 +291,13 @@ def run(args):
             gui.xdo("key", "Return")
             wait(lambda: read("view.ini")["View"]["filter"] == "", "GUI filter clear")
             geometry = dict(line.split("=", 1) for line in gui.xdo("getwindowgeometry", "--shell", window).splitlines())
-            assert (geometry["WIDTH"], geometry["HEIGHT"]) == ("800", "600"), geometry
+            assert (geometry["WIDTH"], geometry["HEIGHT"]) == ("1000", "700"), geometry
             subprocess.run(["import", "-window", window, str(artifacts / "presentation.png")], check=True, timeout=8)
-            print("PASS pointer-driven filter control and captured 800x600 layout", flush=True)
+            print("PASS pointer-driven filter control and captured 1000x700 layout", flush=True)
             command("filter", "alpha")
             command("new-tab", root)
             assert read("view.ini")["View"]["filter"] == ""
-            gui.xdo("mousemove", "--window", window, "700", "52")
-            gui.xdo("click", "1")
+            session.ui().click("Filter current folder", "text")
             gui.xdo("key", "ctrl+w", "ctrl+t", "ctrl+n")
             time.sleep(0.15)
             assert read("workspace.ini")["Workspace"]["count"] == "2"
@@ -366,7 +367,7 @@ def run(args):
             confirmation = gui.xdo("search", "--sync", "--name", "^Confirm Trash$").splitlines()[-1]
             command("select", destination / alpha.name)
             gui.xdo("windowfocus", "--sync", confirmation)
-            gui.xdo("key", "Return")
+            session.ui().click("Trash", "button")
             wait(lambda: not renamed.exists(), "actual Delete frozen Trash confirmation")
             session.wait(lambda state: state["status"] == "ok" and state["message"] != "Operation in progress")
             assert (destination / alpha.name).exists(), "Trash must retain the frozen original target"
@@ -492,15 +493,19 @@ def run(args):
             peers.append(drop_session)
             drop_window = (set(gui.xdo("search", "--sync", "--name", "^Sumi Explorer$").splitlines()) - before_windows).pop()
             gui.xdo("windowmove", window, "0", "0")
-            gui.xdo("windowmove", drop_window, "600", "0")
+            gui.xdo("windowsize", window, "1000", "700")
+            gui.xdo("windowsize", drop_window, "1000", "700")
+            gui.xdo("windowmove", drop_window, "1100", "0")
             def drag_many():
                 gui.xdo("windowfocus", "--sync", window)
-                gui.xdo("mousemove", "80", "52")
+                start = session.ui().row_point(trees[0])
+                finish = drop_session.ui().point(role="list")
+                gui.xdo("mousemove", *map(str, start))
                 time.sleep(0.4)
                 gui.xdo("mousedown", "1")
                 try:
                     for part in range(1, 11):
-                        gui.xdo("mousemove", str(80 + part * 72), str(52 + part * 5))
+                        gui.xdo("mousemove", *(str(round(a+(b-a)*part/10)) for a,b in zip(start, finish)))
                         time.sleep(0.05)
                 finally:
                     gui.xdo("mouseup", "1")
@@ -520,9 +525,8 @@ def run(args):
             print("PASS real external multi-directory/symlink DND COPY and collision preflight preserve bytes and sources", flush=True)
             gui.xdo("windowfocus", "--sync", window)
             command("select", folder)
-            gui.xdo("mousemove", "80", "52")
-            gui.xdo("click", "3")
-            gui.xdo("key", "Tab", "Tab", "Return")
+            session.ui().row_click(folder, 3)
+            session.ui().click("New tab", "button")
             session.wait(lambda state: state["directory"] == str(folder))
             assert read("workspace.ini")["Workspace"]["count"] == "3"
             command("close-tab")
@@ -532,8 +536,7 @@ def run(args):
             command("refresh")
             command("select", folder)
             visible_before = set(gui.xdo("search", "--onlyvisible", "--pid", str(session.process.pid)).splitlines())
-            gui.xdo("mousemove", "80", "52")
-            gui.xdo("click", "3")
+            session.ui().row_click(folder, 3)
             gui.xdo("key", "Tab", "Tab")
             popups = set(gui.xdo("search", "--onlyvisible", "--pid", str(session.process.pid)).splitlines()) - visible_before
             assert popups, "Expected a real mapped GTK context popup surface"

@@ -82,12 +82,12 @@ subprocess.run([cc, "-std=c11", "-Wall", "-Wextra", "-Werror", *cflags,
 subprocess.run([str(zip_io)], check=True)
 PY
     xvfb-run -a python3 tests/explorer-gui-test.py --binary "$binary" --group all
-    xvfb-run -a dbus-run-session -- python3 tests/explorer-dnd-test.py --binary "$binary"
+    xvfb-run -a -s '-screen 0 2200x1080x24' dbus-run-session -- python3 tests/explorer-dnd-test.py --binary "$binary"
     xvfb-run -a emacs -Q --batch -L explorer -l tests/sumi-explorer-integration-test.el
-    xvfb-run -a python3 tests/explorer-operations-test.py --binary "$binary"
-    xvfb-run -a dbus-run-session -- python3 tests/explorer-batches-test.py --binary "$binary"
+    xvfb-run -a -s '-screen 0 2200x1080x24' python3 tests/explorer-operations-test.py --binary "$binary"
+    xvfb-run -a -s '-screen 0 2200x1080x24' dbus-run-session -- python3 tests/explorer-batches-test.py --binary "$binary"
     xvfb-run -a dbus-run-session -- python3 tests/explorer-workspace-test.py --binary "$binary"
-    xvfb-run -a dbus-run-session -- python3 tests/explorer-everyday-test.py --binary "$binary"
+    xvfb-run -a -s '-screen 0 2200x1080x24' dbus-run-session -- python3 tests/explorer-everyday-test.py --binary "$binary"
     xvfb-run -a dbus-run-session -- python3 tests/explorer-advanced-test.py --binary "$binary"
 }
 

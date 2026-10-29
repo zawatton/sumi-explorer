@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "platform": "Linux X11",
+  "binary_sha256": "ae570494e9cba0ac52487644c1e0a5a0fc29ae15ae30e3d5a0ad8ac17c415a6b",
+  "native_source_sha256": "6678e925c53c6454245b61573142c831d779f638537b605c097bf1dc07663825",
+  "visible_window_title": "Sumi Explorer",
+  "observed_state": "[Explorer]\nversion=1\nrequest=0\nstatus=ok\ndirectory=/home/madblack-21/Cowork/Notes/dev/sumi-explorer\nselected=\nmessage=\n",
+  "application_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "desktop_screenshot_sha256": "6cfa1abb92bfb30e43865a4050b5165f5f42766cc51b0399325b229965836a92",
+  "published_screenshot": "docs/images/explorer-redesign.png",
+  "published_screenshot_sha256": "5edaf581cfa0188e15f5ab2c204b4dbea7428dcc0d6894a9f32dd56a764a396b",
+  "scope": "Actual desktop startup, visible native window and screenshot inspection; no claim of Windows or macOS desktop execution."
+}

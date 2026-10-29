@@ -27,6 +27,21 @@ reports actual completion and partial output. Owned paths/context remain alive
 through completion. The sender receives no asynchronous filesystem result.
 Outbound DND exports every selected path; the receiver owns its operation.
 
+* Desktop layout
+
+Tabs stay above the navigation and command bars. Use the left pane for Home
+and bookmarks, and the central pane for files. The address field opens a typed
+directory; the separate filter matches names in the current folder only.
+
+The command bar groups everyday actions. =Sort= and =View= contain presentation
+settings; =More= contains less frequent operations. Clipboard =Copy= / =Cut=
+followed by =Paste= uses the current destination folder. =Copy to...= and
+=Move to...= instead ask for an explicit destination. Rename, new-folder and
+archive actions request their inputs when needed. The bottom status area keeps
+operation feedback and cancellation together.
+
+[[file:docs/images/explorer-redesign.png]]
+
 * Build and run
 
 Install GTK4 and libarchive development libraries with =pkg-config= metadata,
@@ -263,7 +278,9 @@ Client tests need GNU Emacs, Python 3 for a startup fixture, and standard =cat=
 and =true= utilities. Native tests additionally need the built binary, Xvfb
 (=xvfb-run=), xdotool, xwininfo, ImageMagick's =import=, xclip, Nautilus,
 =dbus-run-session=, =pkg-config= metadata for GTK4/libarchive and the
-=CC= compiler driver (default =cc=). They also need the external NeLisp AOT
+=CC= compiler driver (default =cc=). Pointer tests use Python's PyGObject
+=gi= module, the =Atspi 2.0= typelib and a working accessibility bus to locate
+controls by accessible name and actual window-relative geometry. They also need the external NeLisp AOT
 compiler for a focused acceptance unit, even after the app has been built.
 Keep the pinned =NELISP_REPO_ROOT= export above for later test commands. The
 helper respects an explicit checkout path (relative paths resolve against this
@@ -271,6 +288,20 @@ repository), otherwise tries =target/deps/nelisp= and then sibling =../nelisp=;
 it requires =nelisp-aot-compiler.el= under =lisp/= or =src/= and downloads nothing.
 Python implements tests and record verification, not the application.
 Fixtures, configuration and Trash data are isolated by the helper.
+
+The separate layout suite exercises 28 checks across six groups, including
+three viewport sizes and real dialog/clipboard/Undo workflows:
+
+#+begin_src sh
+  (ulimit -v 8388608; xvfb-run -a -s '-screen 0 2200x1200x24' dbus-run-session -- \
+    python3 tests/explorer-design-test.py --binary target/sumi-explorer --artifacts target/design-local)
+  (ulimit -v 8388608; python3 tests/explorer-design-test.py \
+    --verify target/design-local/design-validation.json)
+#+end_src
+
+Layout-record verification checks the retained local binary, logs and screenshots;
+it does not rerun the GUI. Regenerate that record in a fresh checkout before
+using it for local progress measurement. See the [[file:docs/explorer-redesign.md][interaction contract]].
 
 The helper works from any current directory, downloads nothing, caps its children
 at 8 GiB, and fails on missing dependencies. =client= runs warning-as-error byte

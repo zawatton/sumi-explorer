@@ -155,12 +155,11 @@ def run(args):
 
             (a / "keyboard-row").touch()
             window = gui.xdo("search", "--sync", "--name", "^Sumi Explorer$").splitlines()[-1]
-            gui.xdo("windowsize", window, "800", "600")
+            gui.xdo("windowsize", window, "1000", "700")
             gui.xdo("windowmove", window, "0", "0")
             gui.xdo("windowfocus", window)
             command("open", root)
-            gui.xdo("mousemove", "80", "52")
-            gui.xdo("click", "1")
+            session.ui().row_click(a)
             gui.xdo("key", "ctrl+t")
             wait(lambda: len(workspace()[1]) == 2, "Ctrl+T actual tab creation")
             newest = workspace()[0]
@@ -176,8 +175,7 @@ def run(args):
             # Editing shortcuts must not create/close tabs while entry owns focus.
             gui.xdo("key", "ctrl+w")
             assert len(workspace()[1]) == 2
-            gui.xdo("mousemove", "80", "52")
-            gui.xdo("click", "1")
+            session.ui().row_click(a / "keyboard-row")
             gui.xdo("key", "alt+Left")
             wait(lambda: session.state()["directory"] == str(root), "Alt+Left")
             gui.xdo("key", "alt+Right")

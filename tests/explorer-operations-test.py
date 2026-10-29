@@ -162,62 +162,57 @@ def run(args):
 
 def gui_checks(gui, session, root, wait, begin, finish):
     window = gui.xdo("search", "--sync", "--name", "^Sumi Explorer$").splitlines()[-1]
-    gui.xdo("windowsize", window, "800", "600")
+    gui.xdo("windowsize", window, "1000", "700")
     gui.xdo("windowmove", window, "0", "0")
     gui.xdo("windowfocus", window)
     time.sleep(0.15)
 
-    def click(x, y, relative=None):
-        coordinates = ["mousemove"]
-        if relative:
-            coordinates += ["--window", relative]
-        gui.xdo(*coordinates, str(x), str(y))
-        gui.xdo("click", "1")
-
-    def destination(text):
-        click(260, 542)
+    def operation(action, text):
+        ui = session.ui()
+        if action in {"Copy to…", "Move to…"}:
+            ui.click("More", "button"); ui.click(action, "button")
+        else:
+            ui.click(action, "button")
+        ui.find("Destination path" if action in {"Copy to…", "Move to…"} else "Name", "text")
         gui.xdo("key", "ctrl+a")
         gui.xdo("type", "--clearmodifiers", "--", text)
+        gui.xdo("key", "Return")
 
     source = root / "gui-source.txt"
     source.write_bytes(b"GUI bytes")
     session.command("refresh")
     session.command("select", str(source))
     durable = (session.directory / "response.ini").read_bytes()
-    destination("gui-copy.txt")
-    click(30, 582)
+    operation("Copy to…", "gui-copy.txt")
     copied = root / "gui-copy.txt"
     wait(lambda: copied.exists(), "pointer Copy")
     wait(lambda: session.state().get("message") == "", "GUI Copy completion")
     assert copied.read_bytes() == b"GUI bytes"
     assert (session.directory / "response.ini").read_bytes() == durable
     session.command("select", str(copied))
-    destination("gui-renamed.txt")
-    click(190, 582)
+    operation("Rename", "gui-renamed.txt")
     renamed = root / "gui-renamed.txt"
     wait(lambda: renamed.exists() and not copied.exists(), "pointer Rename")
     wait(lambda: session.state().get("message") == "", "GUI Rename completion")
-    destination("gui-folder")
-    click(290, 582)
+    operation("New folder", "gui-folder")
     folder = root / "gui-folder"
     wait(folder.is_dir, "pointer New Folder")
     wait(lambda: session.state().get("message") == "", "GUI mkdir completion")
     session.command("select", str(renamed))
-    destination("gui-folder/gui-moved.txt")
-    click(100, 582)
+    operation("Move to…", "gui-folder/gui-moved.txt")
     moved = folder / "gui-moved.txt"
     wait(lambda: moved.exists() and not renamed.exists(), "pointer Move")
     wait(lambda: session.state().get("message") == "", "GUI Move completion")
     session.command("open", str(folder))
     session.command("select", str(moved))
-    click(385, 582)
+    session.ui().click("Trash", "button")
     confirm = gui.xdo("search", "--sync", "--name", "^Confirm Trash$").splitlines()[-1]
     assert moved.exists(), "Trash happened before confirmation"
-    click(60, 92, confirm)
+    session.ui().click("Cancel", "button")
     assert moved.exists(), "Cancelling confirmation removed source"
-    click(385, 582)
+    session.ui().click("Trash", "button")
     confirm = gui.xdo("search", "--sync", "--name", "^Confirm Trash$").splitlines()[-1]
-    click(60, 43, confirm)
+    session.ui().click("Trash", "button")
     wait(lambda: not moved.exists(), "pointer-confirmed Trash")
     wait(lambda: session.state().get("message") == "", "GUI Trash completion")
     session.command("open", str(root))
@@ -225,8 +220,7 @@ def gui_checks(gui, session, root, wait, begin, finish):
 
     large = root / "cancel source"
     session.command("select", str(large))
-    destination("gui-long-copy")
-    click(30, 582)
+    operation("Copy to…", "gui-long-copy")
     created = root / "gui-long-copy"
     wait(lambda: created.exists() and any(created.iterdir()), "GUI async copy starts")
     # Publish a future request and its cancellation while GUI ID0 is active.
@@ -239,11 +233,10 @@ def gui_checks(gui, session, root, wait, begin, finish):
     assert "cancel" in response["message"].lower() and not queued.exists()
     print("PASS queued protocol cancel survives active GUI task and prevents its mutation", flush=True)
     session.command("select", str(large))
-    destination("gui-cancel-copy")
-    click(30, 582)
+    operation("Copy to…", "gui-cancel-copy")
     cancelled = root / "gui-cancel-copy"
     wait(lambda: cancelled.exists() and any(cancelled.iterdir()), "GUI copy starts before Cancel")
-    click(460, 582)
+    session.ui().click("Cancel", "button")
     wait(lambda: session.state().get("status") == "error" and "cancel" in session.state().get("message", "").lower(), "GUI Cancel completion")
     assert len(list(large.iterdir())) == 10000
     session.command("refresh")
@@ -273,18 +266,20 @@ def dnd_failure_checks(gui, binary, base, artifacts):
                 return next(iter(found)) if found else None
             window = wait(mapped, "peer native window")
             windows.append(window)
-            gui.xdo("windowsize", window, "500", "500")
-            gui.xdo("windowmove", window, str(index * 600), "0")
+            gui.xdo("windowsize", window, "1000", "700")
+            gui.xdo("windowmove", window, str(index * 1100), "0")
         sessions[0].command("select", str(path))
         target.chmod(0o500)
 
         def drag():
             gui.xdo("windowraise", windows[0])
-            gui.xdo("mousemove", "80", "52")
+            start = sessions[0].ui().row_point(path)
+            finish = sessions[1].ui().point(role="list")
+            gui.xdo("mousemove", *map(str, start))
             gui.xdo("mousedown", "1")
             try:
-                for x in (100, 180, 300, 420, 550, 680, 800):
-                    gui.xdo("mousemove", str(x), "150")
+                for part in range(1, 9):
+                    gui.xdo("mousemove", *(str(round(a+(b-a)*part/8)) for a,b in zip(start, finish)))
                     time.sleep(0.1)
                 time.sleep(0.2)
             finally:

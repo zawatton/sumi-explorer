@@ -512,9 +512,11 @@ def undo_cases(args):
         base = Path(temporary)
         root, session_path = base / "root", base / "session"
         root.mkdir(); session_path.mkdir()
-        previous = {key: os.environ.get(key) for key in ("XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "DBUS_SESSION_BUS_ADDRESS")}
-        for key in ("XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME"):
-            path = base / key.lower(); path.mkdir(); os.environ[key] = str(path)
+        previous = {key: os.environ.get(key) for key in ("XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS")}
+        # Separate bus launchers on one display otherwise share an AT-SPI
+        # socket path and the private launcher can replace the outer socket.
+        for key in ("XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_RUNTIME_DIR"):
+            path = base / key.lower(); path.mkdir(mode=0o700); os.environ[key] = str(path)
         bus = subprocess.check_output(["dbus-daemon", "--session", "--fork", "--print-address=1", "--print-pid=1"], text=True, timeout=10).splitlines()
         os.environ["DBUS_SESSION_BUS_ADDRESS"] = bus[0]
         session = gui.Session(args.binary.resolve(), root, session_path)
@@ -673,7 +675,7 @@ def single_select_cases(args):
             durable = (session_path / "response.ini").read_bytes()
             window = gui.xdo("search", "--onlyvisible", "--sync", "--name", "^Sumi Explorer$").splitlines()[-1]
             gui.xdo("windowfocus", "--sync", window)
-            gui.xdo("mousemove", "--window", window, "150", "76"); gui.xdo("click", "1")
+            session.ui().row_click(other)
             session.wait(lambda state: state["selected"] == str(other))
             assert (session_path / "response.ini").read_bytes() == durable
             before = (session_path / "selection.ini").read_bytes()
@@ -1153,7 +1155,7 @@ def busy_guard_cases(args):
         try:
             window = gui.xdo("search", "--onlyvisible", "--sync", "--name", "^Sumi Explorer$").splitlines()[-1]
             gui.xdo("windowfocus", "--sync", window)
-            gui.xdo("mousemove", "--window", window, "150", "52"); gui.xdo("click", "1")
+            session.ui().row_click(original)
             request = session_path / "request.ini"
             request.write_text(f"[Explorer]\nversion=1\nrequest=1\ncommand=copy\npath={gui.escape(str(original))}\ndestination={gui.escape(str(target))}\n")
             deadline = time.monotonic() + 20
@@ -1241,7 +1243,7 @@ def gui_cases(args):
             window = gui.xdo("search", "--onlyvisible", "--sync", "--name", "^Sumi Explorer$").splitlines()[-1]
             gui.xdo("windowfocus", "--sync", window)
             geometry = gui.xdo("getwindowgeometry", "--shell", window)
-            assert "WIDTH=800" in geometry and "HEIGHT=600" in geometry, geometry
+            assert "WIDTH=1000" in geometry and "HEIGHT=700" in geometry, geometry
 
             def wait(check, description):
                 end = time.monotonic() + 20
@@ -1272,10 +1274,6 @@ def gui_cases(args):
             def top_operation(operation):
                 saved = configparser.ConfigParser(); saved.read(session_path / "undo.ini")
                 return saved.has_section("Undo0") and saved["Undo0"]["operation"] == operation
-
-            def row_y(path):
-                entries = sorted(path.parent.iterdir(), key=lambda item: (not item.is_dir(), item.name.casefold()))
-                return str(52 + 24 * entries.index(path))
 
             result = command("chmod", first, "0640")
             assert result["status"] == "ok", result
@@ -1320,9 +1318,9 @@ def gui_cases(args):
             print("PASS actual GTK permissions prompt freezes target and rejects replacement at Apply", flush=True)
 
             command("select", first); gui.xdo("windowfocus", "--sync", window)
-            gui.xdo("mousemove", "--window", window, "80", row_y(first)); gui.xdo("click", "3")
+            session.ui().row_click(first, 3)
             # Folder-only New Tab/New Window are insensitive for this file.
-            gui.xdo("key", *( ["Tab"] * 8 + ["Return"] ))
+            session.ui().click("Create ZIP", "button")
             dialog = prompt("Sumi Create ZIP")
             command("select", other)
             archive = base / "GUI frozen 日本語.zip"; enter(dialog, archive)
@@ -1333,8 +1331,8 @@ def gui_cases(args):
             assert command("open", base)["status"] == "ok"
             command("select", archive); gui.xdo("windowfocus", "--sync", window)
             # Right-click the selected row using its real y coordinate from display order.
-            gui.xdo("mousemove", "--window", window, "80", row_y(archive)); gui.xdo("click", "3")
-            gui.xdo("key", *( ["Tab"] * 9 + ["Return"] ))
+            session.ui().row_click(archive, 3)
+            session.ui().click("Extract ZIP", "button")
             dialog = prompt("Sumi Extract ZIP"); extracted = base / "GUI extracted 日本語"; enter(dialog, extracted)
             wait(lambda: (extracted / first.name).exists() and top_operation("zip-extract"), "GUI ZIP extraction")
             assert (extracted / first.name).read_bytes() == first.read_bytes()

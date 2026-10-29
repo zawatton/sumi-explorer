@@ -2,9 +2,9 @@
   "schema_version": 1,
   "run": {
     "repository": "https://github.com/zawatton/sumi-explorer",
-    "id": 40806815295,
+    "id": 40819015682,
     "attempt": 1,
-    "commit": "b9ea315cb5e743177d7fdf7533b07db06b7b918f",
+    "commit": "5f0af72d7c9e0f677d07e5102f0d8c53a15b2a85",
     "conclusion": "success"
   },
   "compiler": {
@@ -20,7 +20,7 @@
     "archive_sha256": "414d3a1a21147af257ebd98bdd15976fdcb5ed0563f6de89f76d4a4b5dad9c72",
     "executable_sha256": "24848ae901463e3c56dac17031ddd45d58220723aa35102fc778458d17ff2f0b"
   },
-  "binary_sha256": "87f123c26d2256a7ecacc8e6ed39bf26774a9cf0176278671a14e0357fe3164f",
+  "binary_sha256": "cb5fbcb7edeb220f3f1929269029b5ed877111e826491b9233b7b839093c1e9b",
   "limits": {
     "per_process_private_commit_bytes": 8589934592,
     "job_private_commit_bytes": 8589934592,
@@ -34,7 +34,7 @@
     "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
     "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
     "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
-    "explorer/sumi-explorer-native.el": "764cc037998124765464bd931502d300cc5fff0bf8e773ecc4bcd4dcafcd50a8",
+    "explorer/sumi-explorer-native.el": "6678e925c53c6454245b61573142c831d779f638537b605c097bf1dc07663825",
     "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
     "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
     "tests/explorer-platform-windows-test.c": "f530e8c0522da4fd4b01d56c53d026481a1aa873efa4a64a7902962c79bf96de",
@@ -59,13 +59,13 @@
       "status": "pass",
       "exit_code": 0,
       "cases": 59,
-      "log_sha256": "b8ca21353e06868530678557c15854eb1fad0d202c3c8ae30d88e7e020360151"
+      "log_sha256": "b1abdf6bd19f3cbadc3d9a5a425c6e2ab0d23ae590c30f64193a1de07f973904"
     },
     "metadata": {
       "status": "pass",
       "exit_code": 0,
       "cases": 229,
-      "log_sha256": "913aaa6a04c58f6947fee697706e1e9da158fcc3a1b5a5add70f40ab9a019bee"
+      "log_sha256": "d771ce5bae9d1bc1905fbf77df49eaea2a8fdc31e593bbf8fb1fb7b9fc330615"
     },
     "zip_io": {
       "status": "pass",
@@ -89,7 +89,7 @@
       "status": "pass",
       "exit_code": 0,
       "cases": 1,
-      "log_sha256": "e2880b77c39bd9537e3b083c633c19d114a9a40aa2d0acac5f11ee8df0d4ad73"
+      "log_sha256": "e8aad2b3a23128bc20f449c267b6238d337862d5b5ed9226c2b94a89b95478e3"
     }
   },
   "limitations": [

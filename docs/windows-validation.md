@@ -1,8 +1,8 @@
 # Windows x86_64 validation evidence
 
 Status: **automated native feature acceptance passed**.
-[Run 40806815295](https://github.com/zawatton/sumi-explorer/actions/runs/40806815295)
-tested published main commit `b9ea315cb5e743177d7fdf7533b07db06b7b918f` on the `windows-2022` runner.
+[Run 40819015682](https://github.com/zawatton/sumi-explorer/actions/runs/40819015682)
+tested published main commit `5f0af72d7c9e0f677d07e5102f0d8c53a15b2a85` on the `windows-2022` runner.
 The [historical receipt](windows-validation.json) binds the final accepted run
 and its exact source bytes; this is narrower than complete Windows compatibility.
 

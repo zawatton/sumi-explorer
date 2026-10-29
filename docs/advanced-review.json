@@ -5,30 +5,35 @@
   "reviewer": {
     "model": "gpt-6-astra",
     "reasoning_effort": "ultra",
-    "scope": "Independent static code, tests, execution-receipt and publication-document audit; no tests rerun by the auditor."
+    "scope": "Prior independent advanced-increment audit plus final redesign code, retained-coverage and execution-receipt review; no runtime suites rerun by the auditor."
   },
   "base_commit": "a3334c6f2a0360ad741b92c706bbdb738df561b6",
   "sources": {
     ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
     ".github/workflows/windows-native.yml": "12a2e25c2eb40a71b2e624791de1e0a24a08cbac8185bf40b71518b398cfedd3",
-    "README.org": "e243925e24f77269512822b7dfad095b2b83aaf03d37a88d8b0576cdcc94e732",
+    "README.org": "314934e4ff7f31392dad1317d8f2b74af1021ee75943ef7b811c89850a73958c",
     "docs/advanced-features.md": "9f81d6861496fbe2708c803cb1b3ebe8d0ce71e91bc2d8dc51b1c687db3d1d64",
-    "docs/clean-validation.json": "2b2dddd369cd3675f5759dd2bf849193e45876ec514ee92af287aa206dc466ad",
+    "docs/clean-validation.json": "0945b6443f6b42d84d6c631b8b75a57d082283f705307c81c692147e36fe95bc",
+    "docs/design-desktop.json": "bd31f8163ef8a48afded9d3f9b65536ba25ce0d2a0044ced0131c6271e616515",
+    "docs/design-validation.json": "cb440be25ca1d2710e08e2ab983e0ceb98b1fc9489ddd5375e7b7090c76cb1c1",
     "docs/everyday-features.md": "0ed1a7781ad2ff2a01d673e3951c1bc4867186efe2f95d8da2cea2eb8b735e54",
+    "docs/explorer-redesign.md": "c817d68715143f193ded7461bb827d3305c3a6d04976278bda5215d57364141b",
     "docs/file-explorer.md": "88314e5914795f022fd3d47b7ea51ec2279cb43a41d8e988d2b32897df349fd8",
-    "docs/validation.json": "26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395",
-    "docs/windows-validation.json": "9b63c34e14c6011be220e1b59af73cdc5edcf5d8351891a8c6f3045fc27761be",
-    "docs/windows-validation.md": "cf27f1bb6eeea779b0005bd70658dd4d33c142416c81d2a2a38daf3026cd59f5",
+    "docs/images/explorer-redesign.png": "5edaf581cfa0188e15f5ab2c204b4dbea7428dcc0d6894a9f32dd56a764a396b",
+    "docs/validation.json": "76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772",
+    "docs/windows-validation.json": "aa79cd4a024f0e671e4390e82386661336f546ab1b74c3841a4a8341c15f2a23",
+    "docs/windows-validation.md": "7eab47cf6e93ea21261324eda3f748fec2705cd2bd9b8ce4dfe15ef8e97f328d",
     "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
     "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
     "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
     "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
     "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
-    "explorer/sumi-explorer-native.el": "764cc037998124765464bd931502d300cc5fff0bf8e773ecc4bcd4dcafcd50a8",
+    "explorer/sumi-explorer-native.el": "6678e925c53c6454245b61573142c831d779f638537b605c097bf1dc07663825",
     "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
-    "tests/explorer-advanced-test.py": "8057f2bfac44036488189cae5ed9dd73459db89948ad5b32c7cae486803c678a",
-    "tests/explorer-everyday-test.py": "ebcbcfd0e8ee876bfcb526900655b6e6cc7bfc6f1f971bba64dd8ee452796638",
-    "tests/explorer-operations-test.py": "0e7c831abe236b08ace3ab4afadf7bdef67da7df246958926444b75feee0fe6b",
+    "tests/explorer-advanced-test.py": "c606a21981c5fe20c772d4e1f4b053972d6ca5b9c8ac5666627353ec9a3ee6e8",
+    "tests/explorer-design-test.py": "12c69e84eb04ac406122ccb2eb77da2b9ade7ceb5eb26068ed3a319609f98bfe",
+    "tests/explorer-everyday-test.py": "6401a66361fca2750119f2bb378323ff80d38c321a522ab8896fa7a66dc79a05",
+    "tests/explorer-operations-test.py": "386840888cc758f8f49c16244fb9b6bfaa2fae463b94f13834f9d9b7561abfe7",
     "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
     "tests/explorer-platform-test.c": "dd5d10bbe060368715605aec0b5602a7216f54e29aad0df5f76befcc787ee0a1",
     "tests/explorer-platform-windows-test.c": "f530e8c0522da4fd4b01d56c53d026481a1aa873efa4a64a7902962c79bf96de",
@@ -36,7 +41,7 @@
     "tests/sumi-explorer-client-test.el": "68d0762f882c1c60229dd3a60b11da33885e1bb35ab99fd0fb9df4e14f361954",
     "tests/sumi-explorer-integration-test.el": "25fccbc984d24600a4fbcc82e4c8e8c702aac7e5e604682ec846c2c8fe137394",
     "tests/sumi-explorer-windows-test.el": "52a51a3642044e246db410a46aebbd10a3c4db2865938962e249037f66f4c25c",
-    "tools/check.sh": "96089def75816b74ed8db13f1ef2dfd7aff81095bd921e6d983a67379484cdee",
+    "tools/check.sh": "e7c3860e863a5adfb9196a0825ebe5273e20dac6a844e1019ddc4bbf7935d6b3",
     "tools/verify-validation.py": "d8985b423d550bec2ec50dc9df707250e3fc3ceaa255c5c9587c6f9ad41aae16",
     "tools/verify-windows-validation.py": "9437b0178cbe5f4818c6892dbf85b68dc8abe7a1b200a49d5335cde619757ff0",
     "tools/windows-native-check.ps1": "96fc0cb663a79f2173ee597d171c5c69e7b6d8e471493da133f829957114f455"
@@ -54,7 +59,7 @@
   },
   "execution": {
     "linux_defined_checks": 220,
-    "windows_run": 40806815295,
+    "windows_run": 40819015682,
     "windows_shell": 59,
     "windows_metadata": 229,
     "windows_zip_io": 63,
@@ -64,7 +69,9 @@
     "raw_windows_source_hashes_matched": 14,
     "original_python_assertions_retained": 206,
     "original_elisp_test_lines_retained": true,
-    "clean_public_linux_checks": 220
+    "clean_public_linux_checks": 220,
+    "redesign_gui_checks": 28,
+    "retained_python_assertions_current": 420
   },
   "remaining_delivery": [],
   "unverified": [
@@ -77,11 +84,12 @@
     "Session Undo remains conservative and identity-provider dependent; source/path revalidation does not eliminate every external-writer race."
   ],
   "delivery": {
-    "main_code_commit": "b9ea315cb5e743177d7fdf7533b07db06b7b918f",
-    "windows_main_run": 40806815295,
-    "clean_public_app_commit": "b9ea315cb5e743177d7fdf7533b07db06b7b918f",
+    "main_code_commit": "5f0af72d7c9e0f677d07e5102f0d8c53a15b2a85",
+    "windows_main_run": 40819015682,
+    "clean_public_app_commit": "5f0af72d7c9e0f677d07e5102f0d8c53a15b2a85",
     "clean_public_compiler_revision": "f3551799d210ed32f594383997843f0e1bf25e24",
     "clean_record": "docs/clean-validation.json",
-    "clean_record_sha256": "2b2dddd369cd3675f5759dd2bf849193e45876ec514ee92af287aa206dc466ad"
-  }
+    "clean_record_sha256": "0945b6443f6b42d84d6c631b8b75a57d082283f705307c81c692147e36fe95bc"
+  },
+  "redesign_base_commit": "274b67a492f90d0bc99ef66e8784e9a652f5d6eb"
 }

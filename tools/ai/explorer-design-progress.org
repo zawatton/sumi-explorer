@@ -31,6 +31,9 @@ cmd: python3 tools/verify-windows-validation.py
 
 ** S3.2 Independent design and completion audit accepts current sources
 cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/design-review.json")); assert r["status"]=="accepted-for-delivery" and all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in r["sources"].items())'
+evidence: docs/design-review.json sha256=982552a0c30524b6f1e80e616ba4fedc3e0024341ade2ac50583c698baf98f53
 
 ** S3.3 Redesigned desktop application is launched and visually reviewed
 cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/design-desktop.json")); assert hashlib.sha256(Path("explorer/sumi-explorer-native.el").read_bytes()).hexdigest()==r["native_source_sha256"] and hashlib.sha256(Path(r["published_screenshot"]).read_bytes()).hexdigest()==r["published_screenshot_sha256"]'
+evidence: docs/design-desktop.json sha256=bd31f8163ef8a48afded9d3f9b65536ba25ce0d2a0044ced0131c6271e616515
+evidence: docs/images/explorer-redesign.png sha256=5edaf581cfa0188e15f5ab2c204b4dbea7428dcc0d6894a9f32dd56a764a396b

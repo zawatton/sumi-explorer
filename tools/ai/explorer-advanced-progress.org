@@ -6,38 +6,38 @@
 
 ** S1.1 ZIP create and extract preserve Unicode nested bytes without overwrite
 cmd: python3 tools/verify-validation.py --check advanced
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 ** S1.2 Unsafe entries collisions bounds and cancellation fail safely
 cmd: python3 tools/verify-validation.py --check advanced
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 ** S1.3 Actual GUI and Emacs complete ZIP creation and extraction
 cmd: python3 tools/verify-validation.py --check advanced --check emacs_native --check gui
 cmd: python3 tools/verify-windows-validation.py
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 * S2 Undo
 
 ** S2.1 Successful outcomes produce bounded identity-checked undo records
 cmd: python3 tools/verify-validation.py --check advanced
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 ** S2.2 Undo preserves changed or replaced files and conflicting destinations
 cmd: python3 tools/verify-validation.py --check advanced
 cmd: python3 tools/verify-windows-validation.py
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 ** S2.3 Actual GUI and Emacs undo files ZIP and session Trash recovery
 cmd: python3 tools/verify-validation.py --check advanced --check operations --check emacs_native
 cmd: python3 tools/verify-windows-validation.py
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 * S3 Permission editing
 
 ** S3.1 Portable mode editing freezes targets and rejects symlink traversal
 cmd: python3 tools/verify-validation.py --check advanced --check emacs_native
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 ** S3.2 Windows Security editor adapter compiles against actual SDK interfaces
 cmd: python3 tools/verify-windows-validation.py
@@ -53,7 +53,7 @@ cmd: python3 tools/verify-windows-validation.py
 ** S4.2 GUI and Emacs menu entry points preserve frozen identities and errors
 cmd: python3 tools/verify-validation.py --check advanced --check client
 cmd: python3 tools/verify-windows-validation.py
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 ** S4.3 Actual Windows Shell menu displays invokes and cancels filesystem verbs
 cmd: python3 tools/verify-windows-validation.py
@@ -63,15 +63,15 @@ cmd: python3 tools/verify-windows-validation.py
 ** S5.1 Existing client and native regression assertions remain intact and pass
 cmd: python3 tools/verify-validation.py
 cmd: python3 tools/verify-windows-validation.py
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 ** S5.2 Independent review and source-bound records document verified limitations
 cmd: python3 tools/verify-validation.py
 cmd: python3 tools/verify-windows-validation.py
 cmd: python3 -c 'import hashlib,json; from pathlib import Path; r=json.load(open("docs/advanced-review.json")); assert r["status"]=="accepted-for-delivery" and all(hashlib.sha256(Path(n).read_bytes()).hexdigest()==h for n,h in r["sources"].items())'
-evidence: docs/advanced-review.json sha256=06c14b5d6b279f442dcc9e69a77b7e27acb00f0b83883658fdda593e9647e0a9
-evidence: docs/validation.json sha256=26bf9dbe00521c56dd2f5013c9a5630ad12d472f5c74e5819563b74dab31d395
+evidence: docs/advanced-review.json sha256=8394670f55fc68dc0249826789dcd1a32fa2807cfd54aa1f4f427326bc0956f7
+evidence: docs/validation.json sha256=76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772
 
 ** S5.3 Clean integrated build completes archive undo and permission workflows
 cmd: python3 tools/verify-validation.py --record docs/clean-validation.json
-evidence: docs/clean-validation.json sha256=2b2dddd369cd3675f5759dd2bf849193e45876ec514ee92af287aa206dc466ad
+evidence: docs/clean-validation.json sha256=0945b6443f6b42d84d6c631b8b75a57d082283f705307c81c692147e36fe95bc

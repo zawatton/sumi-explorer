@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-29",
+  "status": "accepted-for-delivery",
+  "reviewer": {
+    "model": "gpt-6-astra",
+    "reasoning_effort": "ultra",
+    "scope": "Independent design, code, retained-test and final evidence audit. Runtime suites were not rerun by the auditor; four read-only record verifiers and direct source/artifact hash checks were run."
+  },
+  "code_commit": "5f0af72d7c9e0f677d07e5102f0d8c53a15b2a85",
+  "redesign_base_commit": "274b67a492f90d0bc99ef66e8784e9a652f5d6eb",
+  "sources": {
+    ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
+    ".github/workflows/windows-native.yml": "12a2e25c2eb40a71b2e624791de1e0a24a08cbac8185bf40b71518b398cfedd3",
+    "README.org": "314934e4ff7f31392dad1317d8f2b74af1021ee75943ef7b811c89850a73958c",
+    "docs/advanced-features.md": "9f81d6861496fbe2708c803cb1b3ebe8d0ce71e91bc2d8dc51b1c687db3d1d64",
+    "docs/clean-validation.json": "0945b6443f6b42d84d6c631b8b75a57d082283f705307c81c692147e36fe95bc",
+    "docs/design-desktop.json": "bd31f8163ef8a48afded9d3f9b65536ba25ce0d2a0044ced0131c6271e616515",
+    "docs/design-validation.json": "cb440be25ca1d2710e08e2ab983e0ceb98b1fc9489ddd5375e7b7090c76cb1c1",
+    "docs/everyday-features.md": "0ed1a7781ad2ff2a01d673e3951c1bc4867186efe2f95d8da2cea2eb8b735e54",
+    "docs/explorer-redesign.md": "c817d68715143f193ded7461bb827d3305c3a6d04976278bda5215d57364141b",
+    "docs/file-explorer.md": "88314e5914795f022fd3d47b7ea51ec2279cb43a41d8e988d2b32897df349fd8",
+    "docs/images/explorer-redesign.png": "5edaf581cfa0188e15f5ab2c204b4dbea7428dcc0d6894a9f32dd56a764a396b",
+    "docs/validation.json": "76945bc66c808850c8a38e40b0873dd47e75d10f00b5b7435f7b5cae1c0fe772",
+    "docs/windows-validation.json": "aa79cd4a024f0e671e4390e82386661336f546ab1b74c3841a4a8341c15f2a23",
+    "docs/windows-validation.md": "7eab47cf6e93ea21261324eda3f748fec2705cd2bd9b8ce4dfe15ef8e97f328d",
+    "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
+    "explorer/platform-zip.h": "09feff589f0eb8e854c4ffe23fb50d7d13b640cc12905386e843fce2508a726b",
+    "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
+    "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
+    "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
+    "explorer/sumi-explorer-native.el": "6678e925c53c6454245b61573142c831d779f638537b605c097bf1dc07663825",
+    "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
+    "tests/explorer-advanced-test.py": "c606a21981c5fe20c772d4e1f4b053972d6ca5b9c8ac5666627353ec9a3ee6e8",
+    "tests/explorer-batches-test.py": "ff09c2e50eb81648f18f876a038e540f4b1219b0cde4e4321d2d2b658b8d390f",
+    "tests/explorer-design-test.py": "12c69e84eb04ac406122ccb2eb77da2b9ade7ceb5eb26068ed3a319609f98bfe",
+    "tests/explorer-dnd-test.py": "9a2ada101618b74d834887ce0c18163a4b75d96e05bc039f789eb5e78085b393",
+    "tests/explorer-everyday-test.py": "6401a66361fca2750119f2bb378323ff80d38c321a522ab8896fa7a66dc79a05",
+    "tests/explorer-gui-test.py": "492629080073bef845e8e0aa16d1a15a58bac1528513ce630d2f3ed47adcf58b",
+    "tests/explorer-operations-test.py": "386840888cc758f8f49c16244fb9b6bfaa2fae463b94f13834f9d9b7561abfe7",
+    "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
+    "tests/explorer-platform-test.c": "dd5d10bbe060368715605aec0b5602a7216f54e29aad0df5f76befcc787ee0a1",
+    "tests/explorer-platform-windows-test.c": "f530e8c0522da4fd4b01d56c53d026481a1aa873efa4a64a7902962c79bf96de",
+    "tests/explorer-platform-zip-test.c": "28201ed658115dd59ceb707af17f73acad1d644b82901d33ce6830323092a84f",
+    "tests/explorer-workspace-test.py": "91730d859b8707caa8a3b14784778c1d8646ff8e29b6fd383049028a9bb8635d",
+    "tests/sumi-explorer-client-test.el": "68d0762f882c1c60229dd3a60b11da33885e1bb35ab99fd0fb9df4e14f361954",
+    "tests/sumi-explorer-integration-test.el": "25fccbc984d24600a4fbcc82e4c8e8c702aac7e5e604682ec846c2c8fe137394",
+    "tests/sumi-explorer-windows-test.el": "52a51a3642044e246db410a46aebbd10a3c4db2865938962e249037f66f4c25c",
+    "tools/check.sh": "e7c3860e863a5adfb9196a0825ebe5273e20dac6a844e1019ddc4bbf7935d6b3",
+    "tools/verify-validation.py": "d8985b423d550bec2ec50dc9df707250e3fc3ceaa255c5c9587c6f9ad41aae16",
+    "tools/verify-windows-validation.py": "9437b0178cbe5f4818c6892dbf85b68dc8abe7a1b200a49d5335cde619757ff0",
+    "tools/windows-native-check.ps1": "96fc0cb663a79f2173ee597d171c5c69e7b6d8e471493da133f829957114f455"
+  },
+  "findings": {
+    "open_p1": 0,
+    "open_p2": 0,
+    "resolved": [
+      "Enter activation is visible in the current-folder filter placeholder.",
+      "The active tab exposes its accessible name through the GtkButton child label; actual AT-SPI proof and a failing old-binary control were reviewed.",
+      "The cut-completion fixture allocates and frees the new UI extension; old-fixture SIGSEGV and final-fixture success were demonstrated against the same native source.",
+      "The private D-Bus fixture isolates XDG_RUNTIME_DIR; the helper pins the current accessibility bus, clears stale child overrides and rejects unsupported client-bus switching."
+    ]
+  },
+  "code": {
+    "native_sha256": "6678e925c53c6454245b61573142c831d779f638537b605c097bf1dc07663825",
+    "linux_binary_sha256": "ae570494e9cba0ac52487644c1e0a5a0fc29ae15ae30e3d5a0ad8ac17c415a6b",
+    "accepted_code_audit_sha256": "1b797d28741769f4429e08e2448095bd7ae73e4fea8ab944834d0c79fbe51e10",
+    "retained_python_assertions": 420,
+    "identical_assertion_conditions": 418,
+    "intentional_assertion_changes": 2,
+    "assertion_change_scope": "Only default window geometry changed from 800x600 to 1000x700.",
+    "transfer_scope": "Dialogs own copied source pathname strings and directory strings. The operation engine establishes filesystem identities after acceptance; no dialog-open file-ID pinning is claimed."
+  },
+  "evidence": {
+    "candidate_snapshot_sha256": "242d2137418cf5f7994a5209849b2008fb405c4d93b5ccaceee71733539a33c7",
+    "candidate_scope": "Ten publication files matched at review time. This historical candidate includes the pre-approval advanced review; review JSON files are excluded from sources to avoid cycles.",
+    "source_binding_verifiers": {
+      "linux": "pass",
+      "clean_linux": "pass",
+      "windows": "pass",
+      "design_gui": "pass"
+    },
+    "linux": {
+      "defined_checks": 220,
+      "record": "docs/validation.json",
+      "actual_log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
+    },
+    "clean_public_linux": {
+      "defined_checks": 220,
+      "record": "docs/clean-validation.json",
+      "app_commit": "5f0af72d7c9e0f677d07e5102f0d8c53a15b2a85",
+      "origin": "https://github.com/zawatton/sumi-explorer.git",
+      "compiler_revision": "f3551799d210ed32f594383997843f0e1bf25e24",
+      "actual_log_sha256": "ef75ff46d135bb09d45bc9e43d556cbce17a9ea2de807f8e12c7a750d90af4f7",
+      "binary_matches_root": true
+    },
+    "gui": {
+      "groups": 6,
+      "checks": 28,
+      "record": "docs/design-validation.json",
+      "local_artifact_hash_verification": "pass",
+      "viewports": [
+        "1000x700",
+        "1280x800",
+        "1600x900"
+      ]
+    },
+    "windows": {
+      "run": 40819015682,
+      "attempt": 1,
+      "job": 123266822586,
+      "url": "https://github.com/zawatton/sumi-explorer/actions/runs/40819015682",
+      "github_api_confirmation": "completed/success; push on main at reviewed code commit",
+      "record": "docs/windows-validation.json",
+      "raw_source_csv_hashes_matched": 14,
+      "recorded_diagnostic_artifacts_matched": 8,
+      "actual_ert_pass_receipts": 4,
+      "ert_result_type": "ert-test-passed",
+      "ert_system_type": "windows-nt",
+      "shell_cases": 59,
+      "metadata_cases": 229,
+      "zip_io_cases": 63,
+      "negative_control_cases": 7,
+      "app_exit": 0
+    },
+    "desktop": {
+      "record": "docs/design-desktop.json",
+      "observed_running_pid": 3061694,
+      "running_executable_matches_reviewed_binary": true,
+      "actual_desktop_screenshot_sha256": "6cfa1abb92bfb30e43865a4050b5165f5f42766cc51b0399325b229965836a92",
+      "published_image": "docs/images/explorer-redesign.png",
+      "image_scope": "Published image is an actual application GUI-test screenshot. The separate actual desktop screenshot was also visually inspected; the auditor did not control the desktop."
+    },
+    "visual_review": "Reviewed final hierarchy, command placement, disabled-selection state, filter cue, active tab, left navigation, useful file area and bounded long-path/confirmation evidence. No layout blocker was found.",
+    "readme_review": "Dependency/local-artifact limitations are explicit. The final documentation-only Xvfb width correction matches the already-tested check.sh commands and does not change executable sources."
+  },
+  "limits": [
+    "Windows Security-page visual Cancel and ACL Apply remain unverified.",
+    "Third-party Shell extensions, broader Windows Properties interaction, external Windows Explorer transfer and packaging remain unverified.",
+    "macOS application runtime remains unverified.",
+    "Physical FAT/exFAT/ReFS and network-volume support is not established by injected provider controls; native Undo identity stamps support local NTFS only.",
+    "Path revalidation does not eliminate every external-writer race. Session Undo remains conservative and identity-provider dependent.",
+    "Historical receipts are editable evidence records, not cryptographic execution attestations. GUI receipt verification requires the retained local binary, logs and screenshots; fresh checkouts must regenerate them.",
+    "Final metadata-only publication, remote transport verification and ledger calibration are coordinator steps following this approval."
+  ],
+  "coordinator_followup_authorized": [
+    "Set the advanced review to accepted-for-delivery and clear completed delivery items.",
+    "Refresh evidence metadata hashes and unchanged-denominator progress ledgers; calibrate the gates and run their meters.",
+    "Commit and push only the reviewed metadata/evidence scope, then verify the final remote transport."
+  ]
+}

@@ -8,7 +8,7 @@
     "os": "linux",
     "architecture": "x86_64"
   },
-  "binary_sha256": "544bbbb7340c0daed35ff5f965dbb6bc726a6a7a40014c75b833e540d4fafaa4",
+  "binary_sha256": "ae570494e9cba0ac52487644c1e0a5a0fc29ae15ae30e3d5a0ad8ac17c415a6b",
   "sources": {
     ".gitattributes": "d60f352d0db1404c70afb4bb8b2ca3fd1c610572aa40720e8a0b7baa7885418c",
     "explorer/build.el": "6bf1efa11231d5261e6852298402a65f0d94a8447f14cdeffe08954b93854fd2",
@@ -16,22 +16,22 @@
     "explorer/platform-zip.inc": "461d9c6c33027ec64bb253530407eef53846094b693975296e53b2762aad1c26",
     "explorer/platform.c": "ce2b7c4b183edc3aa4377fa04402573f2e17b16c88f408e5ca47f25b0738d507",
     "explorer/platform.h": "fd812890af8150501cdf3f15369590d4a725595c5452b930ec38b0966bfb04e0",
-    "explorer/sumi-explorer-native.el": "764cc037998124765464bd931502d300cc5fff0bf8e773ecc4bcd4dcafcd50a8",
+    "explorer/sumi-explorer-native.el": "6678e925c53c6454245b61573142c831d779f638537b605c097bf1dc07663825",
     "explorer/sumi-explorer.el": "3946daa2dd0c1f976e7ed4300d93fb93e516562b6d8b1ced3bf7fda085aba566",
-    "tests/explorer-advanced-test.py": "8057f2bfac44036488189cae5ed9dd73459db89948ad5b32c7cae486803c678a",
-    "tests/explorer-batches-test.py": "cfec3b96b3ce24acb438ff94796624e0f4da023f23968dbecf48a57d59562102",
-    "tests/explorer-dnd-test.py": "808a4d84f6d9d1d68eb0d8ca522697a41bdb0b167438e117cdd791dd3a910448",
-    "tests/explorer-everyday-test.py": "ebcbcfd0e8ee876bfcb526900655b6e6cc7bfc6f1f971bba64dd8ee452796638",
-    "tests/explorer-gui-test.py": "9ba503b0510a9a015fd844a78c19f6c4785d4e524e6968a2ffe5b0719e28d7da",
-    "tests/explorer-operations-test.py": "0e7c831abe236b08ace3ab4afadf7bdef67da7df246958926444b75feee0fe6b",
+    "tests/explorer-advanced-test.py": "c606a21981c5fe20c772d4e1f4b053972d6ca5b9c8ac5666627353ec9a3ee6e8",
+    "tests/explorer-batches-test.py": "ff09c2e50eb81648f18f876a038e540f4b1219b0cde4e4321d2d2b658b8d390f",
+    "tests/explorer-dnd-test.py": "9a2ada101618b74d834887ce0c18163a4b75d96e05bc039f789eb5e78085b393",
+    "tests/explorer-everyday-test.py": "6401a66361fca2750119f2bb378323ff80d38c321a522ab8896fa7a66dc79a05",
+    "tests/explorer-gui-test.py": "492629080073bef845e8e0aa16d1a15a58bac1528513ce630d2f3ed47adcf58b",
+    "tests/explorer-operations-test.py": "386840888cc758f8f49c16244fb9b6bfaa2fae463b94f13834f9d9b7561abfe7",
     "tests/explorer-platform-metadata-test.c": "742de332d379408278f3539d0923f1a25cf0315edd0b432032cc9e547e2a7475",
     "tests/explorer-platform-test.c": "dd5d10bbe060368715605aec0b5602a7216f54e29aad0df5f76befcc787ee0a1",
     "tests/explorer-platform-zip-test.c": "28201ed658115dd59ceb707af17f73acad1d644b82901d33ce6830323092a84f",
-    "tests/explorer-workspace-test.py": "924e40d90ed98f0dade29b63607d119a7736cbb9ac6767c3db95cabed6769c91",
+    "tests/explorer-workspace-test.py": "91730d859b8707caa8a3b14784778c1d8646ff8e29b6fd383049028a9bb8635d",
     "tests/sumi-explorer-client-test.el": "68d0762f882c1c60229dd3a60b11da33885e1bb35ab99fd0fb9df4e14f361954",
     "tests/sumi-explorer-integration-test.el": "25fccbc984d24600a4fbcc82e4c8e8c702aac7e5e604682ec846c2c8fe137394",
     "tests/sumi-explorer-windows-test.el": "52a51a3642044e246db410a46aebbd10a3c4db2865938962e249037f66f4c25c",
-    "tools/check.sh": "96089def75816b74ed8db13f1ef2dfd7aff81095bd921e6d983a67379484cdee"
+    "tools/check.sh": "e7c3860e863a5adfb9196a0825ebe5273e20dac6a844e1019ddc4bbf7935d6b3"
   },
   "checks": {
     "build": {
@@ -44,86 +44,84 @@
       "status": "pass",
       "exit_code": 0,
       "cases": 4,
-      "log_sha256": "dc4d5b3776a9f8a68997179b1bdffd3618b06313492590d48f79e5293184b037"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "client": {
       "status": "pass",
       "exit_code": 0,
       "cases": 65,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "emacs_native": {
       "status": "pass",
       "exit_code": 0,
       "cases": 7,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "gui": {
       "status": "pass",
       "exit_code": 0,
       "cases": 1,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "batches": {
       "status": "pass",
       "exit_code": 0,
       "cases": 15,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "operations": {
       "status": "pass",
       "exit_code": 0,
       "cases": 12,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "dnd": {
       "status": "pass",
       "exit_code": 0,
       "cases": 7,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "workspace": {
       "status": "pass",
       "exit_code": 0,
       "cases": 12,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "everyday": {
       "status": "pass",
       "exit_code": 0,
       "cases": 21,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "platform": {
       "status": "pass",
       "exit_code": 0,
       "cases": 6,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "metadata_stub": {
       "status": "pass",
       "exit_code": 0,
       "cases": 4,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "zip_stub": {
       "status": "pass",
       "exit_code": 0,
       "cases": 11,
-      "log_sha256": "9d65dcb8f50fa8a7477e5b5fa5b5d422865f8959be0136a6df777d32d251b2b7"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     },
     "advanced": {
       "status": "pass",
       "exit_code": 0,
       "cases": 54,
-      "log_sha256": "824a1c1ec30141b6778cbdf2dec5742dfdcfd8940b4ffa1ba0a0f1f22def4e70"
+      "log_sha256": "3c901b8c5c752740505866fec799d81fb17ef85bfaf82676791f0b78a3c9e2b2"
     }
   },
   "limitations": [
-    "Historical Linux execution: the final full helper passed209 checks; the subsequently integrated11-case ZIP unsupported-stub suite and four current warning-as-error compilation inputs passed focused continuation commands. This editable record checks source binding and does not independently prove or rerun execution.",
-    "The54 advanced groups include real filesystem/GUI workflows and explicitly labeled fake-provider ABI/ownership controls. Eleven ZIP stub checks establish explicit unsupported behavior on Linux, not native Windows execution.",
-    "Windows execution has a separate source-bound record. Native Security page Apply/Cancel, third-party extension coverage, packaging and complete cross-platform interaction remain unverified.",
-    "macOS application runtime remains unverified; Intel Mach-O emission has a compiler plt32 limitation.",
-    "Undo is session-scoped and conservative. External writers can race path-based checks; unsupported Windows identity providers and unverifiable Trash handles do not receive guessed recovery records."
+    "Existing 220 Linux checks passed on the redesigned application; the separate 28 real GUI layout and interaction checks are recorded in design-validation.json.",
+    "This historical source-bound record does not rerun the application when verified.",
+    "Windows ACL Apply/Cancel, third-party Shell extensions, broader Windows Properties/external transfer and macOS runtime remain unverified. See the separate Windows source-bound record for its actual automated scope."
   ]
 }

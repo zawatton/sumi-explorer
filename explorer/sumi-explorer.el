@@ -157,17 +157,18 @@ Run ON-PUBLISHED before allowing a quit after publication."
                                     "new-tab" "new-window" "close-tab" "activate-tab"
                                     "back" "forward" "home" "filter" "sort" "order"
                                     "hidden" "view" "bookmark-add" "bookmark-remove"
-                                    "bookmark-open" "clipboard-copy" "clipboard-cut" "paste")
+                                    "bookmark-open" "clipboard-copy" "clipboard-cut" "paste"
+                                    "zip-extract" "undo" "permissions" "chmod")
                                   sumi-explorer--mutation-commands))
     (error "Unsupported Explorer command"))
   (let* ((encoded (sumi-explorer--escape (or path "")))
-         (needs-destination (member command '("copy" "move" "rename")))
+         (needs-destination (member command '("copy" "move" "rename" "zip-extract" "chmod")))
          (encoded-destination (and destination (sumi-explorer--escape destination))))
     (cond
      ((member command '("new-tab" "new-window" "bookmark-add" "bookmark-remove" "paste"))
       (unless (or (string-empty-p (or path "")) (sumi-explorer--local-absolute-path-p path))
         (error "Workspace directory must be empty or absolute and local")))
-     ((equal command "activate-tab")
+     ((member command '("activate-tab" "undo"))
       (sumi-explorer--decimal path 1 sumi-explorer--maximum-request-id))
      ((member command '("close-tab" "back" "forward" "home" "clipboard-copy" "clipboard-cut"))
       (unless (string-empty-p (or path "")) (error "Command requires an empty path")))
@@ -183,11 +184,14 @@ Run ON-PUBLISHED before allowing a quit after publication."
       (unless (member path '("show" "hide")) (error "Invalid hidden-file setting")))
      ((equal command "view")
       (unless (member path '("list" "details")) (error "Invalid Explorer view"))))
-    (when (member command sumi-explorer--mutation-commands)
+    (when (member command (append '("zip-extract" "permissions" "chmod") sumi-explorer--mutation-commands))
       (unless (sumi-explorer--local-absolute-path-p path)
         (error "Mutation path must be absolute and local")))
     (if needs-destination
-        (unless (and destination (sumi-explorer--local-absolute-path-p destination))
+        (unless (if (equal command "chmod")
+                    (and (stringp destination)
+                         (string-match-p "\\`0?[0-7][0-7][0-7]\\'" destination))
+                  (and destination (sumi-explorer--local-absolute-path-p destination)))
           (error "Mutation destination must be absolute and local"))
       (when destination (error "Unexpected Explorer destination")))
     (when (and (equal command "rename")
@@ -447,10 +451,10 @@ Interactive calls confirm the frozen selection or prompted source first."
 
 (defun sumi-explorer--submit-paths (command paths &optional directory)
   "Publish an immutable indexed manifest for COMMAND, PATHS and DIRECTORY."
-  (unless (member command '("select-many" "copy-many" "move-many" "trash-many"))
+  (unless (member command '("select-many" "copy-many" "move-many" "trash-many" "zip-create" "shell-menu"))
     (error "Unsupported Explorer manifest command"))
   (setq paths (sumi-explorer--validated-paths paths (equal command "select-many")))
-  (let ((needs-directory (member command '("copy-many" "move-many"))))
+  (let ((needs-directory (member command '("copy-many" "move-many" "zip-create"))))
     (if needs-directory
         (progn
           (sumi-explorer--escape directory)
@@ -764,6 +768,112 @@ This is not a durable result or a freshness guarantee after an I/O failure."
   "Paste into DIRECTORY, or the active directory, awaiting actual completion.
 Timeout and quit retain the same pending request; `sumi-explorer-await' resumes."
   (interactive) (sumi-explorer-send "paste" directory timeout))
+
+(defun sumi-explorer-undo-history ()
+  "Read the last published bounded session undo snapshot.
+Return string-keyed header fields plus ordered group alists under `groups'.
+This snapshot does not establish that a reversal will still be safe."
+  (let* ((groups (sumi-explorer--read-groups "undo.ini"))
+         (header (cdr (assoc "Undo" groups))) result
+         (seen (make-hash-table :test 'equal)))
+    (sumi-explorer--snapshot-error groups "UndoError")
+    (sumi-explorer--exact-keys header '("version" "count"))
+    (unless (equal (cdr (assoc "version" header)) "1") (error "Invalid undo version"))
+    (let ((count (sumi-explorer--decimal (cdr (assoc "count" header)) 0 32)))
+      (unless (equal (mapcar #'car groups)
+                     (cons "Undo" (cl-loop for index below count collect (format "Undo%d" index))))
+        (error "Invalid undo group count or order"))
+      (dotimes (index count)
+        (let* ((fields (cdr (assoc (format "Undo%d" index) groups)))
+               (id (cdr (assoc "id" fields))))
+          (sumi-explorer--exact-keys fields '("id" "operation" "count"))
+          (sumi-explorer--decimal id 1 sumi-explorer--maximum-request-id)
+          (sumi-explorer--decimal (cdr (assoc "count" fields)) 1 256)
+          (unless (and (not (gethash id seen))
+                       (member (cdr (assoc "operation" fields))
+                               '("copy" "move" "rename" "mkdir" "trash" "zip-create" "zip-extract" "chmod")))
+            (error "Invalid undo group"))
+          (puthash id t seen)
+          (push fields result)))
+      (append header (list (cons "groups" (nreverse result)))))))
+
+(defun sumi-explorer-undo (&optional group-id timeout)
+  "Reverse GROUP-ID, or the newest group from one snapshot, awaiting TIMEOUT.
+Stale identifiers fail without retrying another group."
+  (interactive)
+  (let ((id (or group-id
+                (cdr (assoc "id" (car (cdr (assoc "groups" (sumi-explorer-undo-history)))))))))
+    (when (integerp id) (setq id (number-to-string id)))
+    (sumi-explorer--decimal id 1 sumi-explorer--maximum-request-id)
+    (sumi-explorer-send "undo" id timeout)))
+
+(defun sumi-explorer--advanced-manifest (command paths destination timeout)
+  "Submit frozen PATHS for COMMAND to DESTINATION and await actual completion."
+  (unless (and (or (null timeout) (numberp timeout)) (> (or timeout 5) 0))
+    (error "Invalid timeout"))
+  (sumi-explorer--submit-paths command paths destination)
+  (sumi-explorer-await timeout))
+
+(defun sumi-explorer--interactive-archive ()
+  "Freeze selected input paths before prompting for the exact new archive."
+  (let ((files (sumi-explorer--interactive-batch-paths)))
+    (list (read-file-name "Create ZIP at new path: " (file-name-directory (car files))) files)))
+
+(defun sumi-explorer--advanced-single-target (&optional prompt)
+  "Freeze exactly one selected path, otherwise prompt or use the GUI directory.
+PROMPT requests a local file when no selection exists."
+  (let ((paths (sumi-explorer-selected-files)))
+    (when (> (length paths) 1) (user-error "This operation requires one target"))
+    (car (sumi-explorer--validated-paths
+          (list (or (car paths)
+                    (if prompt (read-file-name prompt nil nil t)
+                      (cdr (assoc "directory" (sumi-explorer-state)))))) nil))))
+
+;;;###autoload
+(defun sumi-explorer-zip-create (archive &optional files timeout)
+  "Create exact unused ARCHIVE from frozen FILES or the GUI selection.
+Await actual engine completion; timeout and quit retain the pending request."
+  (interactive (sumi-explorer--interactive-archive))
+  (sumi-explorer--advanced-manifest "zip-create"
+                                    (sumi-explorer--validated-paths
+                                     (or files (sumi-explorer-selected-files)) nil)
+                                    archive timeout))
+
+;;;###autoload
+(defun sumi-explorer-zip-extract (archive destination &optional timeout)
+  "Extract ARCHIVE into exact unused DESTINATION, awaiting TIMEOUT."
+  (interactive (let ((source (sumi-explorer--advanced-single-target "Extract ZIP: ")))
+                 (list source (read-file-name "Extract to new directory: " (file-name-directory source)))))
+  (unless (and (or (null timeout) (numberp timeout)) (> (or timeout 5) 0)) (error "Invalid timeout"))
+  (sumi-explorer--submit "zip-extract" archive destination)
+  (sumi-explorer-await timeout))
+
+;;;###autoload
+(defun sumi-explorer-shell-menu (&optional paths timeout)
+  "Invoke the Windows Shell menu on frozen PATHS, selection or current directory.
+An acknowledgement establishes invocation, never app-managed mutation or undo."
+  (interactive)
+  (let ((targets (or paths (sumi-explorer-selected-files)
+                     (list (cdr (assoc "directory" (sumi-explorer-state)))))))
+    (sumi-explorer--advanced-manifest "shell-menu" targets nil timeout)))
+
+;;;###autoload
+(defun sumi-explorer-permissions (&optional path timeout)
+  "Open the platform permission editor for one frozen PATH.
+Acknowledgement means invocation, not that an ACL change was applied."
+  (interactive (list (sumi-explorer--advanced-single-target)))
+  (sumi-explorer-send "permissions"
+                       (or path (sumi-explorer--advanced-single-target)) timeout))
+
+;;;###autoload
+(defun sumi-explorer-set-permissions (path mode &optional timeout)
+  "Set local PATH to octal string MODE (0000 through 0777), awaiting TIMEOUT.
+The host rejects symlinks and unsupported platforms."
+  (interactive (let ((path (sumi-explorer--advanced-single-target "Set permissions for: ")))
+                 (list path (read-string "Octal mode (0000..0777): "))))
+  (unless (and (or (null timeout) (numberp timeout)) (> (or timeout 5) 0)) (error "Invalid timeout"))
+  (sumi-explorer--submit "chmod" path mode)
+  (sumi-explorer-await timeout))
 
 (defun sumi-explorer-open-directory (directory)
   "Navigate to DIRECTORY."

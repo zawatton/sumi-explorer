@@ -149,7 +149,9 @@ try {
     }
     & git status --short | Set-Content (Join-Path $output 'source-status.log')
     Get-FileHash explorer/platform.c, explorer/platform.h, explorer/build.el,
-        explorer/sumi-explorer-native.el, tests/explorer-platform-windows-test.c,
+        explorer/sumi-explorer-native.el, explorer/sumi-explorer.el,
+        tests/sumi-explorer-windows-test.el, tests/explorer-platform-windows-test.c,
+        tests/explorer-platform-metadata-test.c,
         tests/explorer-platform-metadata-test.c,
         tools/windows-native-check.ps1 -Algorithm SHA256 |
         Export-Csv (Join-Path $output 'source-sha256.csv') -NoTypeInformation
@@ -243,10 +245,18 @@ try {
         return $binary
     }
     $metadata = Build-MetadataTest 'metadata-test' @()
+    $runtimeFailures = [System.Collections.Generic.List[string]]::new()
+    $metadataPassed = $true
     & $metadata --handle-probe 2>&1 | Set-Content (Join-Path $output 'metadata-handle-probe.log')
-    if ($LASTEXITCODE -ne 0) { throw 'Bounded own-process handle diagnostics failed; inspect metadata-handle-probe.log.' }
+    if ($LASTEXITCODE -ne 0) {
+        $metadataPassed = $false
+        $runtimeFailures.Add('Bounded own-process handle diagnostics failed; inspect metadata-handle-probe.log.')
+    }
     & $metadata 2>&1 | Set-Content (Join-Path $output 'metadata-test.log')
-    if ($LASTEXITCODE -ne 0) { throw 'Actual Windows NTFS metadata acceptance failed; inspect metadata-test.log.' }
+    if ($LASTEXITCODE -ne 0) {
+        $metadataPassed = $false
+        $runtimeFailures.Add('Actual Windows NTFS metadata acceptance failed; inspect metadata-test.log.')
+    }
     $controls = @(
         @('metadata-omit-change-time', '-DSUMI_TEST_OMIT_CHANGE_TIME',
           'PASS DACL control calibrated: all serialized fields except ChangeTime equal',
@@ -262,10 +272,75 @@ try {
         $exitCode = $LASTEXITCODE
         $text = Get-Content -Raw (Join-Path $output "$name.log")
         if ($exitCode -ne 1 -or -not $text.Contains($calibrated) -or -not $text.Contains($expected)) {
-            throw "Metadata omission control did not fail its calibrated behavior assertion: $name exit=$exitCode"
+            $metadataPassed = $false
+            $runtimeFailures.Add("Metadata omission control did not fail its calibrated behavior assertion: $name exit=$exitCode")
+        } else {
+            "PASS negative control rejected $name" | Add-Content (Join-Path $output 'negative-controls.log')
         }
-        "PASS negative control rejected $name" | Add-Content (Join-Path $output 'negative-controls.log')
     }
+
+    # Each named acceptance test starts a fresh native Emacs and owns a fresh
+    # host/session through the test fixture. Only an actual ERT pass counts.
+    $env:SUMI_EXPLORER_TEST_BIN = (Resolve-Path -LiteralPath 'target/sumi-explorer.exe').Path
+    $ertTests = @(
+        'sumi-explorer-windows-zip-and-top-undo',
+        'sumi-explorer-windows-copy-undo-and-replacement-refusal',
+        'sumi-explorer-windows-readonly-refusal-and-chmod-rejection',
+        'sumi-explorer-windows-native-shell-menu-cancel'
+    )
+    $ertRunner = Join-Path $output 'run-one-windows-ert.el'
+    @'
+;;; run-one-windows-ert.el --- Exact native acceptance result -*- lexical-binding: t; -*-
+(require 'ert)
+(require 'json)
+(let* ((name (intern (or (getenv "SUMI_WINDOWS_ERT_NAME") (error "Missing test name"))))
+       (receipt (or (getenv "SUMI_WINDOWS_ERT_RECEIPT") (error "Missing receipt path")))
+       (selector (list 'member name))
+       (selected (mapcar #'ert-test-name (ert-select-tests selector t))))
+  (unless (and (eq system-type 'windows-nt) (equal selected (list name)))
+    (error "Expected exactly one named Windows test: %S" selected))
+  (ert-run-tests-batch selector)
+  (let* ((result (ert-test-most-recent-result (ert-get-test name)))
+         (passed (ert-test-passed-p result))
+         (coding-system-for-write 'utf-8-unix))
+    (with-temp-file receipt
+      (insert (json-encode `((name . ,(symbol-name name))
+                             (selected . 1)
+                             (passed . ,(if passed 1 0))
+                             (result_type . ,(symbol-name (type-of result)))
+                             (system_type . ,(symbol-name system-type))
+                             (emacs_version . ,emacs-version)))))
+    (kill-emacs (if passed 0 1))))
+'@ | Set-Content -Encoding utf8 $ertRunner
+    $ertResults = @()
+    foreach ($name in $ertTests) {
+        $log = Join-Path $output "$name.log"
+        $receipt = Join-Path $output "$name.json"
+        Remove-Item -LiteralPath $receipt -Force -ErrorAction SilentlyContinue
+        $env:SUMI_WINDOWS_ERT_NAME = $name
+        $env:SUMI_WINDOWS_ERT_RECEIPT = $receipt
+        & $emacs -Q --batch -L (Join-Path $root 'explorer') `
+            -l (Join-Path $root 'tests/sumi-explorer-windows-test.el') -l $ertRunner 2>&1 |
+            Set-Content $log
+        $exitCode = $LASTEXITCODE
+        $passed = $false
+        try {
+            $result = Get-Content -Raw -LiteralPath $receipt | ConvertFrom-Json
+            $passed = $exitCode -eq 0 -and $result.name -ceq $name -and
+                $result.selected -eq 1 -and $result.passed -eq 1 -and
+                $result.result_type -ceq 'ert-test-passed' -and $result.system_type -ceq 'windows-nt'
+        } catch {
+            $_ | Out-String | Add-Content $log
+        }
+        $ertResults += [pscustomobject]@{ name = $name; exit = $exitCode; passed = $passed }
+        if (-not $passed) { $runtimeFailures.Add("Native Windows ERT did not pass: $name exit=$exitCode") }
+    }
+    $ertResults | ConvertTo-Json -Depth 3 | Set-Content (Join-Path $output 'windows-ert-results.json')
+    $ertPassed = @($ertResults | Where-Object { $_.passed }).Count
+    "expected=4 passed=$ertPassed failed=$($ertTests.Count - $ertPassed) skipped_accepted=0" |
+        Set-Content (Join-Path $output 'windows-ert-summary.log')
+    [Environment]::SetEnvironmentVariable('SUMI_WINDOWS_ERT_NAME', $null, 'Process')
+    [Environment]::SetEnvironmentVariable('SUMI_WINDOWS_ERT_RECEIPT', $null, 'Process')
 
     # A console-subsystem app can have a console as MainWindowHandle. Select
     # GTK's actual PID-owned visible top-level window and close that HWND.
@@ -330,17 +405,25 @@ public static class SumiOwnedWindows {
         }
         "app_exit=$($app.ExitCode)" | Add-Content (Join-Path $output 'app-window.log')
         if ($app.ExitCode -ne 0) { throw "App closed with exit=$($app.ExitCode)" }
+    } catch {
+        $_ | Out-String | Set-Content (Join-Path $output 'app-error.log')
+        $runtimeFailures.Add("Standalone GTK window smoke failed: $_")
     } finally {
         if (-not $app.HasExited) { $app.Kill($true); $app.WaitForExit() }
         $app.Dispose()
     }
-    @(
-        'PASS Windows native build, ABI runtime tests, behavioral negative controls and GTK window smoke'
-        'PASS local NTFS metadata acceptance, injected failures, and calibrated ChangeTime/file-identity omission controls'
+    $summary = @(
+        'PASS Windows native build, Shell ABI runtime tests and Shell behavioral negative controls'
+        "Windows ERT expected=4 passed=$ertPassed failed=$($ertTests.Count - $ertPassed); only actual passes accepted"
         'NOTRUN Security page visual observation/cancellation, ACL Apply, third-party extension compatibility'
-        'NOTRUN Windows ZIP/Undo end-to-end acceptance; these require their own protocol/GUI tests'
         'Shell invocation acknowledgement is not ACL Apply or completion evidence for arbitrary external verbs.'
-    ) | Set-Content (Join-Path $output 'result.log')
+    )
+    if ($metadataPassed) {
+        $summary += 'PASS local NTFS metadata acceptance, injected failures, and calibrated ChangeTime/file-identity omission controls'
+    }
+    $summary += @($runtimeFailures | ForEach-Object { "FAIL $_" })
+    $summary | Set-Content (Join-Path $output 'result.log')
+    if ($runtimeFailures.Count) { throw "$($runtimeFailures.Count) runtime gates failed; inspect result.log and individual logs." }
 } finally {
     Stop-Transcript | Out-Null
 }

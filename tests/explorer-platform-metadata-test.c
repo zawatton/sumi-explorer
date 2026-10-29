@@ -138,7 +138,7 @@ static int equal_except(const char *a, const char *b, const char *field)
     return !strcmp(left, right);
 }
 
-static void direct_metadata_open(const WCHAR *path, const char *stage, DWORD flags, int require_denied)
+static BOOL direct_metadata_open(const WCHAR *path, const char *stage, DWORD flags, int require_denied)
 {
     WCHAR extended[2052]; swprintf(extended, 2052, L"\\\\?\\%ls", path);
     HANDLE file = CreateFileW(extended, FILE_READ_ATTRIBUTES, sharing, NULL, OPEN_EXISTING, flags, NULL);
@@ -148,11 +148,13 @@ static void direct_metadata_open(const WCHAR *path, const char *stage, DWORD fla
     if (require_denied) CHECK(file == INVALID_HANDLE_VALUE && code == ERROR_ACCESS_DENIED,
                               "same-flags native open confirms fixture access denial");
     if (file != INVALID_HANDLE_VALUE) CloseHandle(file);
+    return file == INVALID_HANDLE_VALUE && code == ERROR_ACCESS_DENIED;
 }
 
-static void test_restricted_denial(const WCHAR *path, HANDLE process_token)
+static BOOL test_restricted_denial(const WCHAR *path, HANDLE process_token)
 {
     HANDLE restricted = NULL, impersonation = NULL, existing = NULL;
+    BOOL restored = TRUE;
     DWORD size = 0;
     GetTokenInformation(process_token, TokenPrivileges, NULL, 0, &size);
     TOKEN_PRIVILEGES *privileges = malloc(size);
@@ -178,7 +180,7 @@ static void test_restricted_denial(const WCHAR *path, HANDLE process_token)
     DWORD token_error = had_token ? ERROR_SUCCESS : GetLastError();
     CHECK(!had_token && token_error == ERROR_NO_TOKEN, "fresh test thread has no preexisting impersonation");
     if (existing) CloseHandle(existing);
-    if (had_token || token_error != ERROR_NO_TOKEN) return;
+    if (had_token || token_error != ERROR_NO_TOKEN) return TRUE;
     BOOL created = CreateRestrictedToken(process_token, DISABLE_MAX_PRIVILEGE, 0, NULL, 0, NULL, 0, NULL, &restricted);
     BOOL duplicated = created && DuplicateTokenEx(restricted, TOKEN_QUERY | TOKEN_IMPERSONATE,
         NULL, SecurityImpersonation, TokenImpersonation, &impersonation);
@@ -203,22 +205,121 @@ static void test_restricted_denial(const WCHAR *path, HANDLE process_token)
     BOOL impersonated = duplicated && SetThreadToken(NULL, impersonation);
     CHECK(impersonated, "temporarily use restricted token on this test thread only");
     if (impersonated) {
-        direct_metadata_open(path, "restricted-thread/exact-flags", flags, 1);
-        char *name = utf8(path), *error = NULL;
-        char *result = sumi_explorer_platform_metadata_stamp(name, &error);
-        printf("DIAG restricted denied stamp=%s error=%s\n", result ? result : "<none>", error ? error : "<none>");
-        CHECK(!result && error && strstr(error, "Win32 error 5") && !active_handles,
-              "genuine DACL read-attributes denial is explicit");
-        free(name); g_free(error); g_free(result);
-        BOOL reverted = RevertToSelf();
-        CHECK(reverted, "restore original test-thread security context");
-        if (!reverted) ExitProcess(1);
+        if (direct_metadata_open(path, "restricted-thread/exact-flags", flags, 1)) {
+            char *name = utf8(path), *error = NULL;
+            char *result = sumi_explorer_platform_metadata_stamp(name, &error);
+            printf("DIAG restricted denied stamp=%s error=%s\n", result ? result : "<none>", error ? error : "<none>");
+            CHECK(!result && error && strstr(error, "Win32 error 5") && !active_handles,
+                  "genuine DACL read-attributes denial is explicit");
+            free(name); g_free(error); g_free(result);
+        }
+        restored = RevertToSelf();
+        CHECK(restored, "restore original test-thread security context");
     }
     if (impersonation) CloseHandle(impersonation);
     if (restricted) CloseHandle(restricted);
+    return restored;
 }
 
-static void test_acl(const WCHAR *path)
+static PACL acl_with_denial(PACL original, PSID sid, DWORD mask)
+{
+    DWORD capacity = original->AclSize + GetLengthSid(sid) + sizeof(ACCESS_DENIED_ACE);
+    PACL result = malloc(capacity);
+    if (!result || !InitializeAcl(result, capacity, ACL_REVISION) ||
+        !AddAccessDeniedAceEx(result, ACL_REVISION, 0, mask, sid)) { free(result); return NULL; }
+    for (WORD i = 0; i < original->AceCount; ++i) {
+        void *ace = NULL;
+        if (!GetAce(original, i, &ace) || !AddAce(result, ACL_REVISION, MAXDWORD, ace,
+            ((ACE_HEADER *)ace)->AceSize)) { free(result); return NULL; }
+    }
+    return result;
+}
+
+static BOOL verify_denial(HANDLE file, PSID sid, DWORD mask, const char *label)
+{
+    PSECURITY_DESCRIPTOR descriptor = NULL; PACL acl = NULL; void *first = NULL;
+    DWORD code = GetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+        NULL, NULL, &acl, NULL, &descriptor);
+    BOOL valid = code == ERROR_SUCCESS && acl && GetAce(acl, 0, &first) &&
+        ((ACE_HEADER *)first)->AceType == ACCESS_DENIED_ACE_TYPE &&
+        ((ACE_HEADER *)first)->AceFlags == 0 && ((ACCESS_DENIED_ACE *)first)->Mask == mask &&
+        EqualSid(&((ACCESS_DENIED_ACE *)first)->SidStart, sid);
+    printf("DIAG %s query=%lu own_sid_noninherit_denial=%d mask=%08lx\n", label,
+           (unsigned long)code, valid, (unsigned long)mask);
+    CHECK(valid, label);
+    if (descriptor) LocalFree(descriptor);
+    return valid;
+}
+
+static void restore_and_verify_acl(HANDLE file, PACL original, const char *label)
+{
+    PSECURITY_DESCRIPTOR descriptor = NULL; PACL actual = NULL;
+    DWORD restored = SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+        NULL, NULL, original, NULL);
+    DWORD queried = GetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+        NULL, NULL, &actual, NULL, &descriptor);
+    BOOL equal = restored == ERROR_SUCCESS && queried == ERROR_SUCCESS && actual &&
+        actual->AclRevision == original->AclRevision && actual->AceCount == original->AceCount;
+    for (WORD i = 0; equal && i < original->AceCount; ++i) {
+        void *left = NULL, *right = NULL;
+        equal = GetAce(original, i, &left) && GetAce(actual, i, &right) &&
+            ((ACE_HEADER *)left)->AceSize == ((ACE_HEADER *)right)->AceSize &&
+            !memcmp(left, right, ((ACE_HEADER *)left)->AceSize);
+    }
+    printf("DIAG %s restore=%lu query=%lu original_aces_equal=%d\n", label,
+           (unsigned long)restored, (unsigned long)queried, equal);
+    CHECK(equal, label);
+    if (descriptor) LocalFree(descriptor);
+}
+
+static void test_parent_child_denial(const WCHAR *path, const WCHAR *root, HANDLE token, PSID sid)
+{
+    HANDLE file = INVALID_HANDLE_VALUE, parent = INVALID_HANDLE_VALUE;
+    PSECURITY_DESCRIPTOR file_descriptor = NULL, parent_descriptor = NULL;
+    PACL file_original = NULL, parent_original = NULL, file_denied = NULL, parent_denied = NULL;
+    BOOL restored_thread = TRUE;
+    /* Only this disposable root is changed. Keep both already-authorized
+     * restoration handles before installing either noninheriting deny ACE. */
+    file = CreateFileW(path, READ_CONTROL | WRITE_DAC, sharing, NULL, OPEN_EXISTING, 0, NULL);
+    parent = CreateFileW(root, READ_CONTROL | WRITE_DAC, sharing, NULL, OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    BOOL saved_file = file != INVALID_HANDLE_VALUE && GetSecurityInfo(file, SE_FILE_OBJECT,
+        DACL_SECURITY_INFORMATION, NULL, NULL, &file_original, NULL, &file_descriptor) == ERROR_SUCCESS && file_original;
+    BOOL saved_parent = parent != INVALID_HANDLE_VALUE && GetSecurityInfo(parent, SE_FILE_OBJECT,
+        DACL_SECURITY_INFORMATION, NULL, NULL, &parent_original, NULL, &parent_descriptor) == ERROR_SUCCESS && parent_original;
+    CHECK(saved_file && saved_parent, "retain both fixture ACLs and authorized restoration handles");
+    if (!saved_file || !saved_parent) goto done;
+    file_denied = acl_with_denial(file_original, sid, FILE_READ_ATTRIBUTES);
+    parent_denied = acl_with_denial(parent_original, sid, FILE_LIST_DIRECTORY);
+    CHECK(file_denied && parent_denied, "construct both noninheriting own-SID fixture denials");
+    if (!file_denied || !parent_denied) goto done;
+    DWORD file_code = SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+        NULL, NULL, file_denied, NULL);
+    DWORD parent_code = SetSecurityInfo(parent, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+        NULL, NULL, parent_denied, NULL);
+    CHECK(file_code == ERROR_SUCCESS && parent_code == ERROR_SUCCESS, "apply child-attributes and parent-list fixture denials");
+    BOOL child_valid = verify_denial(file, sid, FILE_READ_ATTRIBUTES, "actual child own-SID READ_ATTRIBUTES denial");
+    BOOL parent_valid = verify_denial(parent, sid, FILE_LIST_DIRECTORY, "actual parent own-SID noninherit LIST_DIRECTORY denial");
+    /* MS-FSA 2.1.5.1.2.1 also grants child attributes through parent listing.
+     * The identical native open must calibrate denial before testing failure. */
+    if (file_code == ERROR_SUCCESS && parent_code == ERROR_SUCCESS && child_valid && parent_valid)
+        restored_thread = test_restricted_denial(path, token);
+done:
+    /* Restore the parent first so any inherited-ACE propagation completes
+     * before the child's final original-ACL restoration and verification. */
+    if (parent != INVALID_HANDLE_VALUE && parent_original)
+        restore_and_verify_acl(parent, parent_original, "restore and verify parent original ACL");
+    if (file != INVALID_HANDLE_VALUE && file_original)
+        restore_and_verify_acl(file, file_original, "restore and verify child original ACL");
+    if (file != INVALID_HANDLE_VALUE) CloseHandle(file);
+    if (parent != INVALID_HANDLE_VALUE) CloseHandle(parent);
+    if (file_descriptor) LocalFree(file_descriptor);
+    if (parent_descriptor) LocalFree(parent_descriptor);
+    free(file_denied); free(parent_denied);
+    if (!restored_thread) ExitProcess(1);
+}
+
+static void test_acl(const WCHAR *path, const WCHAR *root)
 {
     HANDLE token = NULL, file = INVALID_HANDLE_VALUE;
     DWORD required = 0;
@@ -264,41 +365,11 @@ static void test_acl(const WCHAR *path)
         SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION, NULL, NULL, old_acl, NULL);
     printf("DIAG DACL restore open_error=%lu result=%lu\n", (unsigned long)open_error, (unsigned long)restore_result);
     CHECK(file != INVALID_HANDLE_VALUE && restore_result == ERROR_SUCCESS, "restore only fixture original DACL");
-    /* Keep the already authorized WRITE_DAC handle while denying only our
-     * fixture's READ_ATTRIBUTES access, so restoration cannot lock us out. */
-    if (file != INVALID_HANDLE_VALUE) {
-        CHECK(InitializeAcl(changed_acl, capacity, ACL_REVISION) &&
-              AddAccessDeniedAceEx(changed_acl, ACL_REVISION, 0, FILE_READ_ATTRIBUTES, user->User.Sid),
-              "construct fixture-only read-attributes denial");
-        for (WORD i = 0; i < old_acl->AceCount; ++i) {
-            void *ace = NULL;
-            CHECK(GetAce(old_acl, i, &ace) && AddAce(changed_acl, ACL_REVISION, MAXDWORD,
-                ace, ((ACE_HEADER *)ace)->AceSize), "retain original permission entries after denial");
-        }
-        DWORD deny_result = SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
-            NULL, NULL, changed_acl, NULL);
-        printf("DIAG DACL deny result=%lu\n", (unsigned long)deny_result);
-        CHECK(deny_result == ERROR_SUCCESS, "apply fixture-only read-attributes denial");
-        PSECURITY_DESCRIPTOR deny_descriptor = NULL;
-        PACL deny_acl = NULL;
-        DWORD inspected = GetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
-            NULL, NULL, &deny_acl, NULL, &deny_descriptor);
-        void *first_ace = NULL;
-        BOOL first_denial = inspected == ERROR_SUCCESS && deny_acl && GetAce(deny_acl, 0, &first_ace) &&
-            ((ACE_HEADER *)first_ace)->AceType == ACCESS_DENIED_ACE_TYPE;
-        BOOL same_sid = first_denial && EqualSid(&((ACCESS_DENIED_ACE *)first_ace)->SidStart, user->User.Sid);
-        DWORD mask = first_denial ? ((ACCESS_DENIED_ACE *)first_ace)->Mask : 0;
-        printf("DIAG actual-deny-ACL query=%lu first_denied=%d same_sid=%d mask=%08lx count=%u\n",
-               (unsigned long)inspected, first_denial, same_sid, (unsigned long)mask, deny_acl ? deny_acl->AceCount : 0);
-        CHECK(first_denial && same_sid && (mask & FILE_READ_ATTRIBUTES), "actual DACL begins with own-SID read-attributes denial");
-        if (deny_descriptor) LocalFree(deny_descriptor);
-        test_restricted_denial(path, token);
-        restore_result = SetSecurityInfo(file, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
-            NULL, NULL, old_acl, NULL);
-        printf("DIAG DACL final restore result=%lu\n", (unsigned long)restore_result);
-        CHECK(restore_result == ERROR_SUCCESS, "restore fixture ACL after access-denial control");
-    }
+    if (file != INVALID_HANDLE_VALUE && restore_result == ERROR_SUCCESS)
+        test_parent_child_denial(path, root, token, user->User.Sid);
 done:
+    if (file != INVALID_HANDLE_VALUE && old_acl)
+        restore_and_verify_acl(file, old_acl, "verify original DACL-only fixture restoration");
     if (file != INVALID_HANDLE_VALUE) CloseHandle(file);
     if (token) CloseHandle(token);
     if (descriptor) LocalFree(descriptor);
@@ -340,10 +411,13 @@ static void test_identity(const WCHAR *path)
     g_free(before); g_free(after);
 }
 
+static BOOL warmup_handle_observer(void);
+
 static void test_faults(const WCHAR *path)
 {
     char *name = utf8(path);
     DWORD before = 0, after = 0;
+    if (!warmup_handle_observer()) { free(name); return; }
     CHECK(GetProcessHandleCount(GetCurrentProcess(), &before), "read baseline process handle count");
     printf("DIAG handles before=%lu adapter_active=%d opens=%u closes=%u close_failures=%d\n",
            (unsigned long)before, active_handles, observed_opens, observed_closes, close_failures);
@@ -364,7 +438,8 @@ static void test_faults(const WCHAR *path)
     CHECK(GetProcessHandleCount(GetCurrentProcess(), &after), "read final process handle count");
     printf("DIAG handles after=%lu adapter_active=%d opens=%u closes=%u close_failures=%d\n",
            (unsigned long)after, active_handles, observed_opens, observed_closes, close_failures);
-    CHECK(active_handles == 0 && !close_failures && before == after, "all injected paths close each acquired handle without leaks");
+    CHECK(active_handles == 0 && observed_opens == observed_closes && !close_failures && before == after,
+          "all injected paths close each acquired handle without leaks");
     char *sentinel = g_strdup("preserved diagnostic"), *error = sentinel;
     CHECK(!sumi_explorer_platform_metadata_stamp(name, &error) && error == sentinel, "preexisting error is preserved");
     g_free(error); free(name);
@@ -442,6 +517,39 @@ static HandleSnapshot *snapshot_own_handles(const char *stage)
     printf("DIAG PSS stage=%s captured=%u observer_handles_before=%lu observer_handles_after=%lu\n",
            stage, result->count, (unsigned long)before, (unsigned long)after);
     return result;
+}
+
+static BOOL warmup_handle_observer(void)
+{
+    ULONGLONG started = GetTickCount64(), deadline = started + 5000;
+    unsigned prior_failures = failures;
+    char *glib_probe = g_strdup("initialize GLib before ownership measurement");
+    g_free(glib_probe);
+    HandleSnapshot *observer = snapshot_own_handles("premeasurement-observer-initialization");
+    BOOL initialized = observer != NULL && failures == prior_failures;
+    free(observer);
+    if (!initialized) return FALSE;
+    /* Actual PSS evidence isolates startup registry-key churn to idle time.
+     * Initialize observers once, close them, then require quiescence. Never
+     * run adapter work here or reset the baseline after measured operations. */
+    Sleep(500);
+    DWORD previous = 0, current = 0; unsigned stable = 0;
+    while (GetTickCount64() < deadline) {
+        BOOL queried = GetProcessHandleCount(GetCurrentProcess(), &current);
+        CHECK(queried, "sample process handles before fixed measurement baseline");
+        if (!queried) return FALSE;
+        stable = stable && current == previous ? stable + 1 : 1;
+        printf("DIAG startup-quiescence elapsed_ms=%llu handles=%lu consecutive=%u\n",
+               (unsigned long long)(GetTickCount64() - started), (unsigned long)current, stable);
+        if (stable >= 3) {
+            CHECK(1, "startup handles quiescent within five seconds before measurement");
+            return TRUE;
+        }
+        previous = current;
+        Sleep(200);
+    }
+    CHECK(0, "startup handles quiescent within five seconds before measurement");
+    return FALSE;
 }
 
 static void compare_handles(const char *stage, const HandleSnapshot *before, const HandleSnapshot *after)
@@ -561,7 +669,7 @@ int main(int argc, char **argv)
     CHECK(first && again && strcmp(first, again) && same_bytes(path), "read-only metadata changes stamp and preserves bytes");
     CHECK(SetFileAttributesW(path, original_attributes), "restore fixture attributes");
     g_free(first); g_free(again);
-    test_acl(path); test_identity(path);
+    test_acl(path, root); test_identity(path);
     first = stamp(path); Sleep(40);
     CHECK(write_fixture(stream, "12345678", 8), "create actual ADS"); again = stamp(path);
     CHECK(first && again && strcmp(first, again), "ADS creation changes base-file stamp");

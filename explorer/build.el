@@ -47,7 +47,7 @@
           (with-temp-buffer
             (unless (eq 0 (apply #'process-file (or (getenv "CC") "cc") nil t nil
                                  obj platform-obj "-o" output
-                                 (append libs (when windows '("-lshell32" "-lole32" "-luuid" "-luser32")))))
+                                 (append libs (when windows '("-lshell32" "-lole32" "-luuid" "-luser32" "-ladvapi32")))))
               (error "Link failed: %s" (buffer-string))))
           (rename-file output exe t)
           (princ (format "EXPLORER-BUILD-OK %s\n" exe)))

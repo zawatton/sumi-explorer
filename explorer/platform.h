@@ -1,5 +1,6 @@
 #ifndef SUMI_EXPLORER_PLATFORM_H
 #define SUMI_EXPLORER_PLATFORM_H
+#include "platform-zip.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -10,6 +11,8 @@ extern "C" {
  * modeless UI; NULL is an explicit error. Permissions may use NULL ownership.
  * No foreign window is subclassed.
  * Paths are frozen, NUL-terminated scalar UTF-8 filesystem identities.
+ * Windows accepts absolute forward-slash aliases and obtains an owned native
+ * path for Shell APIs without changing inputs or physically resolving links.
  * Returns 1 for actual native invocation, 0 for menu cancellation, -1 on error.
  * Invocation never claims that a Shell verb completed or an ACL was applied.
  * A non-NULL error output receives a GLib allocation, released with g_free().

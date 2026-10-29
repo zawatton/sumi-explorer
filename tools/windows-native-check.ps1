@@ -183,12 +183,18 @@ try {
         throw 'Unexpected NeLisp compiler revision.'
     }
     & git status --short | Set-Content (Join-Path $output 'source-status.log')
-    Get-FileHash explorer/platform.c, explorer/platform.h, explorer/build.el,
-        explorer/sumi-explorer-native.el, explorer/sumi-explorer.el,
-        tests/sumi-explorer-windows-test.el, tests/explorer-platform-windows-test.c,
-        tests/explorer-platform-metadata-test.c,
-        tests/explorer-platform-metadata-test.c,
-        tools/windows-native-check.ps1 -Algorithm SHA256 |
+    $sourcePaths = @(
+        'explorer/platform.c', 'explorer/platform.h', 'explorer/build.el',
+        'explorer/platform-zip.h', 'explorer/platform-zip.inc',
+        'explorer/sumi-explorer-native.el', 'explorer/sumi-explorer.el',
+        'tests/sumi-explorer-windows-test.el', 'tests/explorer-platform-windows-test.c',
+        'tests/explorer-platform-metadata-test.c', 'tests/explorer-platform-zip-test.c',
+        'tools/windows-native-check.ps1', '.github/workflows/windows-native.yml'
+    )
+    if ($sourcePaths.Count -ne 13 -or @($sourcePaths | Sort-Object -Unique).Count -ne 13) {
+        throw 'Native source manifest must contain exactly 13 distinct paths.'
+    }
+    Get-FileHash -LiteralPath $sourcePaths -Algorithm SHA256 |
         Export-Csv (Join-Path $output 'source-sha256.csv') -NoTypeInformation
     & $env:CC --version | Set-Content (Join-Path $output 'gcc-version.log')
     & $env:CC -dumpmachine | Set-Content (Join-Path $output 'gcc-target.log')
@@ -298,7 +304,7 @@ try {
         $binary = Join-Path $output "$name.exe"
         $arguments = @('-std=c11', '-Wall', '-Wextra', '-Werror', "-I$include", '-Iexplorer') +
             $cflags + @('tests/explorer-platform-windows-test.c', '-o', $binary) +
-            $libs + @('-lshell32', '-lole32', '-luuid', '-luser32')
+            $libs + @('-lshell32', '-lole32', '-luuid', '-luser32', '-ladvapi32')
         & $env:CC @arguments 2>&1 | Set-Content (Join-Path $output "$name-build.log")
         if ($LASTEXITCODE -ne 0) { throw "Native test compilation failed: $name" }
         return $binary
@@ -348,6 +354,31 @@ try {
     }
     'PASS negative control rejected broken-owner-lifetime' | Add-Content (Join-Path $output 'negative-controls.log')
 
+    $before = 'char *native = g_file_get_path(file);'
+    if ([regex]::Matches($source, [regex]::Escape($before)).Count -ne 1) {
+        throw 'Native path negative control requires exactly one shared conversion site.'
+    }
+    $directory = Join-Path $output 'broken-native-path'
+    New-Item -ItemType Directory -Force $directory | Out-Null
+    $source.Replace($before, 'char *native = g_strdup(path);') |
+        Set-Content -LiteralPath (Join-Path $directory 'platform.c') -Encoding utf8
+    $mutant = Build-NativeTest 'broken-native-path' $directory
+    & $mutant 2>&1 | Set-Content (Join-Path $output 'broken-native-path.log')
+    $exitCode = $LASTEXITCODE
+    $text = Get-Content -Raw (Join-Path $output 'broken-native-path.log')
+    $required = @(
+        'PASS real COM multi-selection menu cancellation',
+        'PASS real COM Copy menu invocation',
+        'PASS Copy clipboard CF_HDROP contains both frozen Unicode filesystem targets',
+        'FAIL real COM forward-slash Unicode menu cancellation',
+        'FAIL real COM forward-slash Unicode Copy invocation',
+        'FAIL forward-slash Copy CF_HDROP contains both original Unicode filesystem targets'
+    )
+    if ($exitCode -ne 1 -or @($required | Where-Object { -not $text.Contains($_) }).Count) {
+        throw "Native path control did not preserve native passes and fail all forward-path behaviors: exit=$exitCode"
+    }
+    'PASS negative control rejected broken-native-path' | Add-Content (Join-Path $output 'negative-controls.log')
+
     function Build-MetadataTest([string]$name, [string[]]$extra) {
         $binary = Join-Path $output "$name.exe"
         $arguments = @('-std=c11', '-Wall', '-Wextra', '-Werror', '-Iexplorer') + $cflags + $extra +
@@ -390,6 +421,29 @@ try {
         } else {
             "PASS negative control rejected $name" | Add-Content (Join-Path $output 'negative-controls.log')
         }
+    }
+
+    $zip = Join-Path $output 'platform-zip-test.exe'
+    $zipArguments = @('-std=c11', '-Wall', '-Wextra', '-Werror', '-Iexplorer') + $cflags +
+        @('tests/explorer-platform-zip-test.c', '-o', $zip) +
+        $libs + @('-lshell32', '-lole32', '-luuid', '-luser32', '-ladvapi32')
+    & $env:CC @zipArguments 2>&1 | Set-Content (Join-Path $output 'platform-zip-build.log')
+    if ($LASTEXITCODE -ne 0) { throw 'Native ZIP OS I/O test compilation failed.' }
+    & $zip 2>&1 | Set-Content (Join-Path $output 'platform-zip-test.log')
+    $zipExit = $LASTEXITCODE
+    $zipText = Get-Content -Raw (Join-Path $output 'platform-zip-test.log')
+    $zipPassed = $zipExit -eq 0 -and $zipText -match 'RESULT Windows ZIP checks=[1-9][0-9]* failures=0 '
+    if (-not $zipPassed) { $runtimeFailures.Add("Native Windows ZIP OS I/O acceptance failed: exit=$zipExit") }
+    & $zip --omit-file-id 2>&1 | Set-Content (Join-Path $output 'platform-zip-omit-file-id.log')
+    $exitCode = $LASTEXITCODE
+    $zipControl = Get-Content -Raw (Join-Path $output 'platform-zip-omit-file-id.log')
+    if ($exitCode -ne 1 -or
+        -not $zipControl.Contains('PASS replacement control calibrated: all etag fields except native file ID equal') -or
+        -not $zipControl.Contains('FAIL same-byte equal-time replacement changes native ZIP file identity')) {
+        $runtimeFailures.Add("Native ZIP file-ID omission did not fail its calibrated actual replacement assertion: exit=$exitCode")
+        $zipPassed = $false
+    } else {
+        'PASS negative control rejected zip-omit-file-id' | Add-Content (Join-Path $output 'negative-controls.log')
     }
 
     # Each named acceptance test starts a fresh native Emacs and owns a fresh
@@ -534,6 +588,7 @@ public static class SumiOwnedWindows {
     if ($metadataPassed) {
         $summary += 'PASS local NTFS metadata acceptance, injected failures, and calibrated ChangeTime/file-identity omission controls'
     }
+    if ($zipPassed) { $summary += 'PASS native ZIP OS I/O, owned cleanup, provider calibration and file-ID omission control' }
     $summary += @($runtimeFailures | ForEach-Object { "FAIL $_" })
     $summary | Set-Content (Join-Path $output 'result.log')
     if ($runtimeFailures.Count) { throw "$($runtimeFailures.Count) runtime gates failed; inspect result.log and individual logs." }

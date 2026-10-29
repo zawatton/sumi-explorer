@@ -5,8 +5,10 @@
 #ifdef _WIN32
 /* Narrow GLib/GDK imports use their public C ABI, independent of a host's
  * generated glibconfig.h.  Win32/COM types below always come from the SDK. */
+#ifndef __G_TYPES_H__
 typedef struct _GError GError;
 typedef struct _GTypeInstance GTypeInstance;
+typedef struct _GFile GFile;
 typedef uint16_t gunichar2;
 typedef intptr_t gssize;
 extern char *g_strdup(const char *);
@@ -14,8 +16,12 @@ extern char *g_strdup_printf(const char *, ...);
 extern void g_free(void *);
 extern int g_utf8_validate(const char *, gssize, const char **);
 extern gunichar2 *g_utf8_to_utf16(const char *, long, long *, long *, GError **);
-extern uintptr_t gdk_win32_surface_get_type(void);
+extern GFile *g_file_new_for_path(const char *);
+extern char *g_file_get_path(GFile *);
+extern void g_object_unref(void *);
 extern int g_type_check_instance_is_a(GTypeInstance *, uintptr_t);
+#endif
+extern uintptr_t gdk_win32_surface_get_type(void);
 #else
 #include <glib.h>
 #endif
@@ -124,6 +130,22 @@ static int win32_error(char **error, const char *operation, DWORD code)
     if (error) *error = g_strdup_printf("%s failed (Win32 error %lu)",
                                         operation, (unsigned long)code);
     return -1;
+}
+
+static gunichar2 *shell_native_path(const char *path, char **error)
+{
+    /* GFile supplies a lexical, OS-native absolute path without resolving
+     * symlinks or changing the caller's frozen UTF-8 identity. Shell parsing
+     * requires this form even when ordinary file APIs accept forward slashes. */
+    GFile *file = g_file_new_for_path(path);
+    if (!file) { fail(error, "Cannot create native filesystem path"); return NULL; }
+    char *native = g_file_get_path(file);
+    g_object_unref(file);
+    if (!native) { fail(error, "Native action requires a local filesystem path"); return NULL; }
+    gunichar2 *wide = g_utf8_to_utf16(native, -1, NULL, NULL, NULL);
+    g_free(native);
+    if (!wide) fail(error, "Cannot encode native filesystem path");
+    return wide;
 }
 
 static HWND surface_handle(void *surface, char **error)
@@ -237,10 +259,10 @@ int sumi_explorer_platform_shell(void *surface, const char *const *paths,
     result = OleInitialize(NULL);
     if (FAILED(result)) return hresult_error(error, "Initialize Shell OLE apartment", result);
     for (i = 0; i < count; ++i) {
-        gunichar2 *wide = g_utf8_to_utf16(paths[i], -1, NULL, NULL, NULL);
+        gunichar2 *wide = shell_native_path(paths[i], error);
         SFGAOF attributes = 0;
         PIDLIST_ABSOLUTE candidate;
-        if (!wide) { fail(error, "Cannot encode native path"); goto cleanup; }
+        if (!wide) goto cleanup;
         result = SHParseDisplayName((LPCWSTR)wide, NULL, &objects[i], SFGAO_FILESYSTEM, &attributes);
         g_free(wide);
         if (FAILED(result)) { hresult_error(error, "Resolve filesystem Shell object", result); goto cleanup; }
@@ -334,7 +356,8 @@ int sumi_explorer_platform_permissions(void *surface, const char *path, char **e
     if (surface && !parent) return -1;
     result = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
     if (FAILED(result)) return hresult_error(error, "Initialize Security editor COM apartment", result);
-    wide = g_utf8_to_utf16(path, -1, NULL, NULL, NULL);
+    wide = shell_native_path(path, error);
+    if (!wide) { CoUninitialize(); return -1; }
     SetLastError(ERROR_SUCCESS);
     outcome = SHObjectProperties(parent, SHOP_FILEPATH, (LPCWSTR)wide, L"Security")
         ? 1 : win32_error(error, "Invoke Windows Security property page", GetLastError());
@@ -528,3 +551,5 @@ char *sumi_explorer_platform_metadata_stamp(const char *path, char **error)
     return metadata_failure(error, "Local NTFS metadata is unsupported on this platform");
 }
 #endif
+
+#include "platform-zip.inc"

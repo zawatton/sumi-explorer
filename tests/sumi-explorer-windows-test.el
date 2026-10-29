@@ -177,6 +177,48 @@
            (kill-buffer sumi-explorer-windows-test--native-buffer))
          (delete-directory root t)))))
 
+(defun sumi-explorer-windows-test--large-payload ()
+  "Make 131104 binary bytes with unique counter-prefixed 32-byte blocks."
+  (let (blocks)
+    (dotimes (index 4097)
+      (push (concat (unibyte-string (logand (ash index -24) 255)
+                                   (logand (ash index -16) 255)
+                                   (logand (ash index -8) 255) (logand index 255))
+                    (substring (secure-hash 'sha256 (format "ZIP fixture block %d" index) nil nil t) 0 28))
+            blocks))
+    (apply #'concat (nreverse blocks))))
+
+(defun sumi-explorer-windows-test--junction (action alias source)
+  "Create/remove only owned ALIAS to SOURCE using bounded Windows ACTION.
+Removal uses nonrecursive Directory.Delete, never traversing the junction."
+  (let* ((powershell (or (executable-find "powershell.exe") (executable-find "pwsh.exe")))
+         (script (expand-file-name "owned-junction.ps1" sumi-explorer-windows-test--fixture-root))
+         (output (generate-new-buffer " *sumi-owned-junction*"))
+         child)
+    (unwind-protect
+        (progn
+          (unless powershell (error "PowerShell is required for the real junction fixture"))
+          (with-temp-file script
+            (insert "param([ValidateSet('Create','Remove')][string]$Action,[string]$AliasDirectory,[string]$SourceDirectory)\n"
+                    "$ErrorActionPreference='Stop'\n"
+                    "if($Action -eq 'Create') { New-Item -ItemType Junction -Path $AliasDirectory -Target $SourceDirectory | Out-Null }\n"
+                    "$item=Get-Item -LiteralPath $AliasDirectory -Force\n"
+                    "if($item.LinkType -ne 'Junction') { throw 'Owned alias is not a junction' }\n"
+                    "if($Action -eq 'Remove') { [IO.Directory]::Delete($AliasDirectory,$false) }\n"
+                    "[Console]::WriteLine('Owned junction action completed: '+$Action)\n"))
+          (setq child (make-process :name "sumi-owned-junction" :buffer output :noquery t
+                                    :command (list powershell "-NoProfile" "-NonInteractive"
+                                                   "-ExecutionPolicy" "Bypass" "-File" script
+                                                   "-Action" action "-AliasDirectory" alias
+                                                   "-SourceDirectory" source)))
+          (let ((deadline (+ (float-time) 8)))
+            (while (and (process-live-p child) (< (float-time) deadline))
+              (accept-process-output child 0.02)))
+          (when (or (process-live-p child) (/= (process-exit-status child) 0))
+            (error "Owned junction helper failed or timed out: %s" (with-current-buffer output (buffer-string)))))
+      (when (and child (process-live-p child)) (delete-process child))
+      (kill-buffer output))))
+
 (ert-deftest sumi-explorer-windows-zip-and-top-undo ()
   "Real Windows ZIP preserves nested Unicode/spaced fixtures and reverses outputs."
   (sumi-explorer-windows-test--session
@@ -184,18 +226,44 @@
            (nested (expand-file-name "nested folder" source))
            (first (expand-file-name "日本語 spaced.txt" source))
            (second (expand-file-name "binary payload.bin" nested))
+           (large (expand-file-name "large 日本語 payload.bin" nested))
+           (payload (sumi-explorer-windows-test--large-payload))
            (archive (expand-file-name "日本語 archive.zip" root))
            (destination (expand-file-name "new extracted directory" root)))
       (make-directory nested t)
       (sumi-explorer-windows-test--diagnostic "after-create-nested" nested)
       (sumi-explorer-windows-test--write first (encode-coding-string "日本語 fixture\n" 'utf-8-unix))
       (sumi-explorer-windows-test--write second (unibyte-string 0 1 127 128 255 13 10))
+      (should (> (length payload) (* 2 65536)))
+      (sumi-explorer-windows-test--write large payload)
+      ;; Keep the junction outside ROOT: shared recursive fixture cleanup can
+      ;; never traverse it, even if the explicit nonrecursive removal fails.
+      (let* ((alias-root (make-temp-file "sumi-windows-junction-" t))
+             (alias (expand-file-name "owned source alias" alias-root))
+             (invalid-archive (expand-file-name "must not create.zip" alias)))
+        (unwind-protect
+            (progn
+              (sumi-explorer-windows-test--junction "Create" alias source)
+              (should (file-equal-p alias source))
+              (let ((failure (should-error (sumi-explorer-zip-create invalid-archive (list source) 30))))
+                (should (string-match-p (regexp-quote "Destination aliases the source or a source descendant")
+                                        (error-message-string failure))))
+              (should-not (file-exists-p invalid-archive))
+              (should (equal payload (sumi-explorer-windows-test--bytes large)))
+              (should-not (cdr (assoc "groups" (sumi-explorer-undo-history)))))
+          (when (or (file-exists-p alias) (file-symlink-p alias))
+            (sumi-explorer-windows-test--junction "Remove" alias source))
+          ;; No recursive fallback: a failed unlink intentionally retains this
+          ;; separate test-owned container rather than walking its target.
+          (delete-directory alias-root)))
       (sumi-explorer-zip-create archive (list source) 30)
       (should (file-regular-p archive))
       (let ((archive-id (sumi-explorer-windows-test--top-id "zip-create")))
         (sumi-explorer-zip-extract archive destination 30)
         (let* ((restored (expand-file-name (file-name-nondirectory source) destination))
                (restored-nested (expand-file-name (file-name-nondirectory nested) restored)))
+          (should (equal payload (sumi-explorer-windows-test--bytes
+                                  (expand-file-name (file-name-nondirectory large) restored-nested))))
           (should (equal (sumi-explorer-windows-test--bytes first)
                          (sumi-explorer-windows-test--bytes
                           (expand-file-name (file-name-nondirectory first) restored))))
@@ -210,6 +278,7 @@
         (sumi-explorer-undo archive-id 30)
         (should-not (file-exists-p archive)))
       (should (file-regular-p first))
+      (should (equal payload (sumi-explorer-windows-test--bytes large)))
       (should (equal (sumi-explorer-windows-test--bytes second)
                      (unibyte-string 0 1 127 128 255 13 10)))
       (should-not (cdr (assoc "groups" (sumi-explorer-undo-history)))))))

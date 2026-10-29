@@ -76,12 +76,14 @@ static void WINAPI observe_ole_uninitialize(void)
 #undef IContextMenu_InvokeCommand
 
 /* Public GIO ABI. Keep SDK-only syntax checks independent of glibconfig.h. */
+#ifndef __G_TYPES_H__
 typedef struct _GFile GFile;
 extern GFile *g_file_new_for_path(const char *);
 extern char *g_file_get_path(GFile *);
 extern int g_file_query_exists(GFile *, void *);
 extern void g_object_unref(void *);
 extern void *g_object_ref_sink(void *);
+#endif
 extern void gtk_init(void);
 extern void *gtk_window_new(void);
 extern void gtk_window_set_title(void *, const char *);
@@ -89,7 +91,9 @@ extern void gtk_window_set_default_size(void *, int, int);
 extern void gtk_window_present(void *);
 extern void gtk_window_destroy(void *);
 extern void *gtk_native_get_surface(void *);
+#ifndef __G_TYPES_H__
 extern int g_main_context_iteration(void *, int);
+#endif
 
 static void *test_surface;
 static HWND persistent_parent;
@@ -343,9 +347,10 @@ static void pump_owned_messages(void)
     MsgWaitForMultipleObjectsEx(0, NULL, 50, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
 }
 
-static void test_shell(const char *const *paths, const WCHAR *first, const WCHAR *second)
+static void test_shell(const char *const *paths, const WCHAR *first, const WCHAR *second, int forward_alias)
 {
     char *error = NULL;
+    observed_invocations = 0; observed_verb_owner = NULL; modeless_fixture = NULL;
     observe_hook = SetWindowsHookExW(WH_CALLWNDPROC, observe_menu, NULL, GetCurrentThreadId());
     UINT_PTR timer = SetTimer(NULL, 0, 50, drive_menu);
     CHECK(observe_hook && timer, "owned real menu automation installed");
@@ -354,18 +359,34 @@ static void test_shell(const char *const *paths, const WCHAR *first, const WCHAR
     int result = sumi_explorer_platform_shell(test_surface, paths, 2, &error);
     DWORD returned_error = GetLastError();
     log_shell_result("cancel", result, error, returned_error);
-    CHECK(result == 0 && !error && automation_done == 1, "real COM multi-selection menu cancellation");
+    CHECK(result == 0 && !error && automation_done == 1, forward_alias
+          ? "real COM forward-slash Unicode menu cancellation" : "real COM multi-selection menu cancellation");
     CHECK(owner_count() == 0, "canceled menu owner cleanup");
     g_free(error); error = NULL;
-    int opened = OpenClipboard(NULL);
+    int opened = OpenClipboard(persistent_parent), marker_ready = 0;
     CHECK(opened, "clipboard open before Copy");
-    if (opened) { EmptyClipboard(); CloseClipboard(); }
+    if (opened) {
+        WCHAR marker_text[96] = {0};
+        swprintf(marker_text, 96, L"Sumi owned Copy marker pid=%lu tick=%llu alias=%d",
+            (unsigned long)GetCurrentProcessId(), (unsigned long long)GetTickCount64(), forward_alias);
+        HGLOBAL marker = EmptyClipboard() ? GlobalAlloc(GMEM_MOVEABLE, sizeof(marker_text)) : NULL;
+        void *memory = marker ? GlobalLock(marker) : NULL;
+        if (memory) {
+            memcpy(memory, marker_text, sizeof(marker_text));
+            GlobalUnlock(marker);
+            if (SetClipboardData(CF_UNICODETEXT, marker)) { marker_ready = 1; marker = NULL; }
+        }
+        if (marker) GlobalFree(marker);
+        CloseClipboard();
+    }
+    CHECK(marker_ready && !IsClipboardFormatAvailable(CF_HDROP), "fresh owned clipboard marker excludes previous CF_HDROP");
     DWORD clipboard_before = GetClipboardSequenceNumber();
     cancel_menu = 0; reset_menu_observation();
     result = sumi_explorer_platform_shell(test_surface, paths, 2, &error);
     returned_error = GetLastError();
     log_shell_result("copy", result, error, returned_error);
-    CHECK(result == 1 && !error && automation_done == 1, "real COM Copy menu invocation");
+    CHECK(result == 1 && !error && automation_done == 1, forward_alias
+          ? "real COM forward-slash Unicode Copy invocation" : "real COM Copy menu invocation");
     CHECK(observed_invocations == 1 && observed_verb_owner == persistent_parent && IsWindow(persistent_parent),
           "Shell verb uses persistent GTK caller ownership");
     CHECK(modeless_fixture && IsWindow(modeless_fixture), "modeless verb window survives menu-owner cleanup");
@@ -416,7 +437,9 @@ static void test_shell(const char *const *paths, const WCHAR *first, const WCHAR
         printf("\n");
         CloseClipboard();
     }
-    CHECK(matched, "Copy clipboard CF_HDROP contains both frozen Unicode filesystem targets");
+    CHECK(marker_ready && GetClipboardSequenceNumber() != clipboard_before && matched, forward_alias
+          ? "forward-slash Copy CF_HDROP contains both original Unicode filesystem targets"
+          : "Copy clipboard CF_HDROP contains both frozen Unicode filesystem targets");
     CHECK(owner_count() == 0, "invoked menu owner cleanup");
 done:
     if (timer) KillTimer(NULL, timer);
@@ -506,7 +529,16 @@ int main(int argc, char **argv)
     const char *missing[] = {absent};
     test_error(missing, 1, "nonexistent Unicode filesystem Shell object errors");
     g_free(absent);
-    test_shell(frozen, first, second);
+    test_shell(frozen, first, second, 0);
+    char *forward[2] = {g_strdup(paths[0]), g_strdup(paths[1])};
+    CHECK(forward[0] && forward[1], "allocate both owned forward-slash Unicode adapter targets");
+    if (forward[0] && forward[1]) {
+        for (unsigned i = 0; i < 2; ++i)
+            for (char *cursor = forward[i]; *cursor; ++cursor) if (*cursor == '\\') *cursor = '/';
+        const char *aliases[] = {forward[0], forward[1]};
+        test_shell(aliases, first, second, 1);
+    }
+    g_free(forward[0]); g_free(forward[1]);
     printf("NOTRUN Security page visual observation, cancellation and ACL Apply (manual Windows GUI acceptance)\n");
     for (unsigned i = 0; i < 2; ++i) {
         char readback[sizeof(bytes)] = {0}; DWORD size = 0;

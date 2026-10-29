@@ -1,4 +1,4 @@
-param([switch]$Worker)
+param([switch]$Worker, [switch]$PrepareEmacs)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 if (-not $IsWindows) { throw 'This harness requires native Windows PowerShell 7.' }
@@ -6,6 +6,35 @@ $root = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $root
 $output = Join-Path $root 'target/windows-native'
 New-Item -ItemType Directory -Force $output | Out-Null
+$gnuEmacsUrl = 'https://ftp.gnu.org/gnu/emacs/windows/emacs-30/emacs-30.2.zip'
+# Published by GNU in emacs-30.2-sha256sum.txt beside the portable archive.
+$gnuEmacsArchiveHash = '414d3a1a21147af257ebd98bdd15976fdcb5ed0563f6de89f76d4a4b5dad9c72'
+$gnuEmacsExecutableHash = '24848ae901463e3c56dac17031ddd45d58220723aa35102fc778458d17ff2f0b'
+$gnuEmacsHome = Join-Path $root 'target/deps/gnu-emacs-30.2'
+$gnuEmacsArchive = Join-Path $root 'target/deps/emacs-30.2.zip'
+$gnuEmacs = Join-Path $gnuEmacsHome 'bin/emacs.exe'
+
+if ($PrepareEmacs) {
+    if ($Worker) { throw 'Dependency preparation must precede the bounded worker.' }
+    New-Item -ItemType Directory -Force (Split-Path -Parent $gnuEmacsArchive) | Out-Null
+    Invoke-WebRequest -Uri $gnuEmacsUrl -OutFile $gnuEmacsArchive -TimeoutSec 120 -MaximumRedirection 0
+    $archiveHash = (Get-FileHash -LiteralPath $gnuEmacsArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($archiveHash -cne $gnuEmacsArchiveHash) { throw 'Official GNU Emacs archive checksum mismatch; extraction refused.' }
+    # This directory belongs only to this pinned portable dependency.
+    if (Test-Path -LiteralPath $gnuEmacsHome) { Remove-Item -LiteralPath $gnuEmacsHome -Recurse -Force }
+    Expand-Archive -LiteralPath $gnuEmacsArchive -DestinationPath $gnuEmacsHome
+    $executableHash = (Get-FileHash -LiteralPath $gnuEmacs -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($executableHash -cne $gnuEmacsExecutableHash) { throw 'Extracted GNU Emacs executable checksum mismatch.' }
+    @{
+        url = $gnuEmacsUrl
+        checksum_source = 'https://ftp.gnu.org/gnu/emacs/windows/emacs-30/emacs-30.2-sha256sum.txt'
+        archive_sha256 = $archiveHash
+        executable_sha256 = $executableHash
+        executable = $gnuEmacs
+        installation = 'Portable extraction under target/deps; no host installation or global PATH change.'
+    } | ConvertTo-Json | Set-Content (Join-Path $output 'gnu-emacs-dependency.json')
+    exit 0
+}
 
 if (-not $Worker) {
     # Create the worker suspended, assign its Job Object before resuming it,
@@ -123,7 +152,11 @@ try {
     $ucrt = (Resolve-Path -LiteralPath $env:SUMI_UCRT_BIN).Path
     $env:Path = "$ucrt;$env:Path"
     $env:CC = Join-Path $ucrt 'gcc.exe'
-    $emacs = Join-Path $ucrt 'emacs.exe'
+    $msysEmacs = Join-Path $ucrt 'emacs.exe'
+    $emacs = (Resolve-Path -LiteralPath $gnuEmacs).Path
+    if ((Get-FileHash -LiteralPath $emacs -Algorithm SHA256).Hash.ToLowerInvariant() -cne $gnuEmacsExecutableHash) {
+        throw 'Prepared portable GNU Emacs checksum mismatch.'
+    }
     $pkg = Join-Path $ucrt 'pkg-config.exe'
     $env:NELISP_REPO_ROOT = (Resolve-Path -LiteralPath 'target/deps/nelisp').Path
     $env:XDG_CONFIG_HOME = Join-Path $output 'config'
@@ -139,6 +172,8 @@ try {
         powershell = $PSVersionTable.PSVersion.ToString()
         ucrt_bin = $ucrt
         compiler = $env:CC
+        emacs = $emacs
+        msys_emacs = $msysEmacs
         nelisp_root = $env:NELISP_REPO_ROOT
         fixture_root = $env:SUMI_EXPLORER_ROOT
         repository = (& git rev-parse HEAD)
@@ -162,9 +197,87 @@ try {
     $pacman = Join-Path (Split-Path -Parent (Split-Path -Parent $ucrt)) 'usr/bin/pacman.exe'
     & $pacman -Q | Set-Content (Join-Path $output 'packages.log')
     if ($LASTEXITCODE -ne 0) { throw 'Cannot record MSYS2 package versions.' }
-    & $emacs -Q --batch --eval '(progn (princ (format "%s\n%s\n%s\n" emacs-version system-type system-configuration)) (unless (and (eq system-type (quote windows-nt)) (string-match-p "x86_64" system-configuration)) (kill-emacs 1)))' 2>&1 |
+    Get-FileHash -LiteralPath $msysEmacs, $emacs -Algorithm SHA256 |
+        Export-Csv (Join-Path $output 'emacs-executables-sha256.csv') -NoTypeInformation
+    $unicodeProbe = Join-Path $output 'unicode-file-probe.el'
+    @'
+;;; unicode-file-probe.el --- Native filename calibration -*- lexical-binding: t; -*-
+(require 'json)
+(let* ((root (or (getenv "SUMI_UNICODE_PROBE_ROOT") (error "Missing owned probe root")))
+       (receipt (or (getenv "SUMI_UNICODE_PROBE_RECEIPT") (error "Missing probe receipt")))
+       (directory (expand-file-name "\u65e5\u672c\u8a9e directory" root))
+       (file (expand-file-name "\u65e5\u672c\u8a9e file.bin" directory))
+       (bytes (unibyte-string 0 65 127 128 255 10))
+       (stage "mkdir") made passed failure cleanup-failure)
+  (unwind-protect
+      (condition-case err
+          (progn
+            (make-directory directory t)
+            (setq made (file-directory-p directory) stage "write-open")
+            (with-temp-buffer
+              (set-buffer-multibyte nil)
+              (insert bytes)
+              (let ((coding-system-for-write 'no-conversion))
+                (write-region (point-min) (point-max) file nil 'silent)))
+            (setq stage "read-open")
+            (with-temp-buffer
+              (set-buffer-multibyte nil)
+              (insert-file-contents-literally file)
+              (unless (equal (buffer-string) bytes) (error "Unicode fixture bytes differ")))
+            (setq passed t stage "complete"))
+        (error (setq failure err)))
+    (condition-case err (when made (delete-directory directory t))
+      (error (setq cleanup-failure err passed nil))))
+  (let ((coding-system-for-write 'utf-8-unix))
+    (with-temp-file receipt
+      (insert (json-encode
+               `((emacs_version . ,emacs-version)
+                 (system_type . ,(symbol-name system-type))
+                 (configuration . ,system-configuration)
+                 (directory_created . ,(if made t :json-false))
+                 (passed . ,(if passed t :json-false))
+                 (stage . ,stage)
+                 (open_failure . ,(if (and (memq (car-safe failure) '(file-error file-missing))
+                                          (stringp (cadr failure))
+                                          (string-match-p "Opening \\(?:input\\|output\\) file" (cadr failure)))
+                                     t :json-false))
+                 (error . ,(if failure (prin1-to-string failure) ""))
+                 (cleanup_error . ,(if cleanup-failure (prin1-to-string cleanup-failure) "")))))))
+  (kill-emacs (if passed 0 1)))
+'@ | Set-Content -Encoding utf8 $unicodeProbe
+    foreach ($candidate in @(@('msys2', $msysEmacs), @('gnu', $emacs))) {
+        $name, $executable = $candidate
+        $receipt = Join-Path $output "$name-unicode-probe.json"
+        Remove-Item -LiteralPath $receipt -Force -ErrorAction SilentlyContinue
+        $env:SUMI_UNICODE_PROBE_ROOT = Join-Path $env:SUMI_EXPLORER_ROOT "$name-unicode-probe"
+        $env:SUMI_UNICODE_PROBE_RECEIPT = $receipt
+        & $executable -Q --batch -l $unicodeProbe 2>&1 | Set-Content (Join-Path $output "$name-unicode-probe.log")
+        $exitCode = $LASTEXITCODE
+        $probe = Get-Content -Raw -LiteralPath $receipt | ConvertFrom-Json
+        $native = $probe.system_type -ceq 'windows-nt' -and $probe.configuration.Contains('x86_64')
+        $positive = $native -and $exitCode -eq 0 -and $probe.directory_created -eq $true -and
+            $probe.passed -eq $true -and $probe.stage -ceq 'complete' -and $probe.cleanup_error -ceq ''
+        if ($name -ceq 'gnu') {
+            if (-not $positive) { throw 'Pinned GNU Emacs failed actual Japanese mkdir/write/read calibration.' }
+            'PASS pinned GNU Emacs actual Japanese directory and exact-byte filename write/read' |
+                Set-Content (Join-Path $output 'unicode-calibration.log')
+        } elseif ($positive) {
+            "MSYS2 Emacs $($probe.emacs_version) Unicode probe passed; documented package defect was not reproduced." |
+                Set-Content (Join-Path $output 'msys2-unicode-calibration.log')
+        } else {
+            $knownOpenFailure = $native -and $exitCode -eq 1 -and $probe.directory_created -eq $true -and
+                $probe.passed -eq $false -and $probe.open_failure -eq $true -and
+                $probe.stage -cin @('write-open', 'read-open') -and $probe.cleanup_error -ceq ''
+            if (-not $knownOpenFailure) { throw 'MSYS2 Unicode probe failed outside the calibrated file-open defect; inspect its receipt.' }
+            "REPRODUCED MSYS2 Emacs $($probe.emacs_version) Japanese file-open defect: $($probe.error); https://github.com/msys2/MINGW-packages/issues/31733" |
+                Set-Content (Join-Path $output 'msys2-unicode-calibration.log')
+        }
+    }
+    [Environment]::SetEnvironmentVariable('SUMI_UNICODE_PROBE_ROOT', $null, 'Process')
+    [Environment]::SetEnvironmentVariable('SUMI_UNICODE_PROBE_RECEIPT', $null, 'Process')
+    & $emacs -Q --batch --eval '(progn (princ (format "%s\n%s\n%s\n" emacs-version system-type system-configuration)) (unless (and (equal emacs-version "30.2") (eq system-type (quote windows-nt)) (string-match-p "x86_64" system-configuration)) (kill-emacs 1)))' 2>&1 |
         Set-Content (Join-Path $output 'emacs-target.log')
-    if ($LASTEXITCODE -ne 0) { throw 'A native x86_64 Windows GNU Emacs is required.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Pinned native x86_64 Windows GNU Emacs 30.2 is required.' }
     & $emacs -Q --batch -l (Join-Path $root 'explorer/build.el') 2>&1 |
         Set-Content (Join-Path $output 'build.log')
     if ($LASTEXITCODE -ne 0) { throw 'Standalone build failed; inspect build.log.' }

@@ -50,6 +50,9 @@ jobs:
         shell: msys2 {0}
         run: |
           printf 'SUMI_UCRT_BIN=%s\n' "$(cygpath -m /ucrt64/bin)" >> "$GITHUB_ENV"
+      - name: Prepare checksum-pinned portable GNU Emacs
+        shell: pwsh
+        run: ./tools/windows-native-check.ps1 -PrepareEmacs
       - name: Build and exercise native Windows ABI
         shell: pwsh
         run: ./tools/windows-native-check.ps1

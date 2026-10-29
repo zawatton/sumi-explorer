@@ -85,6 +85,7 @@
  (data-blob extract_default "extracted\0" rodata)
  (data-blob mode_format "%04o\0" rodata)
  (data-blob advanced_error "Invalid frozen target, destination, permissions mode, or unavailable native capability\0" rodata)
+ (data-blob windows_chmod_unsupported "POSIX chmod is unsupported on Windows; use the native Windows Security dialog\0" rodata)
  (data-blob platform_unsupported "Native Windows Shell and Security editors are unsupported on this platform\0" rodata)
  (data-blob platform_cancelled "Native menu cancelled without invoking a command\0" rodata)
  (data-blob view_name "view.ini\0" rodata)
@@ -683,11 +684,18 @@
       good)))
 
  (defun sumi_explorer_find_row (ctx path)
-   (let ((row (extern-call gtk_list_box_get_row_at_index (ptr-read-u64 ctx 16) 0)) (found 0))
+   (let ((row (extern-call gtk_list_box_get_row_at_index (ptr-read-u64 ctx 16) 0)) (found 0)
+         (file (if (and path (> (extern-call strlen path) 0)) (extern-call g_file_new_for_path path) 0)) (other 0) (rowpath 0))
      (seq
-      (while (and (= (= row 0) 0) (= found 0))
-        (if (sumi_explorer_same path (extern-call g_object_get_data row (data-addr identity))) (setq found row)
-          (setq row (extern-call gtk_widget_get_next_sibling row))))
+      (while (and file row (= found 0))
+        (seq
+         (setq rowpath (extern-call g_object_get_data row (data-addr identity)))
+         (if rowpath
+           (seq (setq other (extern-call g_file_new_for_path rowpath))
+                (if (extern-call g_file_equal file other) (setq found row))
+                (extern-call g_object_unref other)))
+         (if (= found 0) (setq row (extern-call gtk_widget_get_next_sibling row)))))
+      (if file (extern-call g_object_unref file))
       found)))
 
  (defun sumi_explorer_manifest (key count unique)
@@ -2464,13 +2472,19 @@
       (if (= good 0) (sumi_explorer_job_fail job (data-addr advanced_error)))
       (ptr-write-u64 job 48 good) (sumi_explorer_undo_probe_free probe) (extern-call g_object_unref file) 0)))
  (defun sumi_explorer_chmod_start (ctx path mode expected request)
-   (let ((job 0) (task 0) (value (sumi_explorer_octal_mode mode)) (file 0) (stamp 0) (probe (sumi_explorer_undo_probe)))
+   (if (extern-call sumi_explorer_platform_is_windows)
+    (if (ptr-read-u64 ctx 144)
+      (seq (if request (ptr-write-u64 ctx 408 request))
+           (extern-call gtk_label_set_text (ptr-read-u64 ctx 32) (data-addr copy_busy)) 0)
+      (seq (if (> request 0) (ptr-write-u64 ctx 72 request))
+           (sumi_explorer_publish ctx 0 (data-addr windows_chmod_unsupported)) 0))
+    (let ((job 0) (task 0) (value (sumi_explorer_octal_mode mode)) (file 0) (stamp 0) (probe (sumi_explorer_undo_probe)))
      (seq
       (if (and path (extern-call g_path_is_absolute path))
         (seq (setq file (extern-call g_file_new_for_path path))
              (setq stamp (if expected (extern-call g_strdup expected) (sumi_explorer_permissions_stamp file probe)))
              (extern-call g_object_unref file)))
-      (if (or (ptr-read-u64 ctx 144) (= (extern-call sumi_explorer_platform_is_windows) 1)
+      (if (or (ptr-read-u64 ctx 144)
               (= path 0) (= stamp 0) (= (extern-call g_path_is_absolute path) 0) (< value 0))
         (seq (if (> request 0) (ptr-write-u64 ctx 72 request)) (sumi_explorer_publish ctx 0 (data-addr advanced_error)))
         (seq
@@ -2485,7 +2499,7 @@
          (extern-call g_task_set_task_data task job (addr-of sumi_explorer_job_free)) (ptr-write-u64 ctx 176 task)
          (sumi_explorer_publish ctx 1 (data-addr operation_pending)) (sumi_explorer_poll_cancel ctx)
          (extern-call g_task_run_in_thread task (addr-of sumi_explorer_worker))))
-      (extern-call g_free stamp) (sumi_explorer_undo_probe_free probe) 0)))
+      (extern-call g_free stamp) (sumi_explorer_undo_probe_free probe) 0))))
 
  (defun sumi_explorer_worker (task object job cancellable)
    (seq

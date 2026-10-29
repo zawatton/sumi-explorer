@@ -6,6 +6,72 @@
 (require 'ert)
 (require 'sumi-explorer)
 
+(defvar sumi-explorer-windows-test--fixture-root nil)
+(defconst sumi-explorer-windows-test--source-coding
+  (list buffer-file-coding-system enable-multibyte-characters coding-system-for-read)
+  "Source loading coding/buffer state for dependency diagnostics.")
+
+(defun sumi-explorer-windows-test--name-diagnostic (name)
+  "Describe NAME without emitting non-ASCII characters; cap at 256 characters."
+  (let ((part (substring name 0 (min 256 (length name)))))
+    (list :multibyte (multibyte-string-p name) :length (length name)
+          :codepoints (mapconcat (lambda (c) (format "%X" c)) part ",")
+          :utf8hex (mapconcat (lambda (c) (format "%02X" c))
+                             (encode-coding-string part 'utf-8-unix) ""))))
+
+(defun sumi-explorer-windows-test--diagnostic (phase path)
+  "Emit bounded ASCII-safe expected-name and directory data for PHASE/PATH."
+  (condition-case failure
+      (progn
+        (message "DIAG %s source-coding=%S coding=%S expected=%S exists=%S attributes=%S"
+                 phase sumi-explorer-windows-test--source-coding
+                 (mapcar (lambda (symbol) (cons symbol (and (boundp symbol) (symbol-value symbol))))
+                         '(coding-system-for-write coding-system-for-read file-name-coding-system
+                           default-file-name-coding-system locale-coding-system w32-unicode-filenames))
+                 (sumi-explorer-windows-test--name-diagnostic path)
+                 (file-exists-p path) (file-attributes path))
+        (dolist (directory (delete-dups (list sumi-explorer-windows-test--fixture-root
+                                            (file-name-directory path))))
+          (when (and directory
+                     (or (equal directory sumi-explorer-windows-test--fixture-root)
+                         (file-in-directory-p directory sumi-explorer-windows-test--fixture-root)))
+            (message "DIAG directory=%S entries=%S"
+                     (sumi-explorer-windows-test--name-diagnostic directory)
+                     (mapcar #'sumi-explorer-windows-test--name-diagnostic
+                             (directory-files directory nil directory-files-no-dot-files-regexp t 16))))))
+    (error (message "DIAG inspection-error=%S"
+                    (sumi-explorer-windows-test--name-diagnostic (error-message-string failure))))))
+
+(defun sumi-explorer-windows-test--dotnet-diagnostic ()
+  "Enumerate only the ASCII fixture root through one bounded owned child."
+  (let* ((root sumi-explorer-windows-test--fixture-root)
+         (powershell (or (executable-find "powershell.exe") (executable-find "pwsh.exe")))
+         (script (expand-file-name "fixture-name-diagnostic.ps1" root))
+         (output (generate-new-buffer " *sumi-fixture-names*"))
+         child)
+    (unwind-protect
+        (when (and powershell (cl-every (lambda (c) (< c 128)) root))
+          (with-temp-file script
+            (insert "$ErrorActionPreference='Stop'\ntry {\n"
+                    "$entries=[IO.Directory]::GetFileSystemEntries($env:SUMI_WINDOWS_DIAGNOSTIC_ROOT)\n"
+                    "foreach($entry in ($entries | Select-Object -First 16)) {\n"
+                    "$name=[IO.Path]::GetFileName($entry)\n"
+                    "$hex=($name.ToCharArray() | ForEach-Object { '{0:X4}' -f [int]$_ }) -join ','\n"
+                    "[Console]::WriteLine('DIAG NET utf16='+$hex+' attributes='+[IO.File]::GetAttributes($entry))\n"
+                    "}\n} catch { [Console]::WriteLine('DIAG NET error-type='+$_.Exception.GetType().FullName); exit 1 }\n"))
+          (let ((process-environment (copy-sequence process-environment))
+                (deadline (+ (float-time) 5)))
+            (setenv "SUMI_WINDOWS_DIAGNOSTIC_ROOT" root)
+            (setq child (make-process :name "sumi-fixture-names" :buffer output :noquery t
+                                      :command (list powershell "-NoProfile" "-NonInteractive"
+                                                     "-ExecutionPolicy" "Bypass" "-File" script)))
+            (while (and (process-live-p child) (< (float-time) deadline))
+              (accept-process-output child 0.02))
+            (message "DIAG NET alive=%S exit=%S output=%s" (process-live-p child)
+                     (process-exit-status child) (with-current-buffer output (buffer-string)))))
+      (when (and child (process-live-p child)) (delete-process child))
+      (kill-buffer output))))
+
 (defun sumi-explorer-windows-test--bytes (path)
   "Read exact fixture bytes from PATH."
   (with-temp-buffer
@@ -16,7 +82,14 @@
 (defun sumi-explorer-windows-test--write (path bytes)
   "Write exact BYTES to the disposable PATH."
   (let ((coding-system-for-write 'no-conversion))
-    (write-region bytes nil path nil 'silent)))
+    (condition-case failure
+        (progn
+          (message "DIAG payload-multibyte=%S" (multibyte-string-p bytes))
+          (write-region bytes nil path nil 'silent)
+          (sumi-explorer-windows-test--diagnostic "after-write" path))
+      (error
+       (sumi-explorer-windows-test--diagnostic "write-failure" path)
+       (signal (car failure) (cdr failure))))))
 
 (defun sumi-explorer-windows-test--top-id (operation)
   "Require newest Undo group to describe OPERATION and return its ID."
@@ -32,6 +105,7 @@
      (should (eq system-type 'windows-nt))
      (let* ((binary (getenv "SUMI_EXPLORER_TEST_BIN"))
             (root (make-temp-file "sumi-windows-acceptance-" t))
+            (sumi-explorer-windows-test--fixture-root root)
             (process-environment (copy-sequence process-environment))
             (sumi-explorer--session-directory nil)
             (sumi-explorer--owned-session nil)
@@ -42,10 +116,12 @@
             (sumi-explorer--quit-requested nil)
             (sumi-explorer--stop-timeout 15))
        (unwind-protect
-           (progn
+           (condition-case failure
+               (progn
              (should (and (stringp binary) (file-executable-p binary)))
              (dolist (name '("config" "data"))
                (make-directory (expand-file-name name root)))
+             (sumi-explorer-windows-test--diagnostic "after-create-directories" root)
              (setenv "XDG_CONFIG_HOME" (expand-file-name "config" root))
              (setenv "XDG_DATA_HOME" (expand-file-name "data" root))
              (setenv "SUMI_EXPLORER_SESSION" nil)
@@ -60,6 +136,11 @@
                (should-not (process-live-p owned-process))
                (should-not (file-exists-p owned-session))
                (should-not sumi-explorer--session-directory)))
+             ((error quit)
+              (let ((inhibit-quit t))
+                (sumi-explorer-windows-test--diagnostic "before-cleanup" root)
+                (condition-case nil (sumi-explorer-windows-test--dotnet-diagnostic) (error nil)))
+              (signal (car failure) (cdr failure))))
          ;; Forced disposal is only failure cleanup for this owned test host.
          (sumi-explorer-stop t)
          (delete-directory root t)))))
@@ -74,6 +155,7 @@
            (archive (expand-file-name "日本語 archive.zip" root))
            (destination (expand-file-name "new extracted directory" root)))
       (make-directory nested t)
+      (sumi-explorer-windows-test--diagnostic "after-create-nested" nested)
       (sumi-explorer-windows-test--write first (encode-coding-string "日本語 fixture\n" 'utf-8-unix))
       (sumi-explorer-windows-test--write second (unibyte-string 0 1 127 128 255 13 10))
       (sumi-explorer-zip-create archive (list source) 30)
